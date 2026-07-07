@@ -5,7 +5,7 @@ var rule_checker := RuleChecker.new()
 
 
 func choose_move(board: BoardState, enemy_owner: int = BoardState.ENEMY, player_owner: int = BoardState.PLAYER) -> Vector2i:
-	var playable_cells := board.get_playable_cells()
+	var playable_cells := board.get_playable_cells(enemy_owner)
 
 	if playable_cells.is_empty():
 		return Vector2i(-1, -1)

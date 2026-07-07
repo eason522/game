@@ -4,14 +4,32 @@ extends RefCounted
 const SKILL_ROCK_CREATE := "rock_create"
 const SKILL_ROCK_BREAK := "rock_break"
 const SKILL_WARNING := "warning"
+const SKILL_BREAK_ARRAY := "break_array"
+const SKILL_TWIN_PIECE := "twin_piece"
+const SKILL_SEAL_MOVE := "seal_move"
 
 const SKILL_ORDER := [
+	SKILL_BREAK_ARRAY,
+	SKILL_TWIN_PIECE,
 	SKILL_ROCK_CREATE,
 	SKILL_ROCK_BREAK,
+	SKILL_SEAL_MOVE,
 	SKILL_WARNING,
 ]
 
 const SKILL_DATA := {
+	SKILL_BREAK_ARRAY: {
+		"name": "Po Zhen",
+		"cost": 1,
+		"description": "If your next move forms a line of three or more, gain 1 energy.",
+		"requires_target": false,
+	},
+	SKILL_TWIN_PIECE: {
+		"name": "Shuang Sheng Zi",
+		"cost": 3,
+		"description": "After your next move, create a temporary adjacent X for 2 turns.",
+		"requires_target": false,
+	},
 	SKILL_ROCK_CREATE: {
 		"name": "Li Yan",
 		"cost": 2,
@@ -22,6 +40,12 @@ const SKILL_DATA := {
 		"name": "Sui Yan",
 		"cost": 2,
 		"description": "Remove one rock cell.",
+		"requires_target": true,
+	},
+	SKILL_SEAL_MOVE: {
+		"name": "Feng Shou",
+		"cost": 3,
+		"description": "Seal one empty cell so the enemy cannot play there next turn.",
 		"requires_target": true,
 	},
 	SKILL_WARNING: {
@@ -66,6 +90,8 @@ func is_valid_target(board: BoardState, skill_id: String, pos: Vector2i) -> bool
 			return board.get_piece(pos) == BoardState.EMPTY and board.get_terrain(pos) != BoardState.TERRAIN_ROCK
 		SKILL_ROCK_BREAK:
 			return board.get_piece(pos) == BoardState.EMPTY and board.get_terrain(pos) == BoardState.TERRAIN_ROCK
+		SKILL_SEAL_MOVE:
+			return board.get_piece(pos) == BoardState.EMPTY and board.get_terrain(pos) != BoardState.TERRAIN_ROCK and not board.is_sealed(pos)
 		_:
 			return false
 
@@ -79,5 +105,7 @@ func execute(board: BoardState, skill_id: String, pos: Vector2i) -> bool:
 			return board.set_terrain(pos, BoardState.TERRAIN_ROCK)
 		SKILL_ROCK_BREAK:
 			return board.set_terrain(pos, BoardState.TERRAIN_NORMAL)
+		SKILL_SEAL_MOVE:
+			return board.seal_cell(pos, 1)
 
 	return false

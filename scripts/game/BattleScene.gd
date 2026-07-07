@@ -29,13 +29,17 @@ var player_energy := 0
 var enemy_energy := 0
 var selected_skill_id := ""
 var warning_target := Vector2i(-1, -1)
+var break_array_active := false
+var twin_piece_active := false
 
 var empty_style: StyleBoxFlat
 var spirit_style: StyleBoxFlat
 var rock_style: StyleBoxFlat
 var skill_target_style: StyleBoxFlat
 var warning_style: StyleBoxFlat
+var sealed_style: StyleBoxFlat
 var player_style: StyleBoxFlat
+var temporary_player_style: StyleBoxFlat
 var enemy_style: StyleBoxFlat
 var last_player_style: StyleBoxFlat
 var last_enemy_style: StyleBoxFlat
@@ -54,7 +58,9 @@ func _create_styles() -> void:
 	rock_style = _make_cell_style(Color("#59524a"), Color("#2f2a25"))
 	skill_target_style = _make_cell_style(Color("#9164d8"), Color("#efe5ff"), 4)
 	warning_style = _make_cell_style(Color("#d65f4b"), Color("#fff2cd"), 4)
+	sealed_style = _make_cell_style(Color("#686c74"), Color("#f1c75b"), 4)
 	player_style = _make_cell_style(Color("#f7f2df"), Color("#36404a"))
+	temporary_player_style = _make_cell_style(Color("#efe2bd"), Color("#7c8794"), 3)
 	enemy_style = _make_cell_style(Color("#3f4a56"), Color("#cbd3dc"))
 	last_player_style = _make_cell_style(Color("#fff7dc"), Color("#2f89d7"), 4)
 	last_enemy_style = _make_cell_style(Color("#4b5865"), Color("#dc6c55"), 4)
@@ -197,6 +203,8 @@ func _start_new_game() -> void:
 	enemy_energy = 0
 	selected_skill_id = ""
 	warning_target = Vector2i(-1, -1)
+	break_array_active = false
+	twin_piece_active = false
 	_begin_turn(BoardState.PLAYER)
 	_set_status("Your move: place X, or spend energy on a skill first.")
 	_refresh_board()
@@ -238,6 +246,7 @@ func _on_cell_pressed(pos: Vector2i) -> void:
 	warning_target = Vector2i(-1, -1)
 	_record_move(pos, BoardState.PLAYER)
 	_apply_terrain_reward(pos, BoardState.PLAYER)
+	var skill_notes := _resolve_player_piece_skills(pos)
 	_finish_turn(BoardState.PLAYER)
 
 	if game_over:
@@ -245,7 +254,8 @@ func _on_cell_pressed(pos: Vector2i) -> void:
 
 	current_turn = BoardState.ENEMY
 	_begin_turn(BoardState.ENEMY)
-	_set_status("Enemy is thinking after your move at %s." % _format_board_pos(pos))
+	var note_text := "" if skill_notes.is_empty() else " %s" % " ".join(skill_notes)
+	_set_status("Enemy is thinking after your move at %s.%s" % [_format_board_pos(pos), note_text])
 	_refresh_board()
 
 	await get_tree().create_timer(0.35).timeout
@@ -266,6 +276,7 @@ func _play_enemy_turn() -> void:
 	_record_move(move, BoardState.ENEMY)
 	_apply_terrain_reward(move, BoardState.ENEMY)
 	_finish_turn(BoardState.ENEMY)
+	board.decay_seals()
 
 	if not game_over:
 		current_turn = BoardState.PLAYER
@@ -275,6 +286,7 @@ func _play_enemy_turn() -> void:
 
 
 func _begin_turn(owner: int) -> void:
+	board.decay_temporary_pieces(owner)
 	_gain_energy(owner, 1)
 
 
@@ -313,7 +325,9 @@ func _on_skill_pressed(skill_id: String) -> void:
 		_set_status("Skill cancelled. Place X or choose another skill.")
 	else:
 		selected_skill_id = skill_id
-		_set_status("%s selected. Choose a highlighted target." % skill_executor.get_skill_name(skill_id))
+		var cost := skill_executor.get_cost(skill_id)
+		var remaining: int = max(0, player_energy - cost)
+		_set_status("%s selected. Cost %d energy, leaving %d/%d. Choose a highlighted target." % [skill_executor.get_skill_name(skill_id), cost, remaining, ENERGY_MAX])
 
 	_refresh_board()
 
@@ -344,10 +358,30 @@ func _try_use_targeted_skill(pos: Vector2i) -> void:
 
 
 func _use_instant_skill(skill_id: String) -> void:
-	var predicted_move := enemy_ai.choose_move(board)
 	var skill_name: String = skill_executor.get_skill_name(skill_id)
+	var cost := skill_executor.get_cost(skill_id)
 
-	_spend_player_energy(skill_executor.get_cost(skill_id))
+	if skill_id == SkillExecutorScript.SKILL_BREAK_ARRAY:
+		break_array_active = true
+		_spend_player_energy(cost)
+		selected_skill_id = ""
+		warning_target = Vector2i(-1, -1)
+		_set_status("%s prepared. Place X to form a line of three or more and regain 1 energy." % skill_name)
+		_refresh_board()
+		return
+
+	if skill_id == SkillExecutorScript.SKILL_TWIN_PIECE:
+		twin_piece_active = true
+		_spend_player_energy(cost)
+		selected_skill_id = ""
+		warning_target = Vector2i(-1, -1)
+		_set_status("%s prepared. After your next X, a temporary adjacent X will appear for 2 turns." % skill_name)
+		_refresh_board()
+		return
+
+	var predicted_move := enemy_ai.choose_move(board)
+
+	_spend_player_energy(cost)
 	selected_skill_id = ""
 	warning_target = predicted_move
 
@@ -357,6 +391,55 @@ func _use_instant_skill(skill_id: String) -> void:
 		_set_status("%s predicts danger at %s." % [skill_name, _format_board_pos(predicted_move)])
 
 	_refresh_board()
+
+
+func _resolve_player_piece_skills(pos: Vector2i) -> Array:
+	var notes: Array = []
+
+	if break_array_active:
+		break_array_active = false
+		var line := rule_checker.find_longest_line_through(board, pos, BoardState.PLAYER)
+
+		if line.size() >= 3:
+			_gain_energy(BoardState.PLAYER, 1)
+			notes.append("Po Zhen restored 1 energy.")
+		else:
+			notes.append("Po Zhen found no three-line.")
+
+	if twin_piece_active:
+		twin_piece_active = false
+		var twin_target := _find_twin_piece_target(pos)
+
+		if twin_target == Vector2i(-1, -1):
+			notes.append("Shuang Sheng Zi found no adjacent space.")
+		elif board.place_piece(twin_target, BoardState.PLAYER, 2):
+			notes.append("Shuang Sheng Zi created a temporary X at %s." % _format_board_pos(twin_target))
+
+	return notes
+
+
+func _find_twin_piece_target(anchor: Vector2i) -> Vector2i:
+	var best_target := Vector2i(-1, -1)
+	var best_score := -INF
+	var center := Vector2((BOARD_SIZE - 1) * 0.5, (BOARD_SIZE - 1) * 0.5)
+
+	for offset in _adjacent_offsets():
+		var target: Vector2i = anchor + offset
+
+		if not board.is_cell_playable(target, BoardState.PLAYER) or board.is_sealed(target):
+			continue
+
+		board.place_piece(target, BoardState.PLAYER, 2)
+		var line := rule_checker.find_longest_line_through(board, target, BoardState.PLAYER)
+		board.remove_piece(target)
+
+		var score := line.size() * 20.0 - Vector2(target).distance_to(center)
+
+		if score > best_score:
+			best_score = score
+			best_target = target
+
+	return best_target
 
 
 func _finish_turn(owner: int) -> void:
@@ -429,14 +512,17 @@ func _refresh_board() -> void:
 				button.text = "O"
 				style = last_enemy_style
 			elif owner == BoardState.PLAYER:
-				button.text = "X"
-				style = player_style
+				button.text = "x" if board.is_temporary_piece(pos) else "X"
+				style = temporary_player_style if board.is_temporary_piece(pos) else player_style
 			elif owner == BoardState.ENEMY:
 				button.text = "O"
 				style = enemy_style
 			elif terrain == BoardState.TERRAIN_ROCK:
 				button.text = "#"
 				style = rock_style
+			elif board.is_sealed(pos):
+				button.text = "x"
+				style = sealed_style
 			elif terrain == BoardState.TERRAIN_SPIRIT:
 				button.text = "+"
 				style = spirit_style
@@ -463,7 +549,7 @@ func _is_cell_disabled(pos: Vector2i) -> bool:
 	if not selected_skill_id.is_empty():
 		return not skill_executor.is_valid_target(board, selected_skill_id, pos)
 
-	return not board.is_cell_playable(pos)
+	return not board.is_cell_playable(pos, BoardState.PLAYER)
 
 
 func _refresh_skill_buttons() -> void:
@@ -472,9 +558,12 @@ func _refresh_skill_buttons() -> void:
 		var cost: int = skill_executor.get_cost(skill_id)
 		var name: String = skill_executor.get_skill_name(skill_id)
 		var prefix := "> " if selected_skill_id == skill_id else ""
+		var already_active: bool = skill_id == SkillExecutorScript.SKILL_BREAK_ARRAY and break_array_active
+		already_active = already_active or skill_id == SkillExecutorScript.SKILL_TWIN_PIECE and twin_piece_active
 
 		button.text = "%s%s (%d)" % [prefix, name, cost]
-		button.disabled = game_over or current_turn != BoardState.PLAYER or not skill_executor.can_afford(skill_id, player_energy)
+		button.tooltip_text = skill_executor.get_description(skill_id)
+		button.disabled = game_over or current_turn != BoardState.PLAYER or already_active or not skill_executor.can_afford(skill_id, player_energy)
 
 
 func _refresh_info_labels() -> void:
@@ -489,3 +578,16 @@ func _refresh_info_labels() -> void:
 	turn_label.text = turn_text
 	move_count_label.text = "Moves: %d" % move_count
 	energy_label.text = "Energy: You %d/%d / Enemy %d/%d" % [player_energy, ENERGY_MAX, enemy_energy, ENERGY_MAX]
+
+
+func _adjacent_offsets() -> Array:
+	return [
+		Vector2i(-1, -1),
+		Vector2i(0, -1),
+		Vector2i(1, -1),
+		Vector2i(-1, 0),
+		Vector2i(1, 0),
+		Vector2i(-1, 1),
+		Vector2i(0, 1),
+		Vector2i(1, 1),
+	]
