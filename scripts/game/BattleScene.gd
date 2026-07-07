@@ -14,11 +14,21 @@ var status_label: Label
 var turn_label: Label
 var move_count_label: Label
 var energy_label: Label
+var enemy_profile_label: Label
 var board_grid: GridContainer
 var skill_bar: HBoxContainer
 var reset_button: Button
+var enemy_profile_button: Button
 var cells: Array = []
 var skill_buttons: Dictionary = {}
+var enemy_profile_ids := [
+	EnemyAI.PROFILE_NOVICE,
+	EnemyAI.PROFILE_FAST_ATTACKER,
+	EnemyAI.PROFILE_DEFENDER,
+	EnemyAI.PROFILE_RESOURCE_SEEKER,
+	EnemyAI.PROFILE_ROCK_BOSS,
+]
+var enemy_profile_index := 0
 var current_turn := BoardState.PLAYER
 var game_over := false
 var winning_line: Array = []
@@ -132,6 +142,12 @@ func _build_layout() -> void:
 	energy_label.add_theme_color_override("font_color", Color("#76c7ad"))
 	info_row.add_child(energy_label)
 
+	enemy_profile_label = Label.new()
+	enemy_profile_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	enemy_profile_label.add_theme_font_size_override("font_size", 16)
+	enemy_profile_label.add_theme_color_override("font_color", Color("#f1c75b"))
+	info_row.add_child(enemy_profile_label)
+
 	board_grid = GridContainer.new()
 	board_grid.columns = BOARD_SIZE
 	board_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -144,12 +160,23 @@ func _build_layout() -> void:
 	skill_bar.add_theme_constant_override("separation", 10)
 	main.add_child(skill_bar)
 
+	var footer_row := HBoxContainer.new()
+	footer_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	footer_row.add_theme_constant_override("separation", 12)
+	main.add_child(footer_row)
+
+	enemy_profile_button = Button.new()
+	enemy_profile_button.custom_minimum_size = Vector2(220, 42)
+	enemy_profile_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	enemy_profile_button.pressed.connect(_cycle_enemy_profile)
+	footer_row.add_child(enemy_profile_button)
+
 	reset_button = Button.new()
 	reset_button.text = "New Game"
 	reset_button.custom_minimum_size = Vector2(160, 42)
 	reset_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	reset_button.pressed.connect(_start_new_game)
-	main.add_child(reset_button)
+	footer_row.add_child(reset_button)
 
 	_create_cells()
 	_create_skill_buttons()
@@ -193,6 +220,7 @@ func _create_skill_buttons() -> void:
 
 func _start_new_game() -> void:
 	board = BoardState.new(BOARD_SIZE, BOARD_SIZE)
+	enemy_ai.set_profile(enemy_profile_ids[enemy_profile_index])
 	_setup_demo_terrain()
 	current_turn = BoardState.PLAYER
 	game_over = false
@@ -207,7 +235,7 @@ func _start_new_game() -> void:
 	break_array_active = false
 	twin_piece_active = false
 	_begin_turn(BoardState.PLAYER)
-	_set_status("Your move: place X, or spend energy on a skill first.")
+	_set_status("Your move against %s: place X, or spend energy on a skill first." % enemy_ai.get_profile_name())
 	_refresh_board()
 
 
@@ -282,8 +310,16 @@ func _play_enemy_turn() -> void:
 	if not game_over:
 		current_turn = BoardState.PLAYER
 		_begin_turn(BoardState.PLAYER)
-		_set_status("Enemy placed O at %s. Your move." % _format_board_pos(move))
+		_set_status("%s placed O at %s. Your move." % [enemy_ai.get_profile_name(), _format_board_pos(move)])
 		_refresh_board()
+
+
+func _cycle_enemy_profile() -> void:
+	if enemy_profile_ids.is_empty():
+		return
+
+	enemy_profile_index = (enemy_profile_index + 1) % enemy_profile_ids.size()
+	_start_new_game()
 
 
 func _begin_turn(owner: int) -> void:
@@ -623,7 +659,7 @@ func _refresh_skill_buttons() -> void:
 
 
 func _refresh_info_labels() -> void:
-	if turn_label == null or move_count_label == null or energy_label == null:
+	if turn_label == null or move_count_label == null or energy_label == null or enemy_profile_label == null:
 		return
 
 	var turn_text := "Game Over"
@@ -634,6 +670,10 @@ func _refresh_info_labels() -> void:
 	turn_label.text = turn_text
 	move_count_label.text = "Moves: %d" % move_count
 	energy_label.text = "Energy: You %d/%d / Enemy %d/%d" % [player_energy, ENERGY_MAX, enemy_energy, ENERGY_MAX]
+	enemy_profile_label.text = "Enemy: %s / %s" % [enemy_ai.get_profile_name(), enemy_ai.get_profile_intent()]
+
+	if enemy_profile_button != null:
+		enemy_profile_button.text = "Enemy Style: %s" % enemy_ai.get_profile_name()
 
 
 func _adjacent_offsets() -> Array:
