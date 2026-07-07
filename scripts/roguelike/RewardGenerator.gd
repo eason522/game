@@ -28,6 +28,11 @@ const RARITY_PRICES := {
 	RARITY_RARE: 4,
 }
 
+const EXCLUSIVE_GROUP_LABELS := {
+	"skill_refund": "术法返能",
+	"energy_core": "开局核心",
+}
+
 const REWARD_POOL := [
 	{
 		"id": "deep_breath",
@@ -225,6 +230,67 @@ func get_rarity_label(reward: Dictionary) -> String:
 
 func get_price_for_reward(reward: Dictionary) -> int:
 	return RARITY_PRICES.get(reward.get("rarity", RARITY_COMMON), 2)
+
+
+func get_reward_effect_summary(reward: Dictionary) -> String:
+	var amount: int = reward.get("amount", 0)
+
+	match reward.get("effect", ""):
+		EFFECT_ENERGY_MAX:
+			return "能量上限 +%d" % amount
+		EFFECT_STARTING_ENERGY:
+			return "开局能量 +%d" % amount
+		EFFECT_EXTRA_SPIRIT_CELLS:
+			return "额外灵脉 +%d" % amount
+		EFFECT_ROCK_BREAK_REFUND:
+			return "碎岩返能 +%d/场" % amount
+		EFFECT_SEAL_REFUND:
+			return "封手返能 +%d/场" % amount
+		_:
+			return "无构筑效果"
+
+
+func get_reward_limit_summary(reward: Dictionary) -> String:
+	var notes: Array = []
+	var max_stack: int = reward.get("max_stack", 0)
+
+	if max_stack > 0:
+		notes.append("最多 %d 层" % max_stack)
+
+	var exclusive_group: String = reward.get("exclusive_group", "")
+
+	if not exclusive_group.is_empty():
+		notes.append("互斥：%s" % EXCLUSIVE_GROUP_LABELS.get(exclusive_group, exclusive_group))
+
+	return " · ".join(notes)
+
+
+func get_build_summary_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_battle_modifiers"):
+		return ["暂未形成构筑"]
+
+	var modifiers: Dictionary = run_state.get_battle_modifiers()
+	var lines: Array = []
+
+	if modifiers.get("energy_max_bonus", 0) > 0:
+		lines.append("能量上限 +%d" % modifiers.get("energy_max_bonus", 0))
+
+	if modifiers.get("starting_energy_bonus", 0) > 0:
+		lines.append("开局能量 +%d" % modifiers.get("starting_energy_bonus", 0))
+
+	if modifiers.get("extra_spirit_cells", 0) > 0:
+		lines.append("额外灵脉格 +%d" % modifiers.get("extra_spirit_cells", 0))
+
+	if modifiers.get("rock_break_refund_per_battle", 0) > 0:
+		lines.append("碎岩首次返能 +%d/场" % modifiers.get("rock_break_refund_per_battle", 0))
+
+	if modifiers.get("seal_refund_per_battle", 0) > 0:
+		lines.append("封手首次返能 +%d/场" % modifiers.get("seal_refund_per_battle", 0))
+
+	if lines.is_empty():
+		lines.append("暂未形成构筑")
+
+	return lines
 
 
 func _make_reward(template: Dictionary, suffix: String) -> Dictionary:

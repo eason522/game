@@ -14,6 +14,8 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - run rewards can raise player energy max, add starting energy, add spirit cells, or refund specific skill use in later battles
 - rewards now include rarity labels, stack limits, and exclusive groups for build-defining bonuses
 - shops use rarity-based starsand prices, and event rewards distinguish safe gains from higher-risk paid choices
+- run map nodes now use clearer visual tiers for battles, events, shops, rests, and the boss
+- reward and route choices show build-effect summaries, stack limits, and exclusive-group notes
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement
@@ -34,6 +36,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - roguelike run smoke tests for route shape, progression, defeat, and state roundtrip
 - reward smoke tests for pending reward selection, progression gating, and battle modifier serialization
 - tuning smoke tests for reward rarity metadata, stack limits, exclusive groups, and shop pricing
+- display smoke tests for reward build summaries, effect descriptions, stack-limit text, and exclusive-group text
 
 ## Run Locally
 

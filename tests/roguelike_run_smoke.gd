@@ -31,6 +31,7 @@ func _run() -> void:
 	_assert_reward_choice_blocks_progress_and_applies_modifier()
 	_assert_route_choices_block_progress_and_apply_effects()
 	_assert_reward_rarity_stack_limits_and_prices()
+	_assert_reward_build_summary_text()
 	_assert_state_roundtrip()
 	_assert_local_save_roundtrip()
 
@@ -334,3 +335,46 @@ func _assert_reward_rarity_stack_limits_and_prices() -> void:
 
 	if generator.get_price_for_reward({"rarity": RewardGeneratorScript.RARITY_RARE}) <= generator.get_price_for_reward({"rarity": RewardGeneratorScript.RARITY_COMMON}):
 		failures.append("run reward tuning: rare rewards should cost more than common rewards")
+
+
+func _assert_reward_build_summary_text() -> void:
+	var state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
+	var generator := RewardGeneratorScript.new()
+	state.rewards.append({
+		"id": "summary_energy",
+		"source_id": "summary_energy",
+		"title": "灵息深蓄",
+		"effect": RewardGeneratorScript.EFFECT_ENERGY_MAX,
+		"amount": 1,
+		"rarity": RewardGeneratorScript.RARITY_COMMON,
+		"max_stack": 3,
+	})
+	state.rewards.append({
+		"id": "summary_refund",
+		"source_id": "rock_echo",
+		"title": "碎岩回响",
+		"effect": RewardGeneratorScript.EFFECT_ROCK_BREAK_REFUND,
+		"amount": 1,
+		"rarity": RewardGeneratorScript.RARITY_UNCOMMON,
+		"max_stack": 1,
+		"exclusive_group": "skill_refund",
+	})
+
+	var summary_lines := generator.get_build_summary_lines(state)
+
+	if not summary_lines.has("能量上限 +1"):
+		failures.append("run reward display: build summary should include energy max bonus")
+		return
+
+	if not summary_lines.has("碎岩首次返能 +1/场"):
+		failures.append("run reward display: build summary should include rock refund")
+		return
+
+	if generator.get_reward_effect_summary(state.rewards[0]) != "能量上限 +1":
+		failures.append("run reward display: reward effect summary should describe energy max")
+		return
+
+	var limit_text := generator.get_reward_limit_summary(state.rewards[1])
+
+	if not limit_text.contains("最多 1 层") or not limit_text.contains("互斥：术法返能"):
+		failures.append("run reward display: reward limit summary should describe stack and exclusive group")

@@ -16,6 +16,7 @@ var run_state := RunStateScript.new()
 var loaded_from_save := false
 var status_label: Label
 var reward_label: Label
+var build_summary_label: Label
 var node_list: VBoxContainer
 var node_buttons: Array = []
 var reward_buttons: Array = []
@@ -23,7 +24,15 @@ var panel_style: StyleBoxFlat
 var button_style: StyleBoxFlat
 var button_hover_style: StyleBoxFlat
 var button_disabled_style: StyleBoxFlat
+var event_button_style: StyleBoxFlat
+var event_button_hover_style: StyleBoxFlat
+var shop_button_style: StyleBoxFlat
+var shop_button_hover_style: StyleBoxFlat
+var rest_button_style: StyleBoxFlat
+var rest_button_hover_style: StyleBoxFlat
+var completed_button_style: StyleBoxFlat
 var boss_button_style: StyleBoxFlat
+var boss_button_hover_style: StyleBoxFlat
 
 
 func _ready() -> void:
@@ -39,7 +48,15 @@ func _create_styles() -> void:
 	button_style = _make_panel_style(Color("#314353"), Color("#668195"))
 	button_hover_style = _make_panel_style(Color("#3a5265"), Color("#86a8bd"))
 	button_disabled_style = _make_panel_style(Color("#242b33"), Color("#343b45"))
+	event_button_style = _make_panel_style(Color("#3d354e"), Color("#9077bd"))
+	event_button_hover_style = _make_panel_style(Color("#4b4160"), Color("#b59be1"))
+	shop_button_style = _make_panel_style(Color("#423b2b"), Color("#c59a45"))
+	shop_button_hover_style = _make_panel_style(Color("#514832"), Color("#e1bd6f"))
+	rest_button_style = _make_panel_style(Color("#2f493f"), Color("#72b597"))
+	rest_button_hover_style = _make_panel_style(Color("#385848"), Color("#9ed6bc"))
+	completed_button_style = _make_panel_style(Color("#273038"), Color("#566271"))
 	boss_button_style = _make_panel_style(Color("#4a3030"), Color("#c06b55"))
+	boss_button_hover_style = _make_panel_style(Color("#5a3835"), Color("#de8972"))
 
 
 func _make_panel_style(fill: Color, border: Color) -> StyleBoxFlat:
@@ -217,9 +234,15 @@ func _create_reward_panel(parent: Control) -> void:
 	reward_label.add_theme_color_override("font_color", Color("#f1dfb7"))
 	box.add_child(reward_label)
 
+	build_summary_label = Label.new()
+	build_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	build_summary_label.add_theme_font_size_override("font_size", 14)
+	build_summary_label.add_theme_color_override("font_color", Color("#a9c7bd"))
+	box.add_child(build_summary_label)
+
 	for index in range(3):
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(0, 58)
+		button.custom_minimum_size = Vector2(0, 76)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.focus_mode = Control.FOCUS_NONE
 		button.pressed.connect(_claim_panel_choice_at.bind(index))
@@ -335,14 +358,9 @@ func _refresh() -> void:
 			status_text,
 			enemy_text,
 		]
+		button.tooltip_text = _node_tooltip(node)
 		button.disabled = not run_state.can_enter_node(index)
-
-		if node.get("type", "") == RunStateScript.NODE_BOSS and node.get("status", "") == RunStateScript.STATUS_AVAILABLE:
-			button.add_theme_stylebox_override("normal", boss_button_style)
-			button.add_theme_stylebox_override("hover", boss_button_style)
-		else:
-			button.add_theme_stylebox_override("normal", button_style)
-			button.add_theme_stylebox_override("hover", button_hover_style)
+		_apply_node_button_style(button, node)
 
 	if status_label == null:
 		return
@@ -375,6 +393,7 @@ func _refresh_reward_panel() -> void:
 		return
 
 	var reward_titles := run_state.get_reward_titles()
+	_refresh_build_summary()
 
 	if run_state.has_pending_reward():
 		reward_label.text = "战利品三选一\n已获奖励：%s" % ["无" if reward_titles.is_empty() else "、".join(reward_titles)]
@@ -387,7 +406,12 @@ func _refresh_reward_panel() -> void:
 
 			if has_option:
 				var reward: Dictionary = run_state.pending_rewards[index]
-				button.text = "%s\n%s" % [_format_reward_title(reward), reward.get("description", "")]
+				button.text = "%s\n%s\n%s" % [
+					_format_reward_title(reward),
+					reward_generator.get_reward_effect_summary(reward),
+					reward.get("description", ""),
+				]
+				button.tooltip_text = _format_reward_tooltip(reward)
 
 		return
 
@@ -409,7 +433,9 @@ func _refresh_reward_panel() -> void:
 				var choice: Dictionary = run_state.pending_node_choices[index]
 				var cost: int = choice.get("cost", 0)
 				var cost_text := "" if cost <= 0 else "（花费 %d 星砂）" % cost
-				button.text = "%s%s\n%s" % [_format_choice_title(choice), cost_text, choice.get("description", "")]
+				var effect_text := reward_generator.get_reward_effect_summary(choice) if _is_reward_like_choice(choice) else _choice_effect_summary(choice)
+				button.text = "%s%s\n%s\n%s" % [_format_choice_title(choice), cost_text, effect_text, choice.get("description", "")]
+				button.tooltip_text = _format_reward_tooltip(choice) if _is_reward_like_choice(choice) else choice.get("description", "")
 				button.disabled = not run_state.can_claim_node_choice(choice.get("id", ""))
 
 		return
@@ -418,6 +444,42 @@ func _refresh_reward_panel() -> void:
 
 	for button in reward_buttons:
 		button.visible = false
+		button.tooltip_text = ""
+
+
+func _refresh_build_summary() -> void:
+	if build_summary_label == null:
+		return
+
+	var lines := reward_generator.get_build_summary_lines(run_state)
+	build_summary_label.text = "构筑效果：%s" % " / ".join(lines)
+
+
+func _apply_node_button_style(button: Button, node: Dictionary) -> void:
+	var normal_style := button_style
+	var hover_style := button_hover_style
+
+	match node.get("type", ""):
+		RunStateScript.NODE_EVENT:
+			normal_style = event_button_style
+			hover_style = event_button_hover_style
+		RunStateScript.NODE_SHOP:
+			normal_style = shop_button_style
+			hover_style = shop_button_hover_style
+		RunStateScript.NODE_REST:
+			normal_style = rest_button_style
+			hover_style = rest_button_hover_style
+		RunStateScript.NODE_BOSS:
+			normal_style = boss_button_style
+			hover_style = boss_button_hover_style
+
+	if node.get("status", "") == RunStateScript.STATUS_COMPLETED:
+		normal_style = completed_button_style
+		hover_style = completed_button_style
+
+	button.add_theme_stylebox_override("normal", normal_style)
+	button.add_theme_stylebox_override("hover", hover_style)
+	button.add_theme_stylebox_override("pressed", hover_style)
 
 
 func _type_mark(node_type: String) -> String:
@@ -457,8 +519,38 @@ func _enemy_text(node: Dictionary) -> String:
 	return " · 对阵 %s" % EnemyAI.get_profile_name_for_id(profile_id)
 
 
+func _node_tooltip(node: Dictionary) -> String:
+	var parts := [
+		node.get("description", ""),
+		"类型：%s" % _node_type_label(node.get("type", "")),
+		"状态：%s" % _status_text(node.get("status", RunStateScript.STATUS_LOCKED)),
+	]
+	var enemy := _enemy_text(node)
+
+	if not enemy.is_empty():
+		parts.append(enemy.trim_prefix(" · "))
+
+	return "\n".join(parts)
+
+
+func _node_type_label(node_type: String) -> String:
+	match node_type:
+		RunStateScript.NODE_START:
+			return "起点"
+		RunStateScript.NODE_EVENT:
+			return "事件"
+		RunStateScript.NODE_SHOP:
+			return "商店"
+		RunStateScript.NODE_REST:
+			return "休息"
+		RunStateScript.NODE_BOSS:
+			return "Boss"
+		_:
+			return "战斗"
+
+
 func _format_choice_title(choice: Dictionary) -> String:
-	if choice.get("choice_type", "") == RewardGeneratorScript.CHOICE_REWARD or not choice.get("effect", "").is_empty():
+	if _is_reward_like_choice(choice):
 		return _format_reward_title(choice)
 
 	return choice.get("title", "选择")
@@ -466,3 +558,30 @@ func _format_choice_title(choice: Dictionary) -> String:
 
 func _format_reward_title(reward: Dictionary) -> String:
 	return "[%s] %s" % [reward_generator.get_rarity_label(reward), reward.get("title", "奖励")]
+
+
+func _format_reward_tooltip(reward: Dictionary) -> String:
+	var notes := [
+		reward.get("description", ""),
+		"效果：%s" % reward_generator.get_reward_effect_summary(reward),
+	]
+	var limit_text := reward_generator.get_reward_limit_summary(reward)
+
+	if not limit_text.is_empty():
+		notes.append(limit_text)
+
+	return "\n".join(notes)
+
+
+func _is_reward_like_choice(choice: Dictionary) -> bool:
+	return choice.get("choice_type", "") == RewardGeneratorScript.CHOICE_REWARD or not choice.get("effect", "").is_empty()
+
+
+func _choice_effect_summary(choice: Dictionary) -> String:
+	match choice.get("choice_type", ""):
+		RewardGeneratorScript.CHOICE_COINS:
+			return "星砂 +%d" % choice.get("amount", 0)
+		RewardGeneratorScript.CHOICE_SKIP:
+			return "保留当前构筑"
+		_:
+			return "路线选择"
