@@ -2,7 +2,10 @@ extends SceneTree
 
 const MapGeneratorScript := preload("res://scripts/roguelike/MapGenerator.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
+const RunSaveScript := preload("res://scripts/roguelike/RunSave.gd")
 const RewardGeneratorScript := preload("res://scripts/roguelike/RewardGenerator.gd")
+
+const TEST_SAVE_PATH := "user://tymj_run_save_smoke.json"
 
 var failures: Array = []
 
@@ -27,6 +30,7 @@ func _run() -> void:
 	_assert_defeat_locks_run()
 	_assert_reward_choice_blocks_progress_and_applies_modifier()
 	_assert_state_roundtrip()
+	_assert_local_save_roundtrip()
 
 
 func _assert_linear_route_shape() -> void:
@@ -168,3 +172,38 @@ func _assert_state_roundtrip() -> void:
 
 	if restored.rewards.size() != 1:
 		failures.append("run save: restored rewards mismatch")
+
+
+func _assert_local_save_roundtrip() -> void:
+	RunSaveScript.delete_save(TEST_SAVE_PATH)
+
+	var state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
+	var reward_options := RewardGeneratorScript.new().generate_options(state, state.get_current_node())
+	state.resolve_current_node(true, reward_options)
+	state.claim_reward(reward_options[1].get("id", ""))
+
+	if not RunSaveScript.save_state(state, TEST_SAVE_PATH):
+		failures.append("run local save: expected save to succeed")
+		return
+
+	if not RunSaveScript.has_save(TEST_SAVE_PATH):
+		failures.append("run local save: expected save file to exist")
+		return
+
+	var restored := RunStateScript.new()
+	restored.load_from_dict(RunSaveScript.load_dict(TEST_SAVE_PATH))
+
+	if restored.current_index != state.current_index:
+		failures.append("run local save: restored current index mismatch")
+		return
+
+	if restored.get_reward_titles() != state.get_reward_titles():
+		failures.append("run local save: restored rewards mismatch")
+		return
+
+	if not RunSaveScript.delete_save(TEST_SAVE_PATH):
+		failures.append("run local save: expected delete to succeed")
+		return
+
+	if RunSaveScript.has_save(TEST_SAVE_PATH):
+		failures.append("run local save: expected save file to be removed")

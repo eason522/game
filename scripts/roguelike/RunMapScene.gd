@@ -7,11 +7,13 @@ const BATTLE_ENEMY_PROFILE_META := "tymj_battle_enemy_profile_id"
 const BATTLE_SCENE_PATH := "res://scenes/game/BattleScene.tscn"
 const MapGeneratorScript := preload("res://scripts/roguelike/MapGenerator.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
+const RunSaveScript := preload("res://scripts/roguelike/RunSave.gd")
 const RewardGeneratorScript := preload("res://scripts/roguelike/RewardGenerator.gd")
 
 var map_generator := MapGeneratorScript.new()
 var reward_generator := RewardGeneratorScript.new()
 var run_state := RunStateScript.new()
+var loaded_from_save := false
 var status_label: Label
 var reward_label: Label
 var node_list: VBoxContainer
@@ -61,8 +63,17 @@ func _load_or_create_run_state() -> void:
 		run_state.load_from_dict(root.get_meta(RUN_STATE_META))
 		return
 
+	var saved_state := RunSaveScript.load_dict()
+
+	if not saved_state.is_empty():
+		run_state = RunStateScript.new()
+		run_state.load_from_dict(saved_state)
+		loaded_from_save = true
+		root.set_meta(RUN_STATE_META, run_state.to_dict())
+		return
+
 	run_state.setup(map_generator.generate_linear_route())
-	root.set_meta(RUN_STATE_META, run_state.to_dict())
+	_persist_run_state()
 
 
 func _apply_pending_battle_result() -> void:
@@ -85,7 +96,7 @@ func _apply_pending_battle_result() -> void:
 
 		run_state.resolve_current_node(result == "victory", reward_options)
 
-	root.set_meta(RUN_STATE_META, run_state.to_dict())
+	_persist_run_state()
 	root.remove_meta(BATTLE_RESULT_META)
 	root.remove_meta(BATTLE_NODE_INDEX_META)
 	root.remove_meta(BATTLE_ENEMY_PROFILE_META)
@@ -245,7 +256,8 @@ func _apply_button_theme(button: Button) -> void:
 
 func _restart_run() -> void:
 	run_state.setup(map_generator.generate_linear_route())
-	get_tree().root.set_meta(RUN_STATE_META, run_state.to_dict())
+	loaded_from_save = false
+	_persist_run_state()
 	_refresh()
 
 
@@ -255,7 +267,7 @@ func _enter_node(index: int) -> void:
 
 	var node: Dictionary = run_state.nodes[index]
 	var root := get_tree().root
-	root.set_meta(RUN_STATE_META, run_state.to_dict())
+	_persist_run_state()
 	root.set_meta(BATTLE_NODE_INDEX_META, index)
 	root.set_meta(BATTLE_ENEMY_PROFILE_META, node.get("enemy_profile_id", EnemyAI.PROFILE_NOVICE))
 	get_tree().change_scene_to_file(BATTLE_SCENE_PATH)
@@ -268,7 +280,7 @@ func _claim_reward_at(index: int) -> void:
 	var reward: Dictionary = run_state.pending_rewards[index]
 
 	if run_state.claim_reward(reward.get("id", "")):
-		get_tree().root.set_meta(RUN_STATE_META, run_state.to_dict())
+		_persist_run_state()
 		_refresh()
 
 
@@ -298,16 +310,23 @@ func _refresh() -> void:
 		return
 
 	if run_state.run_completed:
-		status_label.text = "本轮 Run 已通关：岩王之局告破。"
+		status_label.text = "本轮 Run 已通关：岩王之局告破。可以开始新 Run。"
 	elif run_state.run_failed:
 		status_label.text = "本轮 Run 已失败。重新开始后可再次挑战。"
 	elif run_state.has_pending_reward():
 		status_label.text = "战斗胜利：选择一个奖励后继续前进。"
 	else:
 		var current := run_state.get_current_node()
-		status_label.text = "当前节点：%s\n%s" % [current.get("title", "无"), current.get("description", "")]
+		var save_prefix := "已恢复上次 Run\n" if loaded_from_save else ""
+		status_label.text = "%s当前节点：%s\n%s" % [save_prefix, current.get("title", "无"), current.get("description", "")]
 
 	_refresh_reward_panel()
+
+
+func _persist_run_state() -> void:
+	var data := run_state.to_dict()
+	get_tree().root.set_meta(RUN_STATE_META, data)
+	RunSaveScript.save_state(run_state)
 
 
 func _refresh_reward_panel() -> void:
