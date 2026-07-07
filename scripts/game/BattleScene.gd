@@ -10,6 +10,7 @@ var enemy_ai := EnemyAI.new()
 var status_label: Label
 var turn_label: Label
 var move_count_label: Label
+var energy_label: Label
 var board_grid: GridContainer
 var reset_button: Button
 var cells: Array = []
@@ -19,8 +20,12 @@ var winning_line: Array = []
 var last_move := Vector2i(-1, -1)
 var last_move_owner := BoardState.EMPTY
 var move_count := 0
+var player_energy := 0
+var enemy_energy := 0
 
 var empty_style: StyleBoxFlat
+var spirit_style: StyleBoxFlat
+var rock_style: StyleBoxFlat
 var player_style: StyleBoxFlat
 var enemy_style: StyleBoxFlat
 var last_player_style: StyleBoxFlat
@@ -36,6 +41,8 @@ func _ready() -> void:
 
 func _create_styles() -> void:
 	empty_style = _make_cell_style(Color("#dcc58a"), Color("#5a4725"))
+	spirit_style = _make_cell_style(Color("#76c7ad"), Color("#e2f5e9"))
+	rock_style = _make_cell_style(Color("#59524a"), Color("#2f2a25"))
 	player_style = _make_cell_style(Color("#f7f2df"), Color("#36404a"))
 	enemy_style = _make_cell_style(Color("#3f4a56"), Color("#cbd3dc"))
 	last_player_style = _make_cell_style(Color("#fff7dc"), Color("#2f89d7"), 4)
@@ -102,6 +109,12 @@ func _build_layout() -> void:
 	move_count_label.add_theme_color_override("font_color", Color("#9fb0c1"))
 	info_row.add_child(move_count_label)
 
+	energy_label = Label.new()
+	energy_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	energy_label.add_theme_font_size_override("font_size", 16)
+	energy_label.add_theme_color_override("font_color", Color("#76c7ad"))
+	info_row.add_child(energy_label)
+
 	board_grid = GridContainer.new()
 	board_grid.columns = BOARD_SIZE
 	board_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -144,14 +157,39 @@ func _create_cells() -> void:
 
 func _start_new_game() -> void:
 	board = BoardState.new(BOARD_SIZE, BOARD_SIZE)
+	_setup_demo_terrain()
 	current_turn = BoardState.PLAYER
 	game_over = false
 	winning_line.clear()
 	last_move = Vector2i(-1, -1)
 	last_move_owner = BoardState.EMPTY
 	move_count = 0
-	_set_status("Your move: place X to build five in a row.")
+	player_energy = 0
+	enemy_energy = 0
+	_set_status("Your move: place X. Green cells grant energy, rocks block lines.")
 	_refresh_board()
+
+
+func _setup_demo_terrain() -> void:
+	var spirit_cells := [
+		Vector2i(5, 5),
+		Vector2i(4, 5),
+		Vector2i(6, 5),
+		Vector2i(5, 4),
+		Vector2i(5, 6),
+	]
+	var rock_cells := [
+		Vector2i(3, 3),
+		Vector2i(7, 3),
+		Vector2i(3, 7),
+		Vector2i(7, 7),
+	]
+
+	for pos in spirit_cells:
+		board.set_terrain(pos, BoardState.TERRAIN_SPIRIT)
+
+	for pos in rock_cells:
+		board.set_terrain(pos, BoardState.TERRAIN_ROCK)
 
 
 func _on_cell_pressed(pos: Vector2i) -> void:
@@ -162,6 +200,7 @@ func _on_cell_pressed(pos: Vector2i) -> void:
 		return
 
 	_record_move(pos, BoardState.PLAYER)
+	_apply_terrain_reward(pos, BoardState.PLAYER)
 	_finish_turn(BoardState.PLAYER)
 
 	if game_over:
@@ -187,12 +226,23 @@ func _play_enemy_turn() -> void:
 
 	board.place_piece(move, BoardState.ENEMY)
 	_record_move(move, BoardState.ENEMY)
+	_apply_terrain_reward(move, BoardState.ENEMY)
 	_finish_turn(BoardState.ENEMY)
 
 	if not game_over:
 		current_turn = BoardState.PLAYER
 		_set_status("Enemy placed O at %s. Your move." % _format_board_pos(move))
 		_refresh_board()
+
+
+func _apply_terrain_reward(pos: Vector2i, owner: int) -> void:
+	if board.get_terrain(pos) != BoardState.TERRAIN_SPIRIT:
+		return
+
+	if owner == BoardState.PLAYER:
+		player_energy += 1
+	else:
+		enemy_energy += 1
 
 
 func _finish_turn(owner: int) -> void:
@@ -251,6 +301,7 @@ func _refresh_board() -> void:
 			var button: Button = cells[y][x]
 			var owner := board.get_piece(pos)
 			var style := empty_style
+			var terrain := board.get_terrain(pos)
 
 			button.text = ""
 
@@ -268,6 +319,12 @@ func _refresh_board() -> void:
 			elif owner == BoardState.ENEMY:
 				button.text = "O"
 				style = enemy_style
+			elif terrain == BoardState.TERRAIN_ROCK:
+				button.text = "#"
+				style = rock_style
+			elif terrain == BoardState.TERRAIN_SPIRIT:
+				button.text = "+"
+				style = spirit_style
 
 			button.disabled = game_over or current_turn != BoardState.PLAYER or not board.is_cell_playable(pos)
 			button.add_theme_stylebox_override("normal", style)
@@ -277,7 +334,7 @@ func _refresh_board() -> void:
 
 
 func _refresh_info_labels() -> void:
-	if turn_label == null or move_count_label == null:
+	if turn_label == null or move_count_label == null or energy_label == null:
 		return
 
 	var turn_text := "Game Over"
@@ -287,3 +344,4 @@ func _refresh_info_labels() -> void:
 
 	turn_label.text = turn_text
 	move_count_label.text = "Moves: %d" % move_count
+	energy_label.text = "Energy: You %d / Enemy %d" % [player_energy, enemy_energy]

@@ -58,6 +58,9 @@ func _run() -> void:
 			Vector2i(6, 3),
 		]
 	)
+	_assert_rock_blocks_line()
+	_assert_rock_is_not_playable()
+	_assert_ai_prefers_spirit_cell()
 
 
 func _assert_five_line(case_name: String, positions: Array) -> void:
@@ -81,3 +84,50 @@ func _assert_five_line(case_name: String, positions: Array) -> void:
 		if line[index] != positions[index]:
 			failures.append("%s: expected %s at index %d, got %s" % [case_name, positions[index], index, line[index]])
 			return
+
+
+func _assert_rock_blocks_line() -> void:
+	var board := BoardState.new(11, 11)
+	var checker := RuleChecker.new()
+	var positions := [
+		Vector2i(1, 5),
+		Vector2i(2, 5),
+		Vector2i(3, 5),
+		Vector2i(5, 5),
+		Vector2i(6, 5),
+	]
+
+	board.set_terrain(Vector2i(4, 5), BoardState.TERRAIN_ROCK)
+
+	for pos in positions:
+		board.place_piece(pos, BoardState.PLAYER)
+
+	if checker.has_winner(board, BoardState.PLAYER):
+		failures.append("rock blocks line: expected no winner across rock terrain")
+
+
+func _assert_rock_is_not_playable() -> void:
+	var board := BoardState.new(11, 11)
+	var rock_pos := Vector2i(5, 5)
+
+	board.set_terrain(rock_pos, BoardState.TERRAIN_ROCK)
+
+	if board.is_cell_playable(rock_pos):
+		failures.append("rock is not playable: rock cell should reject placement")
+		return
+
+	if board.place_piece(rock_pos, BoardState.PLAYER):
+		failures.append("rock is not playable: place_piece should fail on rock cell")
+
+
+func _assert_ai_prefers_spirit_cell() -> void:
+	var board := BoardState.new(11, 11)
+	var ai := EnemyAI.new()
+	var spirit_pos := Vector2i(3, 3)
+
+	board.set_terrain(spirit_pos, BoardState.TERRAIN_SPIRIT)
+
+	var move := ai.choose_move(board)
+
+	if move != spirit_pos:
+		failures.append("ai prefers spirit cell: expected %s, got %s" % [spirit_pos, move])

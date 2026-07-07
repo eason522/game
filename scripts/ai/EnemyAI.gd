@@ -57,6 +57,9 @@ func _score_cell(board: BoardState, cell: Vector2i, enemy_owner: int, player_own
 	score += _line_potential(board, cell, enemy_owner) * 3.0
 	score += _line_potential(board, cell, player_owner) * 2.2
 
+	if board.get_terrain(cell) == BoardState.TERRAIN_SPIRIT:
+		score += 35.0
+
 	return score
 
 
