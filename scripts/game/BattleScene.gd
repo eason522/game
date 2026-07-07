@@ -8,16 +8,23 @@ var rule_checker := RuleChecker.new()
 var enemy_ai := EnemyAI.new()
 
 var status_label: Label
+var turn_label: Label
+var move_count_label: Label
 var board_grid: GridContainer
 var reset_button: Button
 var cells: Array = []
 var current_turn := BoardState.PLAYER
 var game_over := false
 var winning_line: Array = []
+var last_move := Vector2i(-1, -1)
+var last_move_owner := BoardState.EMPTY
+var move_count := 0
 
 var empty_style: StyleBoxFlat
 var player_style: StyleBoxFlat
 var enemy_style: StyleBoxFlat
+var last_player_style: StyleBoxFlat
+var last_enemy_style: StyleBoxFlat
 var win_style: StyleBoxFlat
 
 
@@ -31,14 +38,16 @@ func _create_styles() -> void:
 	empty_style = _make_cell_style(Color("#dcc58a"), Color("#5a4725"))
 	player_style = _make_cell_style(Color("#f7f2df"), Color("#36404a"))
 	enemy_style = _make_cell_style(Color("#3f4a56"), Color("#cbd3dc"))
+	last_player_style = _make_cell_style(Color("#fff7dc"), Color("#2f89d7"), 4)
+	last_enemy_style = _make_cell_style(Color("#4b5865"), Color("#dc6c55"), 4)
 	win_style = _make_cell_style(Color("#e7a541"), Color("#6a3c13"))
 
 
-func _make_cell_style(fill: Color, border: Color) -> StyleBoxFlat:
+func _make_cell_style(fill: Color, border: Color, border_width: int = 2) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fill
 	style.border_color = border
-	style.set_border_width_all(2)
+	style.set_border_width_all(border_width)
 	style.set_corner_radius_all(6)
 	style.content_margin_left = 0
 	style.content_margin_right = 0
@@ -75,6 +84,23 @@ func _build_layout() -> void:
 	status_label.add_theme_font_size_override("font_size", 20)
 	status_label.add_theme_color_override("font_color", Color("#c9d2dc"))
 	main.add_child(status_label)
+
+	var info_row := HBoxContainer.new()
+	info_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	info_row.add_theme_constant_override("separation", 20)
+	main.add_child(info_row)
+
+	turn_label = Label.new()
+	turn_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	turn_label.add_theme_font_size_override("font_size", 16)
+	turn_label.add_theme_color_override("font_color", Color("#f0e6c8"))
+	info_row.add_child(turn_label)
+
+	move_count_label = Label.new()
+	move_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	move_count_label.add_theme_font_size_override("font_size", 16)
+	move_count_label.add_theme_color_override("font_color", Color("#9fb0c1"))
+	info_row.add_child(move_count_label)
 
 	board_grid = GridContainer.new()
 	board_grid.columns = BOARD_SIZE
@@ -121,7 +147,10 @@ func _start_new_game() -> void:
 	current_turn = BoardState.PLAYER
 	game_over = false
 	winning_line.clear()
-	_set_status("Your turn. Place X to make five in a row.")
+	last_move = Vector2i(-1, -1)
+	last_move_owner = BoardState.EMPTY
+	move_count = 0
+	_set_status("Your move: place X to build five in a row.")
 	_refresh_board()
 
 
@@ -132,13 +161,14 @@ func _on_cell_pressed(pos: Vector2i) -> void:
 	if not board.place_piece(pos, BoardState.PLAYER):
 		return
 
+	_record_move(pos, BoardState.PLAYER)
 	_finish_turn(BoardState.PLAYER)
 
 	if game_over:
 		return
 
 	current_turn = BoardState.ENEMY
-	_set_status("Enemy thinking...")
+	_set_status("Enemy is thinking after your move at %s." % _format_board_pos(pos))
 	_refresh_board()
 
 	await get_tree().create_timer(0.35).timeout
@@ -156,11 +186,12 @@ func _play_enemy_turn() -> void:
 		return
 
 	board.place_piece(move, BoardState.ENEMY)
+	_record_move(move, BoardState.ENEMY)
 	_finish_turn(BoardState.ENEMY)
 
 	if not game_over:
 		current_turn = BoardState.PLAYER
-		_set_status("Your turn. Place X to make five in a row.")
+		_set_status("Enemy placed O at %s. Your move." % _format_board_pos(move))
 		_refresh_board()
 
 
@@ -169,8 +200,8 @@ func _finish_turn(owner: int) -> void:
 
 	if not winning_line.is_empty():
 		game_over = true
-		var winner := "You win!" if owner == BoardState.PLAYER else "Enemy wins."
-		_set_status(winner + " Press New Game to play again.")
+		var winner := "You win" if owner == BoardState.PLAYER else "Enemy wins"
+		_set_status("%s with %s. Press New Game to play again." % [winner, _format_line(winning_line)])
 		_refresh_board()
 		return
 
@@ -192,7 +223,28 @@ func _set_status(text: String) -> void:
 		status_label.text = text
 
 
+func _record_move(pos: Vector2i, owner: int) -> void:
+	last_move = pos
+	last_move_owner = owner
+	move_count += 1
+
+
+func _format_board_pos(pos: Vector2i) -> String:
+	var file := "ABCDEFGHIJKLMNOPQRSTUVWXYZ".substr(pos.x, 1)
+	var rank := str(pos.y + 1)
+	return file + rank
+
+
+func _format_line(line: Array) -> String:
+	if line.is_empty():
+		return ""
+
+	return "%s-%s" % [_format_board_pos(line.front()), _format_board_pos(line.back())]
+
+
 func _refresh_board() -> void:
+	_refresh_info_labels()
+
 	for y in range(BOARD_SIZE):
 		for x in range(BOARD_SIZE):
 			var pos := Vector2i(x, y)
@@ -204,6 +256,12 @@ func _refresh_board() -> void:
 
 			if winning_line.has(pos):
 				style = win_style
+			elif pos == last_move and last_move_owner == BoardState.PLAYER:
+				button.text = "X"
+				style = last_player_style
+			elif pos == last_move and last_move_owner == BoardState.ENEMY:
+				button.text = "O"
+				style = last_enemy_style
 			elif owner == BoardState.PLAYER:
 				button.text = "X"
 				style = player_style
@@ -216,3 +274,16 @@ func _refresh_board() -> void:
 			button.add_theme_stylebox_override("hover", style)
 			button.add_theme_stylebox_override("pressed", style)
 			button.add_theme_stylebox_override("disabled", style)
+
+
+func _refresh_info_labels() -> void:
+	if turn_label == null or move_count_label == null:
+		return
+
+	var turn_text := "Game Over"
+
+	if not game_over:
+		turn_text = "Turn: Player X" if current_turn == BoardState.PLAYER else "Turn: Enemy O"
+
+	turn_label.text = turn_text
+	move_count_label.text = "Moves: %d" % move_count
