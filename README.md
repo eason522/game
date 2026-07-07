@@ -4,7 +4,7 @@ Godot 4.x prototype for **Tian Yuan Mi Ju**, a roguelike strategy game built fro
 
 ## Current Stage
 
-Phase 2 terrain basics are playable:
+Phase 3 skill basics are playable:
 
 - 11x11 board
 - player and simple AI alternating turns
@@ -15,8 +15,12 @@ Phase 2 terrain basics are playable:
 - spirit cells grant energy when occupied
 - rock cells block placement and five-in-a-row lines
 - AI avoids rocks and has a scoring preference for spirit cells
+- turn-start energy gain with a current max of 6
+- skill bar with target highlighting
+- first three skill prototypes: Li Yan, Sui Yan, and Yu Jing
 - basic rule smoke tests for horizontal, vertical, and diagonal wins
 - terrain smoke tests for rock blocking and AI spirit-cell priority
+- skill smoke tests for rock creation, rock removal, and warning metadata
 
 ## Run Locally
 
@@ -36,4 +40,5 @@ Run:
 
 ```powershell
 godot --headless --path . --script tests/rule_checker_smoke.gd
+godot --headless --path . --script tests/skill_system_smoke.gd
 ```

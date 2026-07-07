@@ -2,18 +2,23 @@ extends Control
 
 const BOARD_SIZE := 11
 const CELL_SIZE := Vector2(48, 48)
+const ENERGY_MAX := 6
+const SkillExecutorScript := preload("res://scripts/skills/SkillExecutor.gd")
 
 var board := BoardState.new(BOARD_SIZE, BOARD_SIZE)
 var rule_checker := RuleChecker.new()
 var enemy_ai := EnemyAI.new()
+var skill_executor := SkillExecutorScript.new()
 
 var status_label: Label
 var turn_label: Label
 var move_count_label: Label
 var energy_label: Label
 var board_grid: GridContainer
+var skill_bar: HBoxContainer
 var reset_button: Button
 var cells: Array = []
+var skill_buttons: Dictionary = {}
 var current_turn := BoardState.PLAYER
 var game_over := false
 var winning_line: Array = []
@@ -22,10 +27,14 @@ var last_move_owner := BoardState.EMPTY
 var move_count := 0
 var player_energy := 0
 var enemy_energy := 0
+var selected_skill_id := ""
+var warning_target := Vector2i(-1, -1)
 
 var empty_style: StyleBoxFlat
 var spirit_style: StyleBoxFlat
 var rock_style: StyleBoxFlat
+var skill_target_style: StyleBoxFlat
+var warning_style: StyleBoxFlat
 var player_style: StyleBoxFlat
 var enemy_style: StyleBoxFlat
 var last_player_style: StyleBoxFlat
@@ -43,6 +52,8 @@ func _create_styles() -> void:
 	empty_style = _make_cell_style(Color("#dcc58a"), Color("#5a4725"))
 	spirit_style = _make_cell_style(Color("#76c7ad"), Color("#e2f5e9"))
 	rock_style = _make_cell_style(Color("#59524a"), Color("#2f2a25"))
+	skill_target_style = _make_cell_style(Color("#9164d8"), Color("#efe5ff"), 4)
+	warning_style = _make_cell_style(Color("#d65f4b"), Color("#fff2cd"), 4)
 	player_style = _make_cell_style(Color("#f7f2df"), Color("#36404a"))
 	enemy_style = _make_cell_style(Color("#3f4a56"), Color("#cbd3dc"))
 	last_player_style = _make_cell_style(Color("#fff7dc"), Color("#2f89d7"), 4)
@@ -122,6 +133,11 @@ func _build_layout() -> void:
 	board_grid.add_theme_constant_override("v_separation", 4)
 	main.add_child(board_grid)
 
+	skill_bar = HBoxContainer.new()
+	skill_bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	skill_bar.add_theme_constant_override("separation", 10)
+	main.add_child(skill_bar)
+
 	reset_button = Button.new()
 	reset_button.text = "New Game"
 	reset_button.custom_minimum_size = Vector2(160, 42)
@@ -130,6 +146,7 @@ func _build_layout() -> void:
 	main.add_child(reset_button)
 
 	_create_cells()
+	_create_skill_buttons()
 
 
 func _create_cells() -> void:
@@ -155,6 +172,18 @@ func _create_cells() -> void:
 		cells.append(row)
 
 
+func _create_skill_buttons() -> void:
+	skill_buttons.clear()
+
+	for skill_id in skill_executor.get_skill_ids():
+		var button := Button.new()
+		button.custom_minimum_size = Vector2(138, 40)
+		button.focus_mode = Control.FOCUS_NONE
+		button.pressed.connect(_on_skill_pressed.bind(skill_id))
+		skill_bar.add_child(button)
+		skill_buttons[skill_id] = button
+
+
 func _start_new_game() -> void:
 	board = BoardState.new(BOARD_SIZE, BOARD_SIZE)
 	_setup_demo_terrain()
@@ -166,7 +195,10 @@ func _start_new_game() -> void:
 	move_count = 0
 	player_energy = 0
 	enemy_energy = 0
-	_set_status("Your move: place X. Green cells grant energy, rocks block lines.")
+	selected_skill_id = ""
+	warning_target = Vector2i(-1, -1)
+	_begin_turn(BoardState.PLAYER)
+	_set_status("Your move: place X, or spend energy on a skill first.")
 	_refresh_board()
 
 
@@ -196,9 +228,14 @@ func _on_cell_pressed(pos: Vector2i) -> void:
 	if game_over or current_turn != BoardState.PLAYER:
 		return
 
+	if not selected_skill_id.is_empty():
+		_try_use_targeted_skill(pos)
+		return
+
 	if not board.place_piece(pos, BoardState.PLAYER):
 		return
 
+	warning_target = Vector2i(-1, -1)
 	_record_move(pos, BoardState.PLAYER)
 	_apply_terrain_reward(pos, BoardState.PLAYER)
 	_finish_turn(BoardState.PLAYER)
@@ -207,6 +244,7 @@ func _on_cell_pressed(pos: Vector2i) -> void:
 		return
 
 	current_turn = BoardState.ENEMY
+	_begin_turn(BoardState.ENEMY)
 	_set_status("Enemy is thinking after your move at %s." % _format_board_pos(pos))
 	_refresh_board()
 
@@ -231,18 +269,94 @@ func _play_enemy_turn() -> void:
 
 	if not game_over:
 		current_turn = BoardState.PLAYER
+		_begin_turn(BoardState.PLAYER)
 		_set_status("Enemy placed O at %s. Your move." % _format_board_pos(move))
 		_refresh_board()
+
+
+func _begin_turn(owner: int) -> void:
+	_gain_energy(owner, 1)
 
 
 func _apply_terrain_reward(pos: Vector2i, owner: int) -> void:
 	if board.get_terrain(pos) != BoardState.TERRAIN_SPIRIT:
 		return
 
+	_gain_energy(owner, 1)
+
+
+func _gain_energy(owner: int, amount: int) -> void:
 	if owner == BoardState.PLAYER:
-		player_energy += 1
+		player_energy = min(ENERGY_MAX, player_energy + amount)
 	else:
-		enemy_energy += 1
+		enemy_energy = min(ENERGY_MAX, enemy_energy + amount)
+
+
+func _spend_player_energy(amount: int) -> void:
+	player_energy = max(0, player_energy - amount)
+
+
+func _on_skill_pressed(skill_id: String) -> void:
+	if game_over or current_turn != BoardState.PLAYER:
+		return
+
+	if not skill_executor.can_afford(skill_id, player_energy):
+		_set_status("%s needs %d energy." % [skill_executor.get_skill_name(skill_id), skill_executor.get_cost(skill_id)])
+		return
+
+	if not skill_executor.requires_target(skill_id):
+		_use_instant_skill(skill_id)
+		return
+
+	if selected_skill_id == skill_id:
+		selected_skill_id = ""
+		_set_status("Skill cancelled. Place X or choose another skill.")
+	else:
+		selected_skill_id = skill_id
+		_set_status("%s selected. Choose a highlighted target." % skill_executor.get_skill_name(skill_id))
+
+	_refresh_board()
+
+
+func _try_use_targeted_skill(pos: Vector2i) -> void:
+	if not skill_executor.can_afford(selected_skill_id, player_energy):
+		_set_status("%s needs %d energy." % [skill_executor.get_skill_name(selected_skill_id), skill_executor.get_cost(selected_skill_id)])
+		selected_skill_id = ""
+		_refresh_board()
+		return
+
+	if not skill_executor.is_valid_target(board, selected_skill_id, pos):
+		_set_status("Invalid target for %s." % skill_executor.get_skill_name(selected_skill_id))
+		return
+
+	var skill_name: String = skill_executor.get_skill_name(selected_skill_id)
+	var cost: int = skill_executor.get_cost(selected_skill_id)
+
+	if not skill_executor.execute(board, selected_skill_id, pos):
+		_set_status("%s failed at %s." % [skill_name, _format_board_pos(pos)])
+		return
+
+	_spend_player_energy(cost)
+	selected_skill_id = ""
+	warning_target = Vector2i(-1, -1)
+	_set_status("%s used at %s. Place X to finish your turn." % [skill_name, _format_board_pos(pos)])
+	_refresh_board()
+
+
+func _use_instant_skill(skill_id: String) -> void:
+	var predicted_move := enemy_ai.choose_move(board)
+	var skill_name: String = skill_executor.get_skill_name(skill_id)
+
+	_spend_player_energy(skill_executor.get_cost(skill_id))
+	selected_skill_id = ""
+	warning_target = predicted_move
+
+	if predicted_move == Vector2i(-1, -1):
+		_set_status("%s found no legal enemy move." % skill_name)
+	else:
+		_set_status("%s predicts danger at %s." % [skill_name, _format_board_pos(predicted_move)])
+
+	_refresh_board()
 
 
 func _finish_turn(owner: int) -> void:
@@ -294,6 +408,7 @@ func _format_line(line: Array) -> String:
 
 func _refresh_board() -> void:
 	_refresh_info_labels()
+	_refresh_skill_buttons()
 
 	for y in range(BOARD_SIZE):
 		for x in range(BOARD_SIZE):
@@ -326,11 +441,40 @@ func _refresh_board() -> void:
 				button.text = "+"
 				style = spirit_style
 
-			button.disabled = game_over or current_turn != BoardState.PLAYER or not board.is_cell_playable(pos)
+			if owner == BoardState.EMPTY and not selected_skill_id.is_empty() and skill_executor.is_valid_target(board, selected_skill_id, pos):
+				if button.text.is_empty():
+					button.text = "*"
+				style = skill_target_style
+			elif owner == BoardState.EMPTY and pos == warning_target:
+				button.text = "!"
+				style = warning_style
+
+			button.disabled = _is_cell_disabled(pos)
 			button.add_theme_stylebox_override("normal", style)
 			button.add_theme_stylebox_override("hover", style)
 			button.add_theme_stylebox_override("pressed", style)
 			button.add_theme_stylebox_override("disabled", style)
+
+
+func _is_cell_disabled(pos: Vector2i) -> bool:
+	if game_over or current_turn != BoardState.PLAYER:
+		return true
+
+	if not selected_skill_id.is_empty():
+		return not skill_executor.is_valid_target(board, selected_skill_id, pos)
+
+	return not board.is_cell_playable(pos)
+
+
+func _refresh_skill_buttons() -> void:
+	for skill_id in skill_buttons:
+		var button: Button = skill_buttons[skill_id]
+		var cost: int = skill_executor.get_cost(skill_id)
+		var name: String = skill_executor.get_skill_name(skill_id)
+		var prefix := "> " if selected_skill_id == skill_id else ""
+
+		button.text = "%s%s (%d)" % [prefix, name, cost]
+		button.disabled = game_over or current_turn != BoardState.PLAYER or not skill_executor.can_afford(skill_id, player_energy)
 
 
 func _refresh_info_labels() -> void:
@@ -344,4 +488,4 @@ func _refresh_info_labels() -> void:
 
 	turn_label.text = turn_text
 	move_count_label.text = "Moves: %d" % move_count
-	energy_label.text = "Energy: You %d / Enemy %d" % [player_energy, enemy_energy]
+	energy_label.text = "Energy: You %d/%d / Enemy %d/%d" % [player_energy, ENERGY_MAX, enemy_energy, ENERGY_MAX]
