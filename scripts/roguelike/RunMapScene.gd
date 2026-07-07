@@ -183,7 +183,7 @@ func _build_layout() -> void:
 	side.add_child(status_label)
 
 	var tip := Label.new()
-	tip.text = "胜利后先选择一个奖励，再解锁下一局。失败后可重新开始 Run。"
+	tip.text = "战斗胜利后选择奖励；事件、商店、休息点会给出一次路线选择。失败后可重新开始 Run。"
 	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tip.add_theme_font_size_override("font_size", 15)
 	tip.add_theme_color_override("font_color", Color("#91a7b6"))
@@ -222,7 +222,7 @@ func _create_reward_panel(parent: Control) -> void:
 		button.custom_minimum_size = Vector2(0, 58)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.focus_mode = Control.FOCUS_NONE
-		button.pressed.connect(_claim_reward_at.bind(index))
+		button.pressed.connect(_claim_panel_choice_at.bind(index))
 		_apply_button_theme(button)
 		box.add_child(button)
 		reward_buttons.append(button)
@@ -266,11 +266,38 @@ func _enter_node(index: int) -> void:
 		return
 
 	var node: Dictionary = run_state.nodes[index]
+	var node_type: String = node.get("type", "")
+
+	if node_type != RunStateScript.NODE_BATTLE and node_type != RunStateScript.NODE_BOSS:
+		_open_route_choice_node(index)
+		return
+
 	var root := get_tree().root
 	_persist_run_state()
 	root.set_meta(BATTLE_NODE_INDEX_META, index)
 	root.set_meta(BATTLE_ENEMY_PROFILE_META, node.get("enemy_profile_id", EnemyAI.PROFILE_NOVICE))
 	get_tree().change_scene_to_file(BATTLE_SCENE_PATH)
+
+
+func _open_route_choice_node(index: int) -> void:
+	var node: Dictionary = run_state.nodes[index]
+	var choices := reward_generator.generate_node_choices(run_state, node)
+
+	if choices.is_empty():
+		run_state.resolve_current_node(true)
+	else:
+		run_state.open_node_choices(choices)
+
+	_persist_run_state()
+	_refresh()
+
+
+func _claim_panel_choice_at(index: int) -> void:
+	if run_state.has_pending_reward():
+		_claim_reward_at(index)
+		return
+
+	_claim_node_choice_at(index)
 
 
 func _claim_reward_at(index: int) -> void:
@@ -280,6 +307,17 @@ func _claim_reward_at(index: int) -> void:
 	var reward: Dictionary = run_state.pending_rewards[index]
 
 	if run_state.claim_reward(reward.get("id", "")):
+		_persist_run_state()
+		_refresh()
+
+
+func _claim_node_choice_at(index: int) -> void:
+	if index < 0 or index >= run_state.pending_node_choices.size():
+		return
+
+	var choice: Dictionary = run_state.pending_node_choices[index]
+
+	if run_state.claim_node_choice(choice.get("id", "")):
 		_persist_run_state()
 		_refresh()
 
@@ -315,10 +353,13 @@ func _refresh() -> void:
 		status_label.text = "本轮 Run 已失败。重新开始后可再次挑战。"
 	elif run_state.has_pending_reward():
 		status_label.text = "战斗胜利：选择一个奖励后继续前进。"
+	elif run_state.has_pending_node_choice():
+		var choice_node: Dictionary = run_state.nodes[run_state.pending_choice_node_index]
+		status_label.text = "%s：选择一项处理方式后继续前进。\n星砂：%d" % [choice_node.get("title", "路线节点"), run_state.coins]
 	else:
 		var current := run_state.get_current_node()
 		var save_prefix := "已恢复上次 Run\n" if loaded_from_save else ""
-		status_label.text = "%s当前节点：%s\n%s" % [save_prefix, current.get("title", "无"), current.get("description", "")]
+		status_label.text = "%s当前节点：%s\n%s\n星砂：%d" % [save_prefix, current.get("title", "无"), current.get("description", ""), run_state.coins]
 
 	_refresh_reward_panel()
 
@@ -350,7 +391,30 @@ func _refresh_reward_panel() -> void:
 
 		return
 
-	reward_label.text = "当前构筑\n已获奖励：%s" % ["无" if reward_titles.is_empty() else "、".join(reward_titles)]
+	if run_state.has_pending_node_choice():
+		var choice_node: Dictionary = run_state.nodes[run_state.pending_choice_node_index]
+		reward_label.text = "%s\n星砂：%d  ·  已获奖励：%s" % [
+			choice_node.get("title", "路线选择"),
+			run_state.coins,
+			"无" if reward_titles.is_empty() else "、".join(reward_titles),
+		]
+
+		for index in range(reward_buttons.size()):
+			var button: Button = reward_buttons[index]
+			var has_option := index < run_state.pending_node_choices.size()
+			button.visible = has_option
+			button.disabled = not has_option
+
+			if has_option:
+				var choice: Dictionary = run_state.pending_node_choices[index]
+				var cost: int = choice.get("cost", 0)
+				var cost_text := "" if cost <= 0 else "（花费 %d 星砂）" % cost
+				button.text = "%s%s\n%s" % [choice.get("title", "选择"), cost_text, choice.get("description", "")]
+				button.disabled = run_state.coins < cost
+
+		return
+
+	reward_label.text = "当前构筑\n星砂：%d\n已获奖励：%s" % [run_state.coins, "无" if reward_titles.is_empty() else "、".join(reward_titles)]
 
 	for button in reward_buttons:
 		button.visible = false
@@ -360,6 +424,12 @@ func _type_mark(node_type: String) -> String:
 	match node_type:
 		RunStateScript.NODE_START:
 			return "起"
+		RunStateScript.NODE_EVENT:
+			return "事"
+		RunStateScript.NODE_SHOP:
+			return "店"
+		RunStateScript.NODE_REST:
+			return "息"
 		RunStateScript.NODE_BOSS:
 			return "王"
 		_:
@@ -371,7 +441,7 @@ func _status_text(status: String) -> String:
 		RunStateScript.STATUS_COMPLETED:
 			return "已完成"
 		RunStateScript.STATUS_AVAILABLE:
-			return "可挑战"
+			return "可进入"
 		RunStateScript.STATUS_FAILED:
 			return "失败"
 		_:

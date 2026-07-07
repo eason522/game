@@ -29,6 +29,7 @@ func _run() -> void:
 	_assert_victories_unlock_boss()
 	_assert_defeat_locks_run()
 	_assert_reward_choice_blocks_progress_and_applies_modifier()
+	_assert_route_choices_block_progress_and_apply_effects()
 	_assert_state_roundtrip()
 	_assert_local_save_roundtrip()
 
@@ -37,19 +38,31 @@ func _assert_linear_route_shape() -> void:
 	var generator := MapGeneratorScript.new()
 	var nodes := generator.generate_linear_route()
 
-	if nodes.size() != 5:
-		failures.append("run route: expected 5 linear nodes")
+	if nodes.size() != 8:
+		failures.append("run route: expected 8 linear nodes")
 		return
 
 	if nodes[0].get("type", "") != RunStateScript.NODE_START:
 		failures.append("run route: first node should be start")
 		return
 
-	if nodes[4].get("type", "") != RunStateScript.NODE_BOSS:
+	if nodes[2].get("type", "") != RunStateScript.NODE_EVENT:
+		failures.append("run route: third node should be event")
+		return
+
+	if nodes[4].get("type", "") != RunStateScript.NODE_SHOP:
+		failures.append("run route: fifth node should be shop")
+		return
+
+	if nodes[6].get("type", "") != RunStateScript.NODE_REST:
+		failures.append("run route: seventh node should be rest")
+		return
+
+	if nodes[7].get("type", "") != RunStateScript.NODE_BOSS:
 		failures.append("run route: last node should be boss")
 		return
 
-	if nodes[4].get("enemy_profile_id", "") != EnemyAI.PROFILE_ROCK_BOSS:
+	if nodes[7].get("enemy_profile_id", "") != EnemyAI.PROFILE_ROCK_BOSS:
 		failures.append("run route: boss node should use rock boss profile")
 
 
@@ -64,7 +77,7 @@ func _assert_victories_unlock_boss() -> void:
 		failures.append("run progress: first battle should be enterable")
 		return
 
-	for expected_index in [2, 3, 4]:
+	for expected_index in [2, 3, 4, 5, 6, 7]:
 		state.resolve_current_node(true)
 
 		if state.current_index != expected_index:
@@ -207,3 +220,55 @@ func _assert_local_save_roundtrip() -> void:
 
 	if RunSaveScript.has_save(TEST_SAVE_PATH):
 		failures.append("run local save: expected save file to be removed")
+
+
+func _assert_route_choices_block_progress_and_apply_effects() -> void:
+	var state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
+	var generator := RewardGeneratorScript.new()
+	state.resolve_current_node(true)
+
+	if state.current_index != 2 or not state.can_enter_node(2):
+		failures.append("run route choice: event should unlock after first battle")
+		return
+
+	var event_choices := generator.generate_node_choices(state, state.get_current_node())
+
+	if event_choices.size() != 3:
+		failures.append("run route choice: event should offer three choices")
+		return
+
+	if not state.open_node_choices(event_choices):
+		failures.append("run route choice: expected event choices to open")
+		return
+
+	if state.can_enter_node(2) or state.can_enter_node(3):
+		failures.append("run route choice: pending event choice should block node entry")
+		return
+
+	if not state.claim_node_choice(event_choices[0].get("id", "")):
+		failures.append("run route choice: expected event coin choice to succeed")
+		return
+
+	if state.coins != 4:
+		failures.append("run route choice: event coin choice should add starsand")
+		return
+
+	if state.current_index != 3 or not state.can_enter_node(3):
+		failures.append("run route choice: event choice should advance to next battle")
+		return
+
+	state.resolve_current_node(true)
+	var shop_choices := generator.generate_node_choices(state, state.get_current_node())
+	state.open_node_choices(shop_choices)
+	var coins_before_shop := state.coins
+
+	if not state.claim_node_choice(shop_choices[0].get("id", "")):
+		failures.append("run route choice: expected affordable shop purchase to succeed")
+		return
+
+	if state.coins != coins_before_shop - 2:
+		failures.append("run route choice: shop purchase should spend two starsand")
+		return
+
+	if state.rewards.is_empty():
+		failures.append("run route choice: shop purchase should add a build reward")
