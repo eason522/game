@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Tian Yuan Mi Ju"
-run/main_scene="res://scenes/game/BattleScene.tscn"
+run/main_scene="res://scenes/roguelike/RunMapScene.tscn"
 config/features=PackedStringArray("4.7")
 
 [display]

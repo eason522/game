@@ -4,8 +4,12 @@ Godot 4.x prototype for **Tian Yuan Mi Ju**, a roguelike strategy game built fro
 
 ## Current Stage
 
-Phase 3 MVP skill prototypes are playable:
+Phase 5 roguelike outer-loop prototype is playable:
 
+- linear run map from normal battles to the Rock King boss node
+- run nodes unlock after victories and lock after defeat
+- battle nodes pass the selected enemy profile into the battle scene
+- finished route battles can return to the run map and advance progress
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement
@@ -23,12 +27,13 @@ Phase 3 MVP skill prototypes are playable:
 - basic rule smoke tests for horizontal, vertical, and diagonal wins
 - terrain smoke tests for rock blocking and AI spirit-cell priority
 - skill smoke tests for all MVP skill metadata, temporary-piece rules, rock creation/removal, seal behavior, and warning metadata
+- roguelike run smoke tests for route shape, progression, defeat, and state roundtrip
 
 ## Run Locally
 
 1. Install Godot 4.x.
 2. Open this repository folder in Godot.
-3. Run `scenes/game/BattleScene.tscn` or press Play.
+3. Press Play to start at `scenes/roguelike/RunMapScene.tscn`, or run `scenes/game/BattleScene.tscn` directly for a single battle.
 
 On this machine Godot 4.7 is installed through WinGet. `godot` and `godot4` command shims are available from `C:\Users\eason\bin`.
 
@@ -43,4 +48,6 @@ Run:
 ```powershell
 godot --headless --path . --script tests/rule_checker_smoke.gd
 godot --headless --path . --script tests/skill_system_smoke.gd
+godot --headless --path . --script tests/ai_personality_smoke.gd
+godot --headless --path . --script tests/roguelike_run_smoke.gd
 ```

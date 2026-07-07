@@ -4,6 +4,10 @@ const BOARD_SIZE := 11
 const CELL_SIZE := Vector2(48, 48)
 const ENERGY_MAX := 6
 const ROCK_BOSS_ROCK_INTERVAL := 3
+const RUN_MAP_SCENE_PATH := "res://scenes/roguelike/RunMapScene.tscn"
+const BATTLE_NODE_INDEX_META := "tymj_battle_node_index"
+const BATTLE_RESULT_META := "tymj_battle_result"
+const BATTLE_ENEMY_PROFILE_META := "tymj_battle_enemy_profile_id"
 const SkillExecutorScript := preload("res://scripts/skills/SkillExecutor.gd")
 
 var board := BoardState.new(BOARD_SIZE, BOARD_SIZE)
@@ -20,6 +24,7 @@ var enemy_intent_hint_label: Label
 var board_grid: GridContainer
 var skill_bar: GridContainer
 var reset_button: Button
+var return_to_map_button: Button
 var enemy_profile_button: Button
 var cells: Array = []
 var skill_buttons: Dictionary = {}
@@ -31,6 +36,9 @@ var enemy_profile_ids := [
 	EnemyAI.PROFILE_ROCK_BOSS,
 ]
 var enemy_profile_index := 0
+var launched_from_run := false
+var run_node_index := -1
+var forced_enemy_profile_id := ""
 var current_turn := BoardState.PLAYER
 var game_over := false
 var winning_line: Array = []
@@ -68,9 +76,24 @@ var disabled_button_style: StyleBoxFlat
 
 
 func _ready() -> void:
+	_read_run_context()
 	_create_styles()
 	_build_layout()
 	_start_new_game()
+
+
+func _read_run_context() -> void:
+	var root := get_tree().root
+	launched_from_run = root.has_meta(BATTLE_NODE_INDEX_META)
+
+	if not launched_from_run:
+		return
+
+	run_node_index = root.get_meta(BATTLE_NODE_INDEX_META, -1)
+	forced_enemy_profile_id = root.get_meta(BATTLE_ENEMY_PROFILE_META, EnemyAI.PROFILE_NOVICE)
+
+	if enemy_profile_ids.has(forced_enemy_profile_id):
+		enemy_profile_index = enemy_profile_ids.find(forced_enemy_profile_id)
 
 
 func _create_styles() -> void:
@@ -277,6 +300,16 @@ func _build_layout() -> void:
 	_apply_button_theme(reset_button)
 	controls_panel.add_child(reset_button)
 
+	return_to_map_button = Button.new()
+	return_to_map_button.text = "返回路线"
+	return_to_map_button.custom_minimum_size = Vector2(0, 44)
+	return_to_map_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return_to_map_button.visible = launched_from_run
+	return_to_map_button.disabled = true
+	return_to_map_button.pressed.connect(_return_to_run_map)
+	_apply_button_theme(return_to_map_button)
+	controls_panel.add_child(return_to_map_button)
+
 	_create_cells()
 	_create_skill_buttons()
 
@@ -358,7 +391,7 @@ func _create_skill_buttons() -> void:
 
 func _start_new_game() -> void:
 	board = BoardState.new(BOARD_SIZE, BOARD_SIZE)
-	enemy_ai.set_profile(enemy_profile_ids[enemy_profile_index])
+	enemy_ai.set_profile(forced_enemy_profile_id if launched_from_run else enemy_profile_ids[enemy_profile_index])
 	_setup_demo_terrain()
 	current_turn = BoardState.PLAYER
 	game_over = false
@@ -501,6 +534,9 @@ func _resolve_rock_boss_pressure() -> String:
 
 
 func _cycle_enemy_profile() -> void:
+	if launched_from_run:
+		return
+
 	if enemy_profile_ids.is_empty():
 		return
 
@@ -680,6 +716,7 @@ func _finish_turn(owner: int) -> void:
 	if not winning_line.is_empty():
 		game_over = true
 		var winner := "你获胜" if owner == BoardState.PLAYER else "敌方获胜"
+		_record_battle_result(owner == BoardState.PLAYER)
 		_set_status("%s：连线 %s。可以重新开始。" % [winner, _format_line(winning_line)])
 		_refresh_board()
 		return
@@ -693,8 +730,23 @@ func _finish_turn(owner: int) -> void:
 
 func _set_draw() -> void:
 	game_over = true
+	_record_battle_result(false)
 	_set_status("平局。可以重新开始。")
 	_refresh_board()
+
+
+func _record_battle_result(player_won: bool) -> void:
+	if not launched_from_run:
+		return
+
+	get_tree().root.set_meta(BATTLE_RESULT_META, "victory" if player_won else "defeat")
+
+
+func _return_to_run_map() -> void:
+	if not launched_from_run or not game_over:
+		return
+
+	get_tree().change_scene_to_file(RUN_MAP_SCENE_PATH)
 
 
 func _set_status(text: String) -> void:
@@ -870,7 +922,16 @@ func _refresh_info_labels() -> void:
 	enemy_intent_hint_label.text = enemy_intent_hint
 
 	if enemy_profile_button != null:
-		enemy_profile_button.text = "切换敌人：%s" % enemy_ai.get_profile_name()
+		if launched_from_run:
+			enemy_profile_button.text = "路线敌人：%s" % enemy_ai.get_profile_name()
+		else:
+			enemy_profile_button.text = "切换敌人：%s" % enemy_ai.get_profile_name()
+
+		enemy_profile_button.disabled = launched_from_run
+
+	if return_to_map_button != null:
+		return_to_map_button.visible = launched_from_run
+		return_to_map_button.disabled = not launched_from_run or not game_over
 
 
 func _format_enemy_intro() -> String:
