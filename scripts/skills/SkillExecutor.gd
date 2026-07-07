@@ -19,39 +19,39 @@ const SKILL_ORDER := [
 
 const SKILL_DATA := {
 	SKILL_BREAK_ARRAY: {
-		"name": "Po Zhen",
+		"name": "破阵",
 		"cost": 1,
-		"description": "If your next move forms a line of three or more, gain 1 energy.",
+		"description": "下一手若形成三连或以上，回复 1 点能量。",
 		"requires_target": false,
 	},
 	SKILL_TWIN_PIECE: {
-		"name": "Shuang Sheng Zi",
+		"name": "双生子",
 		"cost": 3,
-		"description": "After your next move, create a temporary adjacent X for 2 turns.",
+		"description": "下一手落子后，在相邻空格生成一颗持续 2 回合的临时棋。",
 		"requires_target": false,
 	},
 	SKILL_ROCK_CREATE: {
-		"name": "Li Yan",
+		"name": "立岩",
 		"cost": 2,
-		"description": "Create rock on an empty cell.",
+		"description": "在一个空格生成岩石，阻断落子与连线。",
 		"requires_target": true,
 	},
 	SKILL_ROCK_BREAK: {
-		"name": "Sui Yan",
+		"name": "碎岩",
 		"cost": 2,
-		"description": "Remove one rock cell.",
+		"description": "移除一处岩石。",
 		"requires_target": true,
 	},
 	SKILL_SEAL_MOVE: {
-		"name": "Feng Shou",
+		"name": "封手",
 		"cost": 3,
-		"description": "Seal one empty cell so the enemy cannot play there next turn.",
+		"description": "封锁一个空格，使敌方下一手不能在此落子。",
 		"requires_target": true,
 	},
 	SKILL_WARNING: {
-		"name": "Yu Jing",
+		"name": "预警",
 		"cost": 1,
-		"description": "Reveal the enemy's likely next move.",
+		"description": "预测敌方下一手的危险落点。",
 		"requires_target": false,
 	},
 }
@@ -111,37 +111,37 @@ func preview(board: BoardState, skill_id: String, pos: Vector2i, energy: int = -
 		SKILL_ROCK_CREATE:
 			result["affected_cells"] = [pos]
 			result["terrain_change"] = "%s -> %s" % [board.get_terrain(pos), BoardState.TERRAIN_ROCK]
-			result["impact_notes"].append("Creates a rock that blocks placement and lines.")
+			result["impact_notes"].append("生成岩石，阻断落子与连线。")
 
 			if _would_owner_win_at(board, pos, enemy_owner):
-				result["impact_notes"].append("Blocks enemy immediate win.")
+				result["impact_notes"].append("可阻止敌方立即连五。")
 
 			if _would_owner_win_at(board, pos, owner):
-				result["impact_notes"].append("Also blocks your immediate win.")
+				result["impact_notes"].append("也会挡住己方胜点。")
 		SKILL_ROCK_BREAK:
 			result["affected_cells"] = [pos]
 			result["terrain_change"] = "%s -> %s" % [BoardState.TERRAIN_ROCK, BoardState.TERRAIN_NORMAL]
-			result["impact_notes"].append("Removes rock and restores placement.")
+			result["impact_notes"].append("移除岩石，恢复可落子。")
 
 			var old_terrain: String = board.get_terrain(pos)
 			board.set_terrain(pos, BoardState.TERRAIN_NORMAL)
 
 			if _would_owner_win_at(board, pos, owner):
-				result["impact_notes"].append("Opens a winning point for you.")
+				result["impact_notes"].append("打开己方胜点。")
 
 			if _would_owner_win_at(board, pos, enemy_owner):
-				result["impact_notes"].append("Also opens an enemy winning point.")
+				result["impact_notes"].append("也会打开敌方胜点。")
 
 			board.set_terrain(pos, old_terrain)
 		SKILL_SEAL_MOVE:
 			result["affected_cells"] = [pos]
-			result["impact_notes"].append("Seals this cell against the enemy next turn.")
+			result["impact_notes"].append("敌方下一手不能在此落子。")
 
 			if _would_owner_win_at(board, pos, enemy_owner):
-				result["impact_notes"].append("Blocks enemy immediate win.")
+				result["impact_notes"].append("可阻止敌方立即连五。")
 
 			if _would_owner_win_at(board, pos, owner):
-				result["impact_notes"].append("Keeps your own winning point playable.")
+				result["impact_notes"].append("己方仍可使用这个胜点。")
 
 	return result
 

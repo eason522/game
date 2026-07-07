@@ -16,7 +16,7 @@ var move_count_label: Label
 var energy_label: Label
 var enemy_profile_label: Label
 var board_grid: GridContainer
-var skill_bar: HBoxContainer
+var skill_bar: GridContainer
 var reset_button: Button
 var enemy_profile_button: Button
 var cells: Array = []
@@ -54,6 +54,13 @@ var enemy_style: StyleBoxFlat
 var last_player_style: StyleBoxFlat
 var last_enemy_style: StyleBoxFlat
 var win_style: StyleBoxFlat
+var panel_style: StyleBoxFlat
+var board_panel_style: StyleBoxFlat
+var status_panel_style: StyleBoxFlat
+var action_button_style: StyleBoxFlat
+var action_button_hover_style: StyleBoxFlat
+var action_button_pressed_style: StyleBoxFlat
+var disabled_button_style: StyleBoxFlat
 
 
 func _ready() -> void:
@@ -63,18 +70,25 @@ func _ready() -> void:
 
 
 func _create_styles() -> void:
-	empty_style = _make_cell_style(Color("#dcc58a"), Color("#5a4725"))
-	spirit_style = _make_cell_style(Color("#76c7ad"), Color("#e2f5e9"))
-	rock_style = _make_cell_style(Color("#59524a"), Color("#2f2a25"))
-	skill_target_style = _make_cell_style(Color("#9164d8"), Color("#efe5ff"), 4)
-	warning_style = _make_cell_style(Color("#d65f4b"), Color("#fff2cd"), 4)
-	sealed_style = _make_cell_style(Color("#686c74"), Color("#f1c75b"), 4)
-	player_style = _make_cell_style(Color("#f7f2df"), Color("#36404a"))
-	temporary_player_style = _make_cell_style(Color("#efe2bd"), Color("#7c8794"), 3)
-	enemy_style = _make_cell_style(Color("#3f4a56"), Color("#cbd3dc"))
-	last_player_style = _make_cell_style(Color("#fff7dc"), Color("#2f89d7"), 4)
-	last_enemy_style = _make_cell_style(Color("#4b5865"), Color("#dc6c55"), 4)
-	win_style = _make_cell_style(Color("#e7a541"), Color("#6a3c13"))
+	empty_style = _make_cell_style(Color("#d9bc78"), Color("#6d5427"))
+	spirit_style = _make_cell_style(Color("#3fa58e"), Color("#bdebdc"), 3)
+	rock_style = _make_cell_style(Color("#4a4540"), Color("#27231f"))
+	skill_target_style = _make_cell_style(Color("#7e5ec5"), Color("#f0e7ff"), 4)
+	warning_style = _make_cell_style(Color("#c25345"), Color("#fff0bf"), 4)
+	sealed_style = _make_cell_style(Color("#5e6572"), Color("#f0c65a"), 4)
+	player_style = _make_cell_style(Color("#f3ead1"), Color("#2f4050"), 3)
+	temporary_player_style = _make_cell_style(Color("#dec98f"), Color("#7a8793"), 3)
+	enemy_style = _make_cell_style(Color("#2f3a46"), Color("#d4dbe1"), 3)
+	last_player_style = _make_cell_style(Color("#fff5d2"), Color("#2f88c9"), 4)
+	last_enemy_style = _make_cell_style(Color("#3e4a57"), Color("#d85f4f"), 4)
+	win_style = _make_cell_style(Color("#e5a544"), Color("#6a3b12"), 4)
+	panel_style = _make_panel_style(Color("#222832"), Color("#3a4655"))
+	board_panel_style = _make_panel_style(Color("#262019"), Color("#725936"))
+	status_panel_style = _make_panel_style(Color("#182129"), Color("#2e8c7e"))
+	action_button_style = _make_panel_style(Color("#314353"), Color("#668195"))
+	action_button_hover_style = _make_panel_style(Color("#3a5265"), Color("#86a8bd"))
+	action_button_pressed_style = _make_panel_style(Color("#273743"), Color("#f0c65a"))
+	disabled_button_style = _make_panel_style(Color("#252b33"), Color("#343b45"))
 
 
 func _make_cell_style(fill: Color, border: Color, border_width: int = 2) -> StyleBoxFlat:
@@ -90,96 +104,214 @@ func _make_cell_style(fill: Color, border: Color, border_width: int = 2) -> Styl
 	return style
 
 
+func _make_panel_style(fill: Color, border: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill
+	style.border_color = border
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(8)
+	style.content_margin_left = 12
+	style.content_margin_right = 12
+	style.content_margin_top = 10
+	style.content_margin_bottom = 10
+	return style
+
+
 func _build_layout() -> void:
 	var background := ColorRect.new()
-	background.color = Color("#20242a")
+	background.color = Color("#12161b")
 	background.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(background)
 
+	var root := MarginContainer.new()
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.add_theme_constant_override("margin_left", 30)
+	root.add_theme_constant_override("margin_top", 22)
+	root.add_theme_constant_override("margin_right", 30)
+	root.add_theme_constant_override("margin_bottom", 24)
+	add_child(root)
+
 	var main := VBoxContainer.new()
-	main.set_anchors_preset(Control.PRESET_FULL_RECT)
-	main.offset_left = 36
-	main.offset_top = 28
-	main.offset_right = -36
-	main.offset_bottom = -28
-	main.alignment = BoxContainer.ALIGNMENT_CENTER
 	main.add_theme_constant_override("separation", 14)
-	add_child(main)
+	root.add_child(main)
+
+	var header := HBoxContainer.new()
+	header.alignment = BoxContainer.ALIGNMENT_CENTER
+	header.add_theme_constant_override("separation", 18)
+	main.add_child(header)
+
+	var title_box := VBoxContainer.new()
+	title_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(title_box)
 
 	var title := Label.new()
-	title.text = "Tian Yuan Mi Ju"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.text = "天元迷局"
 	title.add_theme_font_size_override("font_size", 34)
-	title.add_theme_color_override("font_color", Color("#f0e6c8"))
-	main.add_child(title)
+	title.add_theme_color_override("font_color", Color("#f1dfb7"))
+	title_box.add_child(title)
+
+	var subtitle := Label.new()
+	subtitle.text = "五子棋战斗原型"
+	subtitle.add_theme_font_size_override("font_size", 15)
+	subtitle.add_theme_color_override("font_color", Color("#8da0af"))
+	title_box.add_child(subtitle)
 
 	status_label = Label.new()
-	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	status_label.add_theme_font_size_override("font_size", 20)
-	status_label.add_theme_color_override("font_color", Color("#c9d2dc"))
-	main.add_child(status_label)
+	status_label.custom_minimum_size = Vector2(490, 52)
+	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	status_label.add_theme_font_size_override("font_size", 17)
+	status_label.add_theme_color_override("font_color", Color("#cde8df"))
+	status_label.add_theme_stylebox_override("normal", status_panel_style)
+	header.add_child(status_label)
 
-	var info_row := HBoxContainer.new()
-	info_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	info_row.add_theme_constant_override("separation", 20)
-	main.add_child(info_row)
+	var content := HBoxContainer.new()
+	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_theme_constant_override("separation", 20)
+	main.add_child(content)
+
+	var board_panel := PanelContainer.new()
+	board_panel.add_theme_stylebox_override("panel", board_panel_style)
+	board_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	board_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(board_panel)
+
+	var board_margin := MarginContainer.new()
+	board_margin.add_theme_constant_override("margin_left", 20)
+	board_margin.add_theme_constant_override("margin_top", 18)
+	board_margin.add_theme_constant_override("margin_right", 20)
+	board_margin.add_theme_constant_override("margin_bottom", 18)
+	board_panel.add_child(board_margin)
+
+	var board_box := VBoxContainer.new()
+	board_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	board_box.add_theme_constant_override("separation", 12)
+	board_margin.add_child(board_box)
+
+	var board_header := HBoxContainer.new()
+	board_header.alignment = BoxContainer.ALIGNMENT_CENTER
+	board_header.add_theme_constant_override("separation", 16)
+	board_box.add_child(board_header)
 
 	turn_label = Label.new()
 	turn_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	turn_label.add_theme_font_size_override("font_size", 16)
-	turn_label.add_theme_color_override("font_color", Color("#f0e6c8"))
-	info_row.add_child(turn_label)
+	turn_label.add_theme_font_size_override("font_size", 20)
+	turn_label.add_theme_color_override("font_color", Color("#f1dfb7"))
+	board_header.add_child(turn_label)
 
 	move_count_label = Label.new()
 	move_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	move_count_label.add_theme_font_size_override("font_size", 16)
+	move_count_label.add_theme_font_size_override("font_size", 15)
 	move_count_label.add_theme_color_override("font_color", Color("#9fb0c1"))
-	info_row.add_child(move_count_label)
-
-	energy_label = Label.new()
-	energy_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	energy_label.add_theme_font_size_override("font_size", 16)
-	energy_label.add_theme_color_override("font_color", Color("#76c7ad"))
-	info_row.add_child(energy_label)
-
-	enemy_profile_label = Label.new()
-	enemy_profile_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	enemy_profile_label.add_theme_font_size_override("font_size", 16)
-	enemy_profile_label.add_theme_color_override("font_color", Color("#f1c75b"))
-	info_row.add_child(enemy_profile_label)
+	board_header.add_child(move_count_label)
 
 	board_grid = GridContainer.new()
 	board_grid.columns = BOARD_SIZE
 	board_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	board_grid.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	board_grid.add_theme_constant_override("h_separation", 4)
 	board_grid.add_theme_constant_override("v_separation", 4)
-	main.add_child(board_grid)
+	board_box.add_child(board_grid)
 
-	skill_bar = HBoxContainer.new()
-	skill_bar.alignment = BoxContainer.ALIGNMENT_CENTER
-	skill_bar.add_theme_constant_override("separation", 10)
-	main.add_child(skill_bar)
+	var legend := Label.new()
+	legend.text = "X 己方  /  O 敌方  /  + 灵脉  /  # 岩石  /  ! 预警"
+	legend.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	legend.add_theme_font_size_override("font_size", 14)
+	legend.add_theme_color_override("font_color", Color("#b6a785"))
+	board_box.add_child(legend)
 
-	var footer_row := HBoxContainer.new()
-	footer_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	footer_row.add_theme_constant_override("separation", 12)
-	main.add_child(footer_row)
+	var sidebar := VBoxContainer.new()
+	sidebar.custom_minimum_size = Vector2(360, 0)
+	sidebar.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sidebar.add_theme_constant_override("separation", 12)
+	content.add_child(sidebar)
+
+	var enemy_panel := _create_side_panel(sidebar, "敌方")
+
+	enemy_profile_label = Label.new()
+	enemy_profile_label.add_theme_font_size_override("font_size", 22)
+	enemy_profile_label.add_theme_color_override("font_color", Color("#f0c65a"))
+	enemy_panel.add_child(enemy_profile_label)
+
+	var intent_label := Label.new()
+	intent_label.text = "意图会随棋风变化"
+	intent_label.add_theme_font_size_override("font_size", 14)
+	intent_label.add_theme_color_override("font_color", Color("#91a7b6"))
+	enemy_panel.add_child(intent_label)
+
+	var resource_panel := _create_side_panel(sidebar, "战况")
+
+	energy_label = Label.new()
+	energy_label.add_theme_font_size_override("font_size", 17)
+	energy_label.add_theme_color_override("font_color", Color("#87d1b7"))
+	resource_panel.add_child(energy_label)
+
+	var skill_panel := _create_side_panel(sidebar, "术法")
+
+	skill_bar = GridContainer.new()
+	skill_bar.columns = 2
+	skill_bar.add_theme_constant_override("h_separation", 8)
+	skill_bar.add_theme_constant_override("v_separation", 8)
+	skill_panel.add_child(skill_bar)
+
+	var controls_panel := _create_side_panel(sidebar, "设置")
 
 	enemy_profile_button = Button.new()
-	enemy_profile_button.custom_minimum_size = Vector2(220, 42)
-	enemy_profile_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	enemy_profile_button.custom_minimum_size = Vector2(0, 44)
+	enemy_profile_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	enemy_profile_button.pressed.connect(_cycle_enemy_profile)
-	footer_row.add_child(enemy_profile_button)
+	_apply_button_theme(enemy_profile_button)
+	controls_panel.add_child(enemy_profile_button)
 
 	reset_button = Button.new()
-	reset_button.text = "New Game"
-	reset_button.custom_minimum_size = Vector2(160, 42)
-	reset_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	reset_button.text = "重新开始"
+	reset_button.custom_minimum_size = Vector2(0, 44)
+	reset_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	reset_button.pressed.connect(_start_new_game)
-	footer_row.add_child(reset_button)
+	_apply_button_theme(reset_button)
+	controls_panel.add_child(reset_button)
 
 	_create_cells()
 	_create_skill_buttons()
+
+
+func _create_side_panel(parent: Control, title_text: String) -> VBoxContainer:
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", panel_style)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 14)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_right", 14)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	panel.add_child(margin)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	margin.add_child(box)
+
+	var title := Label.new()
+	title.text = title_text
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color("#b8c5d0"))
+	box.add_child(title)
+
+	return box
+
+
+func _apply_button_theme(button: Button) -> void:
+	button.add_theme_stylebox_override("normal", action_button_style)
+	button.add_theme_stylebox_override("hover", action_button_hover_style)
+	button.add_theme_stylebox_override("pressed", action_button_pressed_style)
+	button.add_theme_stylebox_override("disabled", disabled_button_style)
+	button.add_theme_color_override("font_color", Color("#f3ead1"))
+	button.add_theme_color_override("font_hover_color", Color("#ffffff"))
+	button.add_theme_color_override("font_pressed_color", Color("#f0c65a"))
+	button.add_theme_color_override("font_disabled_color", Color("#77828c"))
+	button.add_theme_font_size_override("font_size", 15)
 
 
 func _create_cells() -> void:
@@ -211,9 +343,10 @@ func _create_skill_buttons() -> void:
 
 	for skill_id in skill_executor.get_skill_ids():
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(138, 40)
+		button.custom_minimum_size = Vector2(148, 58)
 		button.focus_mode = Control.FOCUS_NONE
 		button.pressed.connect(_on_skill_pressed.bind(skill_id))
+		_apply_button_theme(button)
 		skill_bar.add_child(button)
 		skill_buttons[skill_id] = button
 
@@ -235,7 +368,7 @@ func _start_new_game() -> void:
 	break_array_active = false
 	twin_piece_active = false
 	_begin_turn(BoardState.PLAYER)
-	_set_status("Your move against %s: place X, or spend energy on a skill first." % enemy_ai.get_profile_name())
+	_set_status("对阵 %s：选择空格落子，或先使用术法。" % enemy_ai.get_profile_name())
 	_refresh_board()
 
 
@@ -284,7 +417,7 @@ func _on_cell_pressed(pos: Vector2i) -> void:
 	current_turn = BoardState.ENEMY
 	_begin_turn(BoardState.ENEMY)
 	var note_text := "" if skill_notes.is_empty() else " %s" % " ".join(skill_notes)
-	_set_status("Enemy is thinking after your move at %s.%s" % [_format_board_pos(pos), note_text])
+	_set_status("你落子于 %s。%s敌方正在思考。" % [_format_board_pos(pos), note_text])
 	_refresh_board()
 
 	await get_tree().create_timer(0.35).timeout
@@ -310,7 +443,7 @@ func _play_enemy_turn() -> void:
 	if not game_over:
 		current_turn = BoardState.PLAYER
 		_begin_turn(BoardState.PLAYER)
-		_set_status("%s placed O at %s. Your move." % [enemy_ai.get_profile_name(), _format_board_pos(move)])
+		_set_status("%s 落子于 %s。轮到你了。" % [enemy_ai.get_profile_name(), _format_board_pos(move)])
 		_refresh_board()
 
 
@@ -350,7 +483,7 @@ func _on_skill_pressed(skill_id: String) -> void:
 		return
 
 	if not skill_executor.can_afford(skill_id, player_energy):
-		_set_status("%s needs %d energy." % [skill_executor.get_skill_name(skill_id), skill_executor.get_cost(skill_id)])
+		_set_status("%s 需要 %d 点能量。" % [skill_executor.get_skill_name(skill_id), skill_executor.get_cost(skill_id)])
 		return
 
 	if not skill_executor.requires_target(skill_id):
@@ -359,7 +492,7 @@ func _on_skill_pressed(skill_id: String) -> void:
 
 	if selected_skill_id == skill_id:
 		selected_skill_id = ""
-		_set_status("Skill cancelled. Place X or choose another skill.")
+		_set_status("已取消术法。可以落子，或选择其他术法。")
 	else:
 		selected_skill_id = skill_id
 		_set_status(_format_selected_skill_prompt(skill_id))
@@ -380,26 +513,26 @@ func _on_cell_hovered(pos: Vector2i) -> void:
 
 func _try_use_targeted_skill(pos: Vector2i) -> void:
 	if not skill_executor.can_afford(selected_skill_id, player_energy):
-		_set_status("%s needs %d energy." % [skill_executor.get_skill_name(selected_skill_id), skill_executor.get_cost(selected_skill_id)])
+		_set_status("%s 需要 %d 点能量。" % [skill_executor.get_skill_name(selected_skill_id), skill_executor.get_cost(selected_skill_id)])
 		selected_skill_id = ""
 		_refresh_board()
 		return
 
 	if not skill_executor.is_valid_target(board, selected_skill_id, pos):
-		_set_status("Invalid target for %s." % skill_executor.get_skill_name(selected_skill_id))
+		_set_status("%s 不能以该格为目标。" % skill_executor.get_skill_name(selected_skill_id))
 		return
 
 	var skill_name: String = skill_executor.get_skill_name(selected_skill_id)
 	var cost: int = skill_executor.get_cost(selected_skill_id)
 
 	if not skill_executor.execute(board, selected_skill_id, pos):
-		_set_status("%s failed at %s." % [skill_name, _format_board_pos(pos)])
+		_set_status("%s 在 %s 施放失败。" % [skill_name, _format_board_pos(pos)])
 		return
 
 	_spend_player_energy(cost)
 	selected_skill_id = ""
 	warning_target = Vector2i(-1, -1)
-	_set_status("%s used at %s. Place X to finish your turn." % [skill_name, _format_board_pos(pos)])
+	_set_status("%s 已作用于 %s。请落子结束本回合。" % [skill_name, _format_board_pos(pos)])
 	_refresh_board()
 
 
@@ -412,7 +545,7 @@ func _use_instant_skill(skill_id: String) -> void:
 		_spend_player_energy(cost)
 		selected_skill_id = ""
 		warning_target = Vector2i(-1, -1)
-		_set_status("%s prepared. Place X to form a line of three or more and regain 1 energy." % skill_name)
+		_set_status("%s 已准备：下一手若形成三连或以上，回复 1 点能量。" % skill_name)
 		_refresh_board()
 		return
 
@@ -421,7 +554,7 @@ func _use_instant_skill(skill_id: String) -> void:
 		_spend_player_energy(cost)
 		selected_skill_id = ""
 		warning_target = Vector2i(-1, -1)
-		_set_status("%s prepared. After your next X, a temporary adjacent X will appear for 2 turns." % skill_name)
+		_set_status("%s 已准备：下一手旁边会生成一颗持续 2 回合的临时棋。" % skill_name)
 		_refresh_board()
 		return
 
@@ -432,9 +565,9 @@ func _use_instant_skill(skill_id: String) -> void:
 	warning_target = predicted_move
 
 	if predicted_move == Vector2i(-1, -1):
-		_set_status("%s found no legal enemy move." % skill_name)
+		_set_status("%s 未发现敌方合法落点。" % skill_name)
 	else:
-		_set_status("%s predicts danger at %s." % [skill_name, _format_board_pos(predicted_move)])
+		_set_status("%s 预判危险点在 %s。" % [skill_name, _format_board_pos(predicted_move)])
 
 	_refresh_board()
 
@@ -448,18 +581,18 @@ func _resolve_player_piece_skills(pos: Vector2i) -> Array:
 
 		if line.size() >= 3:
 			_gain_energy(BoardState.PLAYER, 1)
-			notes.append("Po Zhen restored 1 energy.")
+			notes.append("破阵回复 1 点能量。")
 		else:
-			notes.append("Po Zhen found no three-line.")
+			notes.append("破阵未触发三连。")
 
 	if twin_piece_active:
 		twin_piece_active = false
 		var twin_target := _find_twin_piece_target(pos)
 
 		if twin_target == Vector2i(-1, -1):
-			notes.append("Shuang Sheng Zi found no adjacent space.")
+			notes.append("双生子没有找到相邻空格。")
 		elif board.place_piece(twin_target, BoardState.PLAYER, 2):
-			notes.append("Shuang Sheng Zi created a temporary X at %s." % _format_board_pos(twin_target))
+			notes.append("双生子在 %s 生成临时棋。" % _format_board_pos(twin_target))
 
 	return notes
 
@@ -493,8 +626,8 @@ func _finish_turn(owner: int) -> void:
 
 	if not winning_line.is_empty():
 		game_over = true
-		var winner := "You win" if owner == BoardState.PLAYER else "Enemy wins"
-		_set_status("%s with %s. Press New Game to play again." % [winner, _format_line(winning_line)])
+		var winner := "你获胜" if owner == BoardState.PLAYER else "敌方获胜"
+		_set_status("%s：连线 %s。可以重新开始。" % [winner, _format_line(winning_line)])
 		_refresh_board()
 		return
 
@@ -507,7 +640,7 @@ func _finish_turn(owner: int) -> void:
 
 func _set_draw() -> void:
 	game_over = true
-	_set_status("Draw. Press New Game to play again.")
+	_set_status("平局。可以重新开始。")
 	_refresh_board()
 
 
@@ -603,18 +736,18 @@ func _is_cell_disabled(pos: Vector2i) -> bool:
 func _format_selected_skill_prompt(skill_id: String) -> String:
 	var cost := skill_executor.get_cost(skill_id)
 	var remaining: int = max(0, player_energy - cost)
-	return "%s selected. Cost %d energy, leaving %d/%d. Hover a highlighted target to preview it." % [skill_executor.get_skill_name(skill_id), cost, remaining, ENERGY_MAX]
+	return "已选择 %s：消耗 %d 点能量，施放后剩余 %d/%d。悬停高亮格可查看预览。" % [skill_executor.get_skill_name(skill_id), cost, remaining, ENERGY_MAX]
 
 
 func _format_skill_preview(preview: Dictionary) -> String:
 	if not preview.get("valid", false):
-		return "%s preview unavailable: %s." % [preview.get("skill_name", "Skill"), preview.get("invalid_reason", "invalid target")]
+		return "%s 无法预览：%s。" % [preview.get("skill_name", "术法"), _translate_invalid_reason(preview.get("invalid_reason", "invalid target"))]
 
 	var affected_cells: Array = preview.get("affected_cells", [])
 	var impact_notes: Array = preview.get("impact_notes", [])
 	var parts := [
-		"%s preview: cost %d, energy after %d/%d." % [
-			preview.get("skill_name", "Skill"),
+		"%s 预览：消耗 %d，剩余能量 %d/%d。" % [
+			preview.get("skill_name", "术法"),
 			preview.get("energy_cost", 0),
 			preview.get("energy_after", player_energy),
 			ENERGY_MAX,
@@ -622,17 +755,27 @@ func _format_skill_preview(preview: Dictionary) -> String:
 	]
 
 	if not affected_cells.is_empty():
-		parts.append("Affects %s." % _format_cell_list(affected_cells))
+		parts.append("影响 %s。" % _format_cell_list(affected_cells))
 
 	var terrain_change: String = preview.get("terrain_change", "")
 
 	if not terrain_change.is_empty():
-		parts.append("Terrain %s." % terrain_change)
+		parts.append("地形 %s。" % terrain_change)
 
 	if not impact_notes.is_empty():
 		parts.append(" ".join(impact_notes))
 
 	return " ".join(parts)
+
+
+func _translate_invalid_reason(reason: String) -> String:
+	match reason:
+		"not enough energy":
+			return "能量不足"
+		"invalid target":
+			return "目标不合法"
+		_:
+			return reason
 
 
 func _format_cell_list(cell_list: Array) -> String:
@@ -649,11 +792,11 @@ func _refresh_skill_buttons() -> void:
 		var button: Button = skill_buttons[skill_id]
 		var cost: int = skill_executor.get_cost(skill_id)
 		var name: String = skill_executor.get_skill_name(skill_id)
-		var prefix := "> " if selected_skill_id == skill_id else ""
+		var prefix := "选中 · " if selected_skill_id == skill_id else ""
 		var already_active: bool = skill_id == SkillExecutorScript.SKILL_BREAK_ARRAY and break_array_active
 		already_active = already_active or skill_id == SkillExecutorScript.SKILL_TWIN_PIECE and twin_piece_active
 
-		button.text = "%s%s (%d)" % [prefix, name, cost]
+		button.text = "%s%s\n%d 能量" % [prefix, name, cost]
 		button.tooltip_text = skill_executor.get_description(skill_id)
 		button.disabled = game_over or current_turn != BoardState.PLAYER or already_active or not skill_executor.can_afford(skill_id, player_energy)
 
@@ -662,18 +805,18 @@ func _refresh_info_labels() -> void:
 	if turn_label == null or move_count_label == null or energy_label == null or enemy_profile_label == null:
 		return
 
-	var turn_text := "Game Over"
+	var turn_text := "战斗结束"
 
 	if not game_over:
-		turn_text = "Turn: Player X" if current_turn == BoardState.PLAYER else "Turn: Enemy O"
+		turn_text = "己方回合" if current_turn == BoardState.PLAYER else "敌方回合"
 
 	turn_label.text = turn_text
-	move_count_label.text = "Moves: %d" % move_count
-	energy_label.text = "Energy: You %d/%d / Enemy %d/%d" % [player_energy, ENERGY_MAX, enemy_energy, ENERGY_MAX]
-	enemy_profile_label.text = "Enemy: %s / %s" % [enemy_ai.get_profile_name(), enemy_ai.get_profile_intent()]
+	move_count_label.text = "落子数：%d" % move_count
+	energy_label.text = "己方能量：%d/%d\n敌方能量：%d/%d" % [player_energy, ENERGY_MAX, enemy_energy, ENERGY_MAX]
+	enemy_profile_label.text = "%s\n%s" % [enemy_ai.get_profile_name(), enemy_ai.get_profile_intent()]
 
 	if enemy_profile_button != null:
-		enemy_profile_button.text = "Enemy Style: %s" % enemy_ai.get_profile_name()
+		enemy_profile_button.text = "切换敌人：%s" % enemy_ai.get_profile_name()
 
 
 func _adjacent_offsets() -> Array:

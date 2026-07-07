@@ -10,8 +10,8 @@ const DEFAULT_PROFILE_ID := PROFILE_NOVICE
 
 const PROFILES := {
 	PROFILE_NOVICE: {
-		"name": "Novice Spirit",
-		"intent": "balanced",
+		"name": "新手棋魂",
+		"intent": "均衡试探",
 		"center_weight": 1.0,
 		"attack_weight": 2.0,
 		"defense_weight": 1.6,
@@ -23,8 +23,8 @@ const PROFILES := {
 		"rock_adjacency_weight": 0.0,
 	},
 	PROFILE_FAST_ATTACKER: {
-		"name": "Fast Attacker",
-		"intent": "attack",
+		"name": "快攻棋士",
+		"intent": "主动进攻",
 		"center_weight": 0.6,
 		"attack_weight": 4.0,
 		"defense_weight": 0.9,
@@ -36,8 +36,8 @@ const PROFILES := {
 		"rock_adjacency_weight": 0.0,
 	},
 	PROFILE_DEFENDER: {
-		"name": "Fortress Defender",
-		"intent": "defense",
+		"name": "堡垒棋士",
+		"intent": "防守堵点",
 		"center_weight": 0.7,
 		"attack_weight": 1.1,
 		"defense_weight": 4.0,
@@ -49,8 +49,8 @@ const PROFILES := {
 		"rock_adjacency_weight": 40.0,
 	},
 	PROFILE_RESOURCE_SEEKER: {
-		"name": "Vein Seeker",
-		"intent": "resource",
+		"name": "地脉棋士",
+		"intent": "争夺灵脉",
 		"center_weight": 0.7,
 		"attack_weight": 1.2,
 		"defense_weight": 1.1,
@@ -62,8 +62,8 @@ const PROFILES := {
 		"rock_adjacency_weight": 0.0,
 	},
 	PROFILE_ROCK_BOSS: {
-		"name": "Rock King",
-		"intent": "boss",
+		"name": "岩王",
+		"intent": "岩阵压制",
 		"center_weight": 0.8,
 		"attack_weight": 2.0,
 		"defense_weight": 2.5,

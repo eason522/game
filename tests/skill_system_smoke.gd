@@ -198,7 +198,7 @@ func _assert_targeted_skill_previews() -> void:
 		failures.append("preview rock create: expected target in affected cells")
 		return
 
-	if not rock_preview.get("impact_notes", []).has("Blocks enemy immediate win."):
+	if not rock_preview.get("impact_notes", []).has("可阻止敌方立即连五。"):
 		failures.append("preview rock create: expected enemy win block note")
 		return
 
@@ -216,7 +216,7 @@ func _assert_targeted_skill_previews() -> void:
 		failures.append("preview rock break: expected valid preview")
 		return
 
-	if not break_preview.get("impact_notes", []).has("Opens a winning point for you."):
+	if not break_preview.get("impact_notes", []).has("打开己方胜点。"):
 		failures.append("preview rock break: expected player winning point note")
 		return
 
