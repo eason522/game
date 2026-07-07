@@ -27,6 +27,7 @@ func _run() -> void:
 	_assert_rock_break_skill()
 	_assert_seal_move_skill()
 	_assert_warning_skill_metadata()
+	_assert_targeted_skill_previews()
 
 
 func _assert_all_mvp_skills_are_listed() -> void:
@@ -173,3 +174,57 @@ func _assert_warning_skill_metadata() -> void:
 
 	if not skills.can_afford("warning", 1):
 		failures.append("warning: should be affordable at 1 energy")
+
+
+func _assert_targeted_skill_previews() -> void:
+	var skills := SkillExecutorScript.new()
+	var board := BoardState.new(11, 11)
+	var enemy_win_target := Vector2i(4, 4)
+
+	for x in range(4):
+		board.place_piece(Vector2i(x, 4), BoardState.ENEMY)
+
+	var rock_preview := skills.preview(board, "rock_create", enemy_win_target, 6)
+
+	if not rock_preview.get("valid", false):
+		failures.append("preview rock create: expected valid preview")
+		return
+
+	if rock_preview.get("energy_after", -1) != 4:
+		failures.append("preview rock create: expected energy after cost to be 4")
+		return
+
+	if not rock_preview.get("affected_cells", []).has(enemy_win_target):
+		failures.append("preview rock create: expected target in affected cells")
+		return
+
+	if not rock_preview.get("impact_notes", []).has("Blocks enemy immediate win."):
+		failures.append("preview rock create: expected enemy win block note")
+		return
+
+	var rock_target := Vector2i(4, 6)
+	board = BoardState.new(11, 11)
+
+	for x in range(4):
+		board.place_piece(Vector2i(x, 6), BoardState.PLAYER)
+
+	board.set_terrain(rock_target, BoardState.TERRAIN_ROCK)
+
+	var break_preview := skills.preview(board, "rock_break", rock_target, 6)
+
+	if not break_preview.get("valid", false):
+		failures.append("preview rock break: expected valid preview")
+		return
+
+	if not break_preview.get("impact_notes", []).has("Opens a winning point for you."):
+		failures.append("preview rock break: expected player winning point note")
+		return
+
+	var seal_preview := skills.preview(board, "seal_move", Vector2i(9, 9), 2)
+
+	if seal_preview.get("valid", false):
+		failures.append("preview seal move: expected insufficient energy to be invalid")
+		return
+
+	if seal_preview.get("invalid_reason", "") != "not enough energy":
+		failures.append("preview seal move: expected not enough energy reason")

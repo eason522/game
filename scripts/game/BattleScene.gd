@@ -172,6 +172,7 @@ func _create_cells() -> void:
 			button.add_theme_color_override("font_pressed_color", Color("#1c2229"))
 			button.add_theme_color_override("font_disabled_color", Color("#10151a"))
 			button.pressed.connect(_on_cell_pressed.bind(pos))
+			button.mouse_entered.connect(_on_cell_hovered.bind(pos))
 			board_grid.add_child(button)
 			row.append(button)
 
@@ -325,11 +326,20 @@ func _on_skill_pressed(skill_id: String) -> void:
 		_set_status("Skill cancelled. Place X or choose another skill.")
 	else:
 		selected_skill_id = skill_id
-		var cost := skill_executor.get_cost(skill_id)
-		var remaining: int = max(0, player_energy - cost)
-		_set_status("%s selected. Cost %d energy, leaving %d/%d. Choose a highlighted target." % [skill_executor.get_skill_name(skill_id), cost, remaining, ENERGY_MAX])
+		_set_status(_format_selected_skill_prompt(skill_id))
 
 	_refresh_board()
+
+
+func _on_cell_hovered(pos: Vector2i) -> void:
+	if game_over or current_turn != BoardState.PLAYER or selected_skill_id.is_empty():
+		return
+
+	if not skill_executor.is_valid_target(board, selected_skill_id, pos):
+		return
+
+	var preview := skill_executor.preview(board, selected_skill_id, pos, player_energy)
+	_set_status(_format_skill_preview(preview))
 
 
 func _try_use_targeted_skill(pos: Vector2i) -> void:
@@ -502,6 +512,7 @@ func _refresh_board() -> void:
 			var terrain := board.get_terrain(pos)
 
 			button.text = ""
+			button.tooltip_text = ""
 
 			if winning_line.has(pos):
 				style = win_style
@@ -531,6 +542,7 @@ func _refresh_board() -> void:
 				if button.text.is_empty():
 					button.text = "*"
 				style = skill_target_style
+				button.tooltip_text = _format_skill_preview(skill_executor.preview(board, selected_skill_id, pos, player_energy))
 			elif owner == BoardState.EMPTY and pos == warning_target:
 				button.text = "!"
 				style = warning_style
@@ -550,6 +562,50 @@ func _is_cell_disabled(pos: Vector2i) -> bool:
 		return not skill_executor.is_valid_target(board, selected_skill_id, pos)
 
 	return not board.is_cell_playable(pos, BoardState.PLAYER)
+
+
+func _format_selected_skill_prompt(skill_id: String) -> String:
+	var cost := skill_executor.get_cost(skill_id)
+	var remaining: int = max(0, player_energy - cost)
+	return "%s selected. Cost %d energy, leaving %d/%d. Hover a highlighted target to preview it." % [skill_executor.get_skill_name(skill_id), cost, remaining, ENERGY_MAX]
+
+
+func _format_skill_preview(preview: Dictionary) -> String:
+	if not preview.get("valid", false):
+		return "%s preview unavailable: %s." % [preview.get("skill_name", "Skill"), preview.get("invalid_reason", "invalid target")]
+
+	var affected_cells: Array = preview.get("affected_cells", [])
+	var impact_notes: Array = preview.get("impact_notes", [])
+	var parts := [
+		"%s preview: cost %d, energy after %d/%d." % [
+			preview.get("skill_name", "Skill"),
+			preview.get("energy_cost", 0),
+			preview.get("energy_after", player_energy),
+			ENERGY_MAX,
+		]
+	]
+
+	if not affected_cells.is_empty():
+		parts.append("Affects %s." % _format_cell_list(affected_cells))
+
+	var terrain_change: String = preview.get("terrain_change", "")
+
+	if not terrain_change.is_empty():
+		parts.append("Terrain %s." % terrain_change)
+
+	if not impact_notes.is_empty():
+		parts.append(" ".join(impact_notes))
+
+	return " ".join(parts)
+
+
+func _format_cell_list(cell_list: Array) -> String:
+	var formatted: Array = []
+
+	for cell in cell_list:
+		formatted.append(_format_board_pos(cell))
+
+	return ", ".join(formatted)
 
 
 func _refresh_skill_buttons() -> void:
