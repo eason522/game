@@ -18,6 +18,7 @@ var enemy_ai := EnemyAI.new()
 var skill_executor := SkillExecutorScript.new()
 
 var status_label: Label
+var feedback_label: Label
 var turn_label: Label
 var move_count_label: Label
 var energy_label: Label
@@ -62,11 +63,19 @@ var selected_skill_id := ""
 var warning_target := Vector2i(-1, -1)
 var break_array_active := false
 var twin_piece_active := false
+var feedback_log: Array = []
+var feedback_flashes: Dictionary = {}
+var feedback_flash_token := 0
 
 var empty_style: StyleBoxFlat
 var spirit_style: StyleBoxFlat
 var rock_style: StyleBoxFlat
 var skill_target_style: StyleBoxFlat
+var feedback_player_style: StyleBoxFlat
+var feedback_enemy_style: StyleBoxFlat
+var feedback_skill_style: StyleBoxFlat
+var feedback_rock_style: StyleBoxFlat
+var feedback_energy_style: StyleBoxFlat
 var warning_style: StyleBoxFlat
 var sealed_style: StyleBoxFlat
 var player_style: StyleBoxFlat
@@ -126,6 +135,11 @@ func _create_styles() -> void:
 	spirit_style = _make_cell_style(Color("#3fa58e"), Color("#bdebdc"), 3)
 	rock_style = _make_cell_style(Color("#4a4540"), Color("#27231f"))
 	skill_target_style = _make_cell_style(Color("#7e5ec5"), Color("#f0e7ff"), 4)
+	feedback_player_style = _make_cell_style(Color("#f8e8a7"), Color("#4fa6d8"), 5)
+	feedback_enemy_style = _make_cell_style(Color("#4c5d6f"), Color("#e27965"), 5)
+	feedback_skill_style = _make_cell_style(Color("#8066cf"), Color("#fff3ba"), 5)
+	feedback_rock_style = _make_cell_style(Color("#665347"), Color("#f2b35e"), 5)
+	feedback_energy_style = _make_cell_style(Color("#4eb39d"), Color("#d7fff1"), 5)
 	warning_style = _make_cell_style(Color("#c25345"), Color("#fff0bf"), 4)
 	sealed_style = _make_cell_style(Color("#5e6572"), Color("#f0c65a"), 4)
 	player_style = _make_cell_style(Color("#f3ead1"), Color("#2f4050"), 3)
@@ -208,6 +222,11 @@ func _build_layout() -> void:
 	subtitle.add_theme_color_override("font_color", Color("#8da0af"))
 	title_box.add_child(subtitle)
 
+	var status_box := VBoxContainer.new()
+	status_box.custom_minimum_size = Vector2(490, 76)
+	status_box.add_theme_constant_override("separation", 6)
+	header.add_child(status_box)
+
 	status_label = Label.new()
 	status_label.custom_minimum_size = Vector2(490, 52)
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -216,7 +235,15 @@ func _build_layout() -> void:
 	status_label.add_theme_font_size_override("font_size", 17)
 	status_label.add_theme_color_override("font_color", Color("#cde8df"))
 	status_label.add_theme_stylebox_override("normal", status_panel_style)
-	header.add_child(status_label)
+	status_box.add_child(status_label)
+
+	feedback_label = Label.new()
+	feedback_label.custom_minimum_size = Vector2(490, 48)
+	feedback_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	feedback_label.add_theme_font_size_override("font_size", 13)
+	feedback_label.add_theme_color_override("font_color", Color("#f1dfb7"))
+	feedback_label.add_theme_stylebox_override("normal", panel_style)
+	status_box.add_child(feedback_label)
 
 	var content := HBoxContainer.new()
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -434,8 +461,10 @@ func _start_new_game() -> void:
 	warning_target = Vector2i(-1, -1)
 	break_array_active = false
 	twin_piece_active = false
+	_clear_feedback()
 	_begin_turn(BoardState.PLAYER)
 	_set_status("对阵 %s：选择空格落子，或先使用术法。" % enemy_ai.get_profile_name())
+	_show_feedback("战斗开始：己方获得起始能量 %d/%d。" % [player_energy, energy_max], [], "")
 	_refresh_board()
 
 
@@ -500,6 +529,7 @@ func _on_cell_pressed(pos: Vector2i) -> void:
 	_record_move(pos, BoardState.PLAYER)
 	_apply_terrain_reward(pos, BoardState.PLAYER)
 	var skill_notes := _resolve_player_piece_skills(pos)
+	_show_feedback("己方落子 %s。" % _format_board_pos(pos), [pos], "player")
 	_finish_turn(BoardState.PLAYER)
 
 	if game_over:
@@ -529,6 +559,7 @@ func _play_enemy_turn() -> void:
 	board.place_piece(move, BoardState.ENEMY)
 	_record_move(move, BoardState.ENEMY)
 	_apply_terrain_reward(move, BoardState.ENEMY)
+	_show_feedback("%s 落子 %s。" % [enemy_ai.get_profile_name(), _format_board_pos(move)], [move], "enemy")
 	_finish_turn(BoardState.ENEMY)
 
 	if not game_over:
@@ -571,6 +602,7 @@ func _resolve_rock_boss_pressure() -> String:
 
 	board.set_terrain(rock_target, BoardState.TERRAIN_ROCK)
 	enemy_intent_hint = "岩阵压制：在 %s 生成岩石，压缩你的连线空间。" % _format_board_pos(rock_target)
+	_show_feedback("岩王造岩：%s 被岩石封住。" % _format_board_pos(rock_target), [rock_target], "rock")
 	return "岩王在 %s 生成岩石。" % _format_board_pos(rock_target)
 
 
@@ -595,6 +627,8 @@ func _apply_terrain_reward(pos: Vector2i, owner: int) -> void:
 		return
 
 	_gain_energy(owner, 1)
+	var owner_text := "己方" if owner == BoardState.PLAYER else "敌方"
+	_show_feedback("%s触发灵脉：%s 回复 1 点能量。" % [owner_text, _format_board_pos(pos)], [pos], "energy")
 
 
 func _gain_energy(owner: int, amount: int) -> void:
@@ -693,6 +727,16 @@ func _try_use_targeted_skill(pos: Vector2i) -> void:
 		return
 
 	_spend_player_energy(cost)
+	var feedback_kind := "skill"
+	var feedback_text := "%s 生效：%s。" % [skill_name, _format_board_pos(pos)]
+
+	if selected_skill_id == SkillExecutorScript.SKILL_ROCK_CREATE:
+		feedback_kind = "rock"
+		feedback_text = "%s 生效：%s 生成岩石。" % [skill_name, _format_board_pos(pos)]
+	elif selected_skill_id == SkillExecutorScript.SKILL_ROCK_BREAK:
+		feedback_kind = "rock"
+		feedback_text = "%s 生效：%s 的岩石被移除。" % [skill_name, _format_board_pos(pos)]
+
 	var refund := _consume_skill_refund(selected_skill_id)
 	var refund_note := ""
 
@@ -703,6 +747,7 @@ func _try_use_targeted_skill(pos: Vector2i) -> void:
 	selected_skill_id = ""
 	warning_target = Vector2i(-1, -1)
 	_set_status("%s 已作用于 %s。%s请落子结束本回合。" % [skill_name, _format_board_pos(pos), refund_note])
+	_show_feedback("%s%s" % [feedback_text, refund_note], [pos], feedback_kind)
 	_refresh_board()
 
 
@@ -716,6 +761,7 @@ func _use_instant_skill(skill_id: String) -> void:
 		selected_skill_id = ""
 		warning_target = Vector2i(-1, -1)
 		_set_status("%s 已准备：下一手若形成三连或以上，回复 1 点能量。" % skill_name)
+		_show_feedback("%s 已准备：等待下一手触发。" % skill_name, [], "skill")
 		_refresh_board()
 		return
 
@@ -725,6 +771,7 @@ func _use_instant_skill(skill_id: String) -> void:
 		selected_skill_id = ""
 		warning_target = Vector2i(-1, -1)
 		_set_status("%s 已准备：下一手旁边会生成一颗持续 2 回合的临时棋。" % skill_name)
+		_show_feedback("%s 已准备：下一手会寻找相邻空格。" % skill_name, [], "skill")
 		_refresh_board()
 		return
 
@@ -736,8 +783,10 @@ func _use_instant_skill(skill_id: String) -> void:
 
 	if predicted_move == Vector2i(-1, -1):
 		_set_status("%s 未发现敌方合法落点。" % skill_name)
+		_show_feedback("%s 未发现敌方合法落点。" % skill_name, [], "skill")
 	else:
 		_set_status("%s 预判危险点在 %s。" % [skill_name, _format_board_pos(predicted_move)])
+		_show_feedback("%s 标记危险点：%s。" % [skill_name, _format_board_pos(predicted_move)], [predicted_move], "skill")
 
 	_refresh_board()
 
@@ -752,6 +801,7 @@ func _resolve_player_piece_skills(pos: Vector2i) -> Array:
 		if line.size() >= 3:
 			_gain_energy(BoardState.PLAYER, 1)
 			notes.append("破阵回复 1 点能量。")
+			_show_feedback("破阵触发：形成 %d 连，回复 1 点能量。" % line.size(), line, "energy")
 		else:
 			notes.append("破阵未触发三连。")
 
@@ -763,6 +813,7 @@ func _resolve_player_piece_skills(pos: Vector2i) -> Array:
 			notes.append("双生子没有找到相邻空格。")
 		elif board.place_piece(twin_target, BoardState.PLAYER, 2):
 			notes.append("双生子在 %s 生成临时棋。" % _format_board_pos(twin_target))
+			_show_feedback("双生子触发：%s 生成临时棋。" % _format_board_pos(twin_target), [twin_target], "skill")
 
 	return notes
 
@@ -835,6 +886,64 @@ func _set_status(text: String) -> void:
 		status_label.text = text
 
 
+func _clear_feedback() -> void:
+	feedback_log.clear()
+	feedback_flashes.clear()
+	feedback_flash_token += 1
+
+	if feedback_label != null:
+		feedback_label.text = "最近动作会显示在这里。"
+
+
+func _show_feedback(text: String, target_cells: Array = [], kind: String = "skill") -> void:
+	if not text.is_empty():
+		feedback_log.push_front(text)
+
+		while feedback_log.size() > 3:
+			feedback_log.pop_back()
+
+		if feedback_label != null:
+			feedback_label.text = "\n".join(feedback_log)
+
+	if not target_cells.is_empty() and not kind.is_empty():
+		_flash_cells(target_cells, kind)
+
+
+func _flash_cells(target_cells: Array, kind: String) -> void:
+	feedback_flash_token += 1
+	var token := feedback_flash_token
+
+	for cell in target_cells:
+		if cell is Vector2i and board.is_inside(cell):
+			feedback_flashes[cell] = kind
+
+	_refresh_board()
+
+	await get_tree().create_timer(0.55).timeout
+
+	if token != feedback_flash_token:
+		return
+
+	feedback_flashes.clear()
+	_refresh_board()
+
+
+func _get_feedback_style(kind: String, fallback: StyleBoxFlat) -> StyleBoxFlat:
+	match kind:
+		"player":
+			return feedback_player_style
+		"enemy":
+			return feedback_enemy_style
+		"rock":
+			return feedback_rock_style
+		"energy":
+			return feedback_energy_style
+		"skill":
+			return feedback_skill_style
+		_:
+			return fallback
+
+
 func _record_move(pos: Vector2i, owner: int) -> void:
 	last_move = pos
 	last_move_owner = owner
@@ -901,6 +1010,9 @@ func _refresh_board() -> void:
 			elif owner == BoardState.EMPTY and pos == warning_target:
 				button.text = "!"
 				style = warning_style
+
+			if feedback_flashes.has(pos) and not winning_line.has(pos):
+				style = _get_feedback_style(feedback_flashes[pos], style)
 
 			button.disabled = _is_cell_disabled(pos)
 			button.add_theme_stylebox_override("normal", style)
