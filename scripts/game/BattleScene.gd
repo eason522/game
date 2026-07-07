@@ -3,6 +3,7 @@ extends Control
 const BOARD_SIZE := 11
 const CELL_SIZE := Vector2(48, 48)
 const ENERGY_MAX := 6
+const ROCK_BOSS_ROCK_INTERVAL := 3
 const SkillExecutorScript := preload("res://scripts/skills/SkillExecutor.gd")
 
 var board := BoardState.new(BOARD_SIZE, BOARD_SIZE)
@@ -15,6 +16,7 @@ var turn_label: Label
 var move_count_label: Label
 var energy_label: Label
 var enemy_profile_label: Label
+var enemy_intent_hint_label: Label
 var board_grid: GridContainer
 var skill_bar: GridContainer
 var reset_button: Button
@@ -35,8 +37,10 @@ var winning_line: Array = []
 var last_move := Vector2i(-1, -1)
 var last_move_owner := BoardState.EMPTY
 var move_count := 0
+var enemy_turn_count := 0
 var player_energy := 0
 var enemy_energy := 0
+var enemy_intent_hint := ""
 var selected_skill_id := ""
 var warning_target := Vector2i(-1, -1)
 var break_array_active := false
@@ -234,11 +238,12 @@ func _build_layout() -> void:
 	enemy_profile_label.add_theme_color_override("font_color", Color("#f0c65a"))
 	enemy_panel.add_child(enemy_profile_label)
 
-	var intent_label := Label.new()
-	intent_label.text = "意图会随棋风变化"
-	intent_label.add_theme_font_size_override("font_size", 14)
-	intent_label.add_theme_color_override("font_color", Color("#91a7b6"))
-	enemy_panel.add_child(intent_label)
+	enemy_intent_hint_label = Label.new()
+	enemy_intent_hint_label.text = "意图会随棋风变化"
+	enemy_intent_hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	enemy_intent_hint_label.add_theme_font_size_override("font_size", 14)
+	enemy_intent_hint_label.add_theme_color_override("font_color", Color("#91a7b6"))
+	enemy_panel.add_child(enemy_intent_hint_label)
 
 	var resource_panel := _create_side_panel(sidebar, "战况")
 
@@ -361,8 +366,10 @@ func _start_new_game() -> void:
 	last_move = Vector2i(-1, -1)
 	last_move_owner = BoardState.EMPTY
 	move_count = 0
+	enemy_turn_count = 0
 	player_energy = 0
 	enemy_energy = 0
+	enemy_intent_hint = _format_enemy_intro()
 	selected_skill_id = ""
 	warning_target = Vector2i(-1, -1)
 	break_array_active = false
@@ -386,6 +393,16 @@ func _setup_demo_terrain() -> void:
 		Vector2i(3, 7),
 		Vector2i(7, 7),
 	]
+
+	if enemy_ai.get_profile_id() == EnemyAI.PROFILE_ROCK_BOSS:
+		rock_cells = [
+			Vector2i(2, 5),
+			Vector2i(4, 3),
+			Vector2i(6, 3),
+			Vector2i(8, 5),
+			Vector2i(4, 7),
+			Vector2i(6, 7),
+		]
 
 	for pos in spirit_cells:
 		board.set_terrain(pos, BoardState.TERRAIN_SPIRIT)
@@ -428,7 +445,8 @@ func _play_enemy_turn() -> void:
 	if game_over:
 		return
 
-	var move := enemy_ai.choose_move(board)
+	var plan := enemy_ai.choose_move_plan(board)
+	var move: Vector2i = plan.get("move", Vector2i(-1, -1))
 
 	if move == Vector2i(-1, -1):
 		_set_draw()
@@ -438,13 +456,48 @@ func _play_enemy_turn() -> void:
 	_record_move(move, BoardState.ENEMY)
 	_apply_terrain_reward(move, BoardState.ENEMY)
 	_finish_turn(BoardState.ENEMY)
-	board.decay_seals()
 
 	if not game_over:
+		enemy_turn_count += 1
+		var rock_note := _resolve_rock_boss_pressure()
+
+		if board.get_playable_cells().is_empty():
+			_set_draw()
+			return
+
+		board.decay_seals()
 		current_turn = BoardState.PLAYER
 		_begin_turn(BoardState.PLAYER)
-		_set_status("%s 落子于 %s。轮到你了。" % [enemy_ai.get_profile_name(), _format_board_pos(move)])
+		var move_intent_hint := "%s：%s" % [plan.get("intent", enemy_ai.get_profile_intent()), plan.get("reason", "")]
+		enemy_intent_hint = move_intent_hint if enemy_intent_hint.is_empty() or rock_note.is_empty() else "%s\n%s" % [move_intent_hint, enemy_intent_hint]
+		_set_status("%s 落子于 %s，意图：%s。%s轮到你了。" % [
+			enemy_ai.get_profile_name(),
+			_format_board_pos(move),
+			plan.get("intent", enemy_ai.get_profile_intent()),
+			rock_note,
+		])
 		_refresh_board()
+
+
+func _resolve_rock_boss_pressure() -> String:
+	if enemy_ai.get_profile_id() != EnemyAI.PROFILE_ROCK_BOSS:
+		return ""
+
+	var turns_until_rock := ROCK_BOSS_ROCK_INTERVAL - enemy_turn_count % ROCK_BOSS_ROCK_INTERVAL
+
+	if enemy_turn_count % ROCK_BOSS_ROCK_INTERVAL != 0:
+		enemy_intent_hint = "岩阵压制：%d 个敌方回合后尝试生成岩石。" % turns_until_rock
+		return "岩阵正在聚势，%d 回合后生成岩石。" % turns_until_rock
+
+	var rock_target := enemy_ai.choose_rock_target(board)
+
+	if rock_target == Vector2i(-1, -1):
+		enemy_intent_hint = "岩阵压制：棋盘已无可生成岩石的位置。"
+		return "岩阵没有找到可生成的位置。"
+
+	board.set_terrain(rock_target, BoardState.TERRAIN_ROCK)
+	enemy_intent_hint = "岩阵压制：在 %s 生成岩石，压缩你的连线空间。" % _format_board_pos(rock_target)
+	return "岩王在 %s 生成岩石。" % _format_board_pos(rock_target)
 
 
 func _cycle_enemy_profile() -> void:
@@ -802,7 +855,7 @@ func _refresh_skill_buttons() -> void:
 
 
 func _refresh_info_labels() -> void:
-	if turn_label == null or move_count_label == null or energy_label == null or enemy_profile_label == null:
+	if turn_label == null or move_count_label == null or energy_label == null or enemy_profile_label == null or enemy_intent_hint_label == null:
 		return
 
 	var turn_text := "战斗结束"
@@ -814,9 +867,17 @@ func _refresh_info_labels() -> void:
 	move_count_label.text = "落子数：%d" % move_count
 	energy_label.text = "己方能量：%d/%d\n敌方能量：%d/%d" % [player_energy, ENERGY_MAX, enemy_energy, ENERGY_MAX]
 	enemy_profile_label.text = "%s\n%s" % [enemy_ai.get_profile_name(), enemy_ai.get_profile_intent()]
+	enemy_intent_hint_label.text = enemy_intent_hint
 
 	if enemy_profile_button != null:
 		enemy_profile_button.text = "切换敌人：%s" % enemy_ai.get_profile_name()
+
+
+func _format_enemy_intro() -> String:
+	if enemy_ai.get_profile_id() == EnemyAI.PROFILE_ROCK_BOSS:
+		return "岩王开局布置岩阵，并每 %d 个敌方回合尝试生成岩石。" % ROCK_BOSS_ROCK_INTERVAL
+
+	return "当前棋风：%s。落子后会显示具体意图。" % enemy_ai.get_profile_intent()
 
 
 func _adjacent_offsets() -> Array:
