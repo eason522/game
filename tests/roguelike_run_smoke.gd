@@ -30,6 +30,7 @@ func _run() -> void:
 	_assert_defeat_locks_run()
 	_assert_reward_choice_blocks_progress_and_applies_modifier()
 	_assert_route_choices_block_progress_and_apply_effects()
+	_assert_reward_rarity_stack_limits_and_prices()
 	_assert_state_roundtrip()
 	_assert_local_save_roundtrip()
 
@@ -237,6 +238,10 @@ func _assert_route_choices_block_progress_and_apply_effects() -> void:
 		failures.append("run route choice: event should offer three choices")
 		return
 
+	if event_choices[1].get("cost", 0) <= 0:
+		failures.append("run route choice: event risky reward should have a starsand cost")
+		return
+
 	if not state.open_node_choices(event_choices):
 		failures.append("run route choice: expected event choices to open")
 		return
@@ -261,14 +266,71 @@ func _assert_route_choices_block_progress_and_apply_effects() -> void:
 	var shop_choices := generator.generate_node_choices(state, state.get_current_node())
 	state.open_node_choices(shop_choices)
 	var coins_before_shop := state.coins
+	var shop_cost: int = shop_choices[0].get("cost", 0)
 
 	if not state.claim_node_choice(shop_choices[0].get("id", "")):
 		failures.append("run route choice: expected affordable shop purchase to succeed")
 		return
 
-	if state.coins != coins_before_shop - 2:
-		failures.append("run route choice: shop purchase should spend two starsand")
+	if state.coins != coins_before_shop - shop_cost:
+		failures.append("run route choice: shop purchase should spend its rarity-based starsand cost")
 		return
 
 	if state.rewards.is_empty():
 		failures.append("run route choice: shop purchase should add a build reward")
+
+
+func _assert_reward_rarity_stack_limits_and_prices() -> void:
+	var state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
+	var generator := RewardGeneratorScript.new()
+	var reward_options := generator.generate_options(state, state.get_current_node())
+
+	if reward_options.size() != 3:
+		failures.append("run reward tuning: expected three generated reward options")
+		return
+
+	for reward in reward_options:
+		if reward.get("rarity", "").is_empty():
+			failures.append("run reward tuning: generated reward should include rarity")
+			return
+
+		if reward.get("source_id", "").is_empty():
+			failures.append("run reward tuning: generated reward should include source id")
+			return
+
+	var limited_reward := {
+		"id": "limited_a",
+		"source_id": "limited",
+		"effect": "starting_energy",
+		"amount": 1,
+		"max_stack": 1,
+	}
+	state.rewards.append(limited_reward)
+
+	if state.can_add_reward(limited_reward):
+		failures.append("run reward tuning: max stack should block duplicate reward source")
+		return
+
+	var rock_refund := {
+		"id": "rock_refund",
+		"source_id": "rock_echo",
+		"effect": "rock_break_refund",
+		"amount": 1,
+		"exclusive_group": "skill_refund",
+	}
+	var seal_refund := {
+		"id": "seal_refund",
+		"source_id": "seal_channel",
+		"effect": "seal_refund",
+		"amount": 1,
+		"exclusive_group": "skill_refund",
+	}
+	state.rewards.clear()
+	state.rewards.append(rock_refund)
+
+	if state.can_add_reward(seal_refund):
+		failures.append("run reward tuning: exclusive group should block competing refund reward")
+		return
+
+	if generator.get_price_for_reward({"rarity": RewardGeneratorScript.RARITY_RARE}) <= generator.get_price_for_reward({"rarity": RewardGeneratorScript.RARITY_COMMON}):
+		failures.append("run reward tuning: rare rewards should cost more than common rewards")

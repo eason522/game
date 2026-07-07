@@ -4,7 +4,7 @@ Godot 4.x prototype for **Tian Yuan Mi Ju**, a roguelike strategy game built fro
 
 ## Current Stage
 
-Phase 5 roguelike outer-loop prototype is playable:
+Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 
 - linear run map from normal battles to the Rock King boss node
 - run nodes unlock after victories and lock after defeat
@@ -12,6 +12,8 @@ Phase 5 roguelike outer-loop prototype is playable:
 - finished route battles can return to the run map and advance progress
 - battle victories now offer a three-choice reward before the next node unlocks
 - run rewards can raise player energy max, add starting energy, add spirit cells, or refund specific skill use in later battles
+- rewards now include rarity labels, stack limits, and exclusive groups for build-defining bonuses
+- shops use rarity-based starsand prices, and event rewards distinguish safe gains from higher-risk paid choices
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement
@@ -31,6 +33,7 @@ Phase 5 roguelike outer-loop prototype is playable:
 - skill smoke tests for all MVP skill metadata, temporary-piece rules, rock creation/removal, seal behavior, and warning metadata
 - roguelike run smoke tests for route shape, progression, defeat, and state roundtrip
 - reward smoke tests for pending reward selection, progression gating, and battle modifier serialization
+- tuning smoke tests for reward rarity metadata, stack limits, exclusive groups, and shop pricing
 
 ## Run Locally
 

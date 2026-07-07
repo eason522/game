@@ -387,7 +387,7 @@ func _refresh_reward_panel() -> void:
 
 			if has_option:
 				var reward: Dictionary = run_state.pending_rewards[index]
-				button.text = "%s\n%s" % [reward.get("title", "奖励"), reward.get("description", "")]
+				button.text = "%s\n%s" % [_format_reward_title(reward), reward.get("description", "")]
 
 		return
 
@@ -409,8 +409,8 @@ func _refresh_reward_panel() -> void:
 				var choice: Dictionary = run_state.pending_node_choices[index]
 				var cost: int = choice.get("cost", 0)
 				var cost_text := "" if cost <= 0 else "（花费 %d 星砂）" % cost
-				button.text = "%s%s\n%s" % [choice.get("title", "选择"), cost_text, choice.get("description", "")]
-				button.disabled = run_state.coins < cost
+				button.text = "%s%s\n%s" % [_format_choice_title(choice), cost_text, choice.get("description", "")]
+				button.disabled = not run_state.can_claim_node_choice(choice.get("id", ""))
 
 		return
 
@@ -455,3 +455,14 @@ func _enemy_text(node: Dictionary) -> String:
 		return ""
 
 	return " · 对阵 %s" % EnemyAI.get_profile_name_for_id(profile_id)
+
+
+func _format_choice_title(choice: Dictionary) -> String:
+	if choice.get("choice_type", "") == RewardGeneratorScript.CHOICE_REWARD or not choice.get("effect", "").is_empty():
+		return _format_reward_title(choice)
+
+	return choice.get("title", "选择")
+
+
+func _format_reward_title(reward: Dictionary) -> String:
+	return "[%s] %s" % [reward_generator.get_rarity_label(reward), reward.get("title", "奖励")]

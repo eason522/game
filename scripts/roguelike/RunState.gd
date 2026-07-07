@@ -110,6 +110,9 @@ func claim_reward(reward_id: String) -> bool:
 		if reward.get("id", "") != reward_id:
 			continue
 
+		if not can_add_reward(reward):
+			return false
+
 		rewards.append(reward.duplicate(true))
 		pending_rewards.clear()
 		pending_reward_node_index = -1
@@ -150,6 +153,9 @@ func claim_node_choice(choice_id: String) -> bool:
 		if coins < cost:
 			return false
 
+		if _is_reward_choice(choice) and not can_add_reward(choice):
+			return false
+
 		coins -= cost
 		_apply_node_choice(choice)
 		nodes[pending_choice_node_index]["status"] = STATUS_COMPLETED
@@ -159,6 +165,47 @@ func claim_node_choice(choice_id: String) -> bool:
 		return true
 
 	return false
+
+
+func can_claim_node_choice(choice_id: String) -> bool:
+	if not has_pending_node_choice():
+		return false
+
+	for choice in pending_node_choices:
+		if choice.get("id", "") != choice_id:
+			continue
+
+		if coins < choice.get("cost", 0):
+			return false
+
+		if _is_reward_choice(choice):
+			return can_add_reward(choice)
+
+		return true
+
+	return false
+
+
+func can_add_reward(reward: Dictionary) -> bool:
+	var source_id := _reward_source_id(reward)
+	var max_stack: int = reward.get("max_stack", 0)
+
+	if max_stack > 0 and _count_rewards_from_source(source_id) >= max_stack:
+		return false
+
+	var exclusive_group: String = reward.get("exclusive_group", "")
+
+	if exclusive_group.is_empty():
+		return true
+
+	for owned_reward in rewards:
+		if owned_reward.get("exclusive_group", "") != exclusive_group:
+			continue
+
+		if _reward_source_id(owned_reward) != source_id:
+			return false
+
+	return true
 
 
 func has_pending_reward() -> bool:
@@ -270,5 +317,23 @@ func _apply_node_choice(choice: Dictionary) -> void:
 		"skip":
 			return
 		_:
-			if not choice.get("effect", "").is_empty():
+			if _is_reward_choice(choice):
 				rewards.append(choice.duplicate(true))
+
+
+func _is_reward_choice(choice: Dictionary) -> bool:
+	return choice.get("choice_type", "") == "reward" or not choice.get("effect", "").is_empty()
+
+
+func _count_rewards_from_source(source_id: String) -> int:
+	var count := 0
+
+	for reward in rewards:
+		if _reward_source_id(reward) == source_id:
+			count += 1
+
+	return count
+
+
+func _reward_source_id(reward: Dictionary) -> String:
+	return reward.get("source_id", reward.get("id", ""))
