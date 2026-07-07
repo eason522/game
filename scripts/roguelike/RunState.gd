@@ -10,7 +10,10 @@ const NODE_BATTLE := "battle"
 const NODE_BOSS := "boss"
 
 var nodes: Array = []
+var rewards: Array = []
+var pending_rewards: Array = []
 var current_index := 0
+var pending_reward_node_index := -1
 var run_completed := false
 var run_failed := false
 
@@ -26,7 +29,10 @@ func setup(route_nodes: Array) -> void:
 	for node in route_nodes:
 		nodes.append(node.duplicate(true))
 
+	rewards.clear()
+	pending_rewards.clear()
 	current_index = 0
+	pending_reward_node_index = -1
 	run_completed = false
 	run_failed = false
 
@@ -44,7 +50,7 @@ func can_enter_node(index: int) -> bool:
 	if run_completed or run_failed:
 		return false
 
-	if index < 0 or index >= nodes.size():
+	if has_pending_reward() or index < 0 or index >= nodes.size():
 		return false
 
 	var node: Dictionary = nodes[index]
@@ -59,9 +65,12 @@ func get_current_node() -> Dictionary:
 	return nodes[current_index]
 
 
-func resolve_current_node(victory: bool) -> void:
+func resolve_current_node(victory: bool, reward_options: Array = []) -> void:
 	if current_index < 0 or current_index >= nodes.size():
 		return
+
+	pending_rewards.clear()
+	pending_reward_node_index = -1
 
 	if not victory:
 		nodes[current_index]["status"] = STATUS_FAILED
@@ -74,6 +83,72 @@ func resolve_current_node(victory: bool) -> void:
 		run_completed = true
 		return
 
+	if not reward_options.is_empty():
+		pending_rewards = reward_options.duplicate(true)
+		pending_reward_node_index = current_index
+		return
+
+	_advance_after_completed_node()
+
+
+func claim_reward(reward_id: String) -> bool:
+	if not has_pending_reward():
+		return false
+
+	for reward in pending_rewards:
+		if reward.get("id", "") != reward_id:
+			continue
+
+		rewards.append(reward.duplicate(true))
+		pending_rewards.clear()
+		pending_reward_node_index = -1
+		_advance_after_completed_node()
+		return true
+
+	return false
+
+
+func has_pending_reward() -> bool:
+	return not pending_rewards.is_empty()
+
+
+func get_battle_modifiers() -> Dictionary:
+	var modifiers := {
+		"energy_max_bonus": 0,
+		"starting_energy_bonus": 0,
+		"extra_spirit_cells": 0,
+		"rock_break_refund_per_battle": 0,
+		"seal_refund_per_battle": 0,
+	}
+
+	for reward in rewards:
+		var amount: int = reward.get("amount", 0)
+
+		match reward.get("effect", ""):
+			"energy_max":
+				modifiers["energy_max_bonus"] += amount
+			"starting_energy":
+				modifiers["starting_energy_bonus"] += amount
+			"extra_spirit_cells":
+				modifiers["extra_spirit_cells"] += amount
+			"rock_break_refund":
+				modifiers["rock_break_refund_per_battle"] += amount
+			"seal_refund":
+				modifiers["seal_refund_per_battle"] += amount
+
+	return modifiers
+
+
+func get_reward_titles() -> Array:
+	var titles: Array = []
+
+	for reward in rewards:
+		titles.append(reward.get("title", "未知奖励"))
+
+	return titles
+
+
+func _advance_after_completed_node() -> void:
 	var next_index := _find_next_playable_index(current_index)
 
 	if next_index == -1:
@@ -87,7 +162,10 @@ func resolve_current_node(victory: bool) -> void:
 func to_dict() -> Dictionary:
 	return {
 		"nodes": nodes.duplicate(true),
+		"rewards": rewards.duplicate(true),
+		"pending_rewards": pending_rewards.duplicate(true),
 		"current_index": current_index,
+		"pending_reward_node_index": pending_reward_node_index,
 		"run_completed": run_completed,
 		"run_failed": run_failed,
 	}
@@ -95,7 +173,10 @@ func to_dict() -> Dictionary:
 
 func load_from_dict(data: Dictionary) -> void:
 	nodes = data.get("nodes", []).duplicate(true)
+	rewards = data.get("rewards", []).duplicate(true)
+	pending_rewards = data.get("pending_rewards", []).duplicate(true)
 	current_index = data.get("current_index", 0)
+	pending_reward_node_index = data.get("pending_reward_node_index", -1)
 	run_completed = data.get("run_completed", false)
 	run_failed = data.get("run_failed", false)
 

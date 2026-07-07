@@ -10,6 +10,8 @@ Phase 5 roguelike outer-loop prototype is playable:
 - run nodes unlock after victories and lock after defeat
 - battle nodes pass the selected enemy profile into the battle scene
 - finished route battles can return to the run map and advance progress
+- battle victories now offer a three-choice reward before the next node unlocks
+- run rewards can raise player energy max, add starting energy, add spirit cells, or refund specific skill use in later battles
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement
@@ -28,6 +30,7 @@ Phase 5 roguelike outer-loop prototype is playable:
 - terrain smoke tests for rock blocking and AI spirit-cell priority
 - skill smoke tests for all MVP skill metadata, temporary-piece rules, rock creation/removal, seal behavior, and warning metadata
 - roguelike run smoke tests for route shape, progression, defeat, and state roundtrip
+- reward smoke tests for pending reward selection, progression gating, and battle modifier serialization
 
 ## Run Locally
 

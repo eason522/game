@@ -7,12 +7,16 @@ const BATTLE_ENEMY_PROFILE_META := "tymj_battle_enemy_profile_id"
 const BATTLE_SCENE_PATH := "res://scenes/game/BattleScene.tscn"
 const MapGeneratorScript := preload("res://scripts/roguelike/MapGenerator.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
+const RewardGeneratorScript := preload("res://scripts/roguelike/RewardGenerator.gd")
 
 var map_generator := MapGeneratorScript.new()
+var reward_generator := RewardGeneratorScript.new()
 var run_state := RunStateScript.new()
 var status_label: Label
+var reward_label: Label
 var node_list: VBoxContainer
 var node_buttons: Array = []
+var reward_buttons: Array = []
 var panel_style: StyleBoxFlat
 var button_style: StyleBoxFlat
 var button_hover_style: StyleBoxFlat
@@ -71,7 +75,15 @@ func _apply_pending_battle_result() -> void:
 	var node_index: int = root.get_meta(BATTLE_NODE_INDEX_META, -1)
 
 	if node_index == run_state.current_index:
-		run_state.resolve_current_node(result == "victory")
+		var reward_options: Array = []
+
+		if result == "victory":
+			var current_node := run_state.get_current_node()
+
+			if current_node.get("type", "") != RunStateScript.NODE_BOSS:
+				reward_options = reward_generator.generate_options(run_state, current_node)
+
+		run_state.resolve_current_node(result == "victory", reward_options)
 
 	root.set_meta(RUN_STATE_META, run_state.to_dict())
 	root.remove_meta(BATTLE_RESULT_META)
@@ -160,14 +172,49 @@ func _build_layout() -> void:
 	side.add_child(status_label)
 
 	var tip := Label.new()
-	tip.text = "胜利会解锁下一局；失败后可重新开始 Run。"
+	tip.text = "胜利后先选择一个奖励，再解锁下一局。失败后可重新开始 Run。"
 	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tip.add_theme_font_size_override("font_size", 15)
 	tip.add_theme_color_override("font_color", Color("#91a7b6"))
 	tip.add_theme_stylebox_override("normal", panel_style)
 	side.add_child(tip)
 
+	_create_reward_panel(side)
 	_create_node_buttons()
+
+
+func _create_reward_panel(parent: Control) -> void:
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", panel_style)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 14)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_right", 14)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	panel.add_child(margin)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	margin.add_child(box)
+
+	reward_label = Label.new()
+	reward_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	reward_label.add_theme_font_size_override("font_size", 16)
+	reward_label.add_theme_color_override("font_color", Color("#f1dfb7"))
+	box.add_child(reward_label)
+
+	for index in range(3):
+		var button := Button.new()
+		button.custom_minimum_size = Vector2(0, 58)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.focus_mode = Control.FOCUS_NONE
+		button.pressed.connect(_claim_reward_at.bind(index))
+		_apply_button_theme(button)
+		box.add_child(button)
+		reward_buttons.append(button)
 
 
 func _create_node_buttons() -> void:
@@ -214,6 +261,17 @@ func _enter_node(index: int) -> void:
 	get_tree().change_scene_to_file(BATTLE_SCENE_PATH)
 
 
+func _claim_reward_at(index: int) -> void:
+	if index < 0 or index >= run_state.pending_rewards.size():
+		return
+
+	var reward: Dictionary = run_state.pending_rewards[index]
+
+	if run_state.claim_reward(reward.get("id", "")):
+		get_tree().root.set_meta(RUN_STATE_META, run_state.to_dict())
+		_refresh()
+
+
 func _refresh() -> void:
 	for index in range(node_buttons.size()):
 		var node: Dictionary = run_state.nodes[index]
@@ -243,9 +301,40 @@ func _refresh() -> void:
 		status_label.text = "本轮 Run 已通关：岩王之局告破。"
 	elif run_state.run_failed:
 		status_label.text = "本轮 Run 已失败。重新开始后可再次挑战。"
+	elif run_state.has_pending_reward():
+		status_label.text = "战斗胜利：选择一个奖励后继续前进。"
 	else:
 		var current := run_state.get_current_node()
 		status_label.text = "当前节点：%s\n%s" % [current.get("title", "无"), current.get("description", "")]
+
+	_refresh_reward_panel()
+
+
+func _refresh_reward_panel() -> void:
+	if reward_label == null:
+		return
+
+	var reward_titles := run_state.get_reward_titles()
+
+	if run_state.has_pending_reward():
+		reward_label.text = "战利品三选一\n已获奖励：%s" % ["无" if reward_titles.is_empty() else "、".join(reward_titles)]
+
+		for index in range(reward_buttons.size()):
+			var button: Button = reward_buttons[index]
+			var has_option := index < run_state.pending_rewards.size()
+			button.visible = has_option
+			button.disabled = not has_option
+
+			if has_option:
+				var reward: Dictionary = run_state.pending_rewards[index]
+				button.text = "%s\n%s" % [reward.get("title", "奖励"), reward.get("description", "")]
+
+		return
+
+	reward_label.text = "当前构筑\n已获奖励：%s" % ["无" if reward_titles.is_empty() else "、".join(reward_titles)]
+
+	for button in reward_buttons:
+		button.visible = false
 
 
 func _type_mark(node_type: String) -> String:

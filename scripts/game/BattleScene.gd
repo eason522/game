@@ -2,13 +2,15 @@ extends Control
 
 const BOARD_SIZE := 11
 const CELL_SIZE := Vector2(48, 48)
-const ENERGY_MAX := 6
+const BASE_ENERGY_MAX := 6
 const ROCK_BOSS_ROCK_INTERVAL := 3
 const RUN_MAP_SCENE_PATH := "res://scenes/roguelike/RunMapScene.tscn"
+const RUN_STATE_META := "tymj_run_state"
 const BATTLE_NODE_INDEX_META := "tymj_battle_node_index"
 const BATTLE_RESULT_META := "tymj_battle_result"
 const BATTLE_ENEMY_PROFILE_META := "tymj_battle_enemy_profile_id"
 const SkillExecutorScript := preload("res://scripts/skills/SkillExecutor.gd")
+const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
 
 var board := BoardState.new(BOARD_SIZE, BOARD_SIZE)
 var rule_checker := RuleChecker.new()
@@ -46,6 +48,13 @@ var last_move := Vector2i(-1, -1)
 var last_move_owner := BoardState.EMPTY
 var move_count := 0
 var enemy_turn_count := 0
+var energy_max := BASE_ENERGY_MAX
+var starting_player_energy_bonus := 0
+var extra_spirit_cells := 0
+var rock_break_refunds_per_battle := 0
+var seal_refunds_per_battle := 0
+var rock_break_refunds_left := 0
+var seal_refunds_left := 0
 var player_energy := 0
 var enemy_energy := 0
 var enemy_intent_hint := ""
@@ -91,9 +100,25 @@ func _read_run_context() -> void:
 
 	run_node_index = root.get_meta(BATTLE_NODE_INDEX_META, -1)
 	forced_enemy_profile_id = root.get_meta(BATTLE_ENEMY_PROFILE_META, EnemyAI.PROFILE_NOVICE)
+	_load_run_build_modifiers(root)
 
 	if enemy_profile_ids.has(forced_enemy_profile_id):
 		enemy_profile_index = enemy_profile_ids.find(forced_enemy_profile_id)
+
+
+func _load_run_build_modifiers(root: Window) -> void:
+	if not root.has_meta(RUN_STATE_META):
+		return
+
+	var restored_run := RunStateScript.new()
+	restored_run.load_from_dict(root.get_meta(RUN_STATE_META))
+	var modifiers := restored_run.get_battle_modifiers()
+
+	energy_max = BASE_ENERGY_MAX + modifiers.get("energy_max_bonus", 0)
+	starting_player_energy_bonus = modifiers.get("starting_energy_bonus", 0)
+	extra_spirit_cells = modifiers.get("extra_spirit_cells", 0)
+	rock_break_refunds_per_battle = modifiers.get("rock_break_refund_per_battle", 0)
+	seal_refunds_per_battle = modifiers.get("seal_refund_per_battle", 0)
 
 
 func _create_styles() -> void:
@@ -400,7 +425,9 @@ func _start_new_game() -> void:
 	last_move_owner = BoardState.EMPTY
 	move_count = 0
 	enemy_turn_count = 0
-	player_energy = 0
+	rock_break_refunds_left = rock_break_refunds_per_battle
+	seal_refunds_left = seal_refunds_per_battle
+	player_energy = min(energy_max, starting_player_energy_bonus)
 	enemy_energy = 0
 	enemy_intent_hint = _format_enemy_intro()
 	selected_skill_id = ""
@@ -426,6 +453,14 @@ func _setup_demo_terrain() -> void:
 		Vector2i(3, 7),
 		Vector2i(7, 7),
 	]
+	var bonus_spirit_cells := [
+		Vector2i(2, 2),
+		Vector2i(8, 8),
+		Vector2i(2, 8),
+		Vector2i(8, 2),
+		Vector2i(1, 5),
+		Vector2i(9, 5),
+	]
 
 	if enemy_ai.get_profile_id() == EnemyAI.PROFILE_ROCK_BOSS:
 		rock_cells = [
@@ -439,6 +474,12 @@ func _setup_demo_terrain() -> void:
 
 	for pos in spirit_cells:
 		board.set_terrain(pos, BoardState.TERRAIN_SPIRIT)
+
+	for index in range(min(extra_spirit_cells, bonus_spirit_cells.size())):
+		var pos: Vector2i = bonus_spirit_cells[index]
+
+		if board.get_terrain(pos) != BoardState.TERRAIN_ROCK:
+			board.set_terrain(pos, BoardState.TERRAIN_SPIRIT)
 
 	for pos in rock_cells:
 		board.set_terrain(pos, BoardState.TERRAIN_ROCK)
@@ -558,21 +599,54 @@ func _apply_terrain_reward(pos: Vector2i, owner: int) -> void:
 
 func _gain_energy(owner: int, amount: int) -> void:
 	if owner == BoardState.PLAYER:
-		player_energy = min(ENERGY_MAX, player_energy + amount)
+		player_energy = min(energy_max, player_energy + amount)
 	else:
-		enemy_energy = min(ENERGY_MAX, enemy_energy + amount)
+		enemy_energy = min(BASE_ENERGY_MAX, enemy_energy + amount)
 
 
 func _spend_player_energy(amount: int) -> void:
 	player_energy = max(0, player_energy - amount)
 
 
+func _get_skill_cost(skill_id: String) -> int:
+	return skill_executor.get_cost(skill_id)
+
+
+func _can_afford_skill(skill_id: String) -> bool:
+	return player_energy >= _get_skill_cost(skill_id)
+
+
+func _preview_skill(skill_id: String, pos: Vector2i) -> Dictionary:
+	var preview := skill_executor.preview(board, skill_id, pos, player_energy)
+	var cost := _get_skill_cost(skill_id)
+	preview["energy_cost"] = cost
+	preview["energy_after"] = max(0, player_energy - cost)
+
+	if player_energy < cost:
+		preview["valid"] = false
+		preview["invalid_reason"] = "not enough energy"
+
+	return preview
+
+
+func _consume_skill_refund(skill_id: String) -> int:
+	if skill_id == SkillExecutorScript.SKILL_ROCK_BREAK and rock_break_refunds_left > 0:
+		rock_break_refunds_left -= 1
+		return 1
+
+	if skill_id == SkillExecutorScript.SKILL_SEAL_MOVE and seal_refunds_left > 0:
+		seal_refunds_left -= 1
+		return 1
+
+	return 0
+
+
 func _on_skill_pressed(skill_id: String) -> void:
 	if game_over or current_turn != BoardState.PLAYER:
 		return
 
-	if not skill_executor.can_afford(skill_id, player_energy):
-		_set_status("%s 需要 %d 点能量。" % [skill_executor.get_skill_name(skill_id), skill_executor.get_cost(skill_id)])
+	if not _can_afford_skill(skill_id):
+		_set_status("%s 需要 %d 点能量。" % [skill_executor.get_skill_name(skill_id), _get_skill_cost(skill_id)])
 		return
 
 	if not skill_executor.requires_target(skill_id):
@@ -596,13 +670,13 @@ func _on_cell_hovered(pos: Vector2i) -> void:
 	if not skill_executor.is_valid_target(board, selected_skill_id, pos):
 		return
 
-	var preview := skill_executor.preview(board, selected_skill_id, pos, player_energy)
+	var preview := _preview_skill(selected_skill_id, pos)
 	_set_status(_format_skill_preview(preview))
 
 
 func _try_use_targeted_skill(pos: Vector2i) -> void:
-	if not skill_executor.can_afford(selected_skill_id, player_energy):
-		_set_status("%s 需要 %d 点能量。" % [skill_executor.get_skill_name(selected_skill_id), skill_executor.get_cost(selected_skill_id)])
+	if not _can_afford_skill(selected_skill_id):
+		_set_status("%s 需要 %d 点能量。" % [skill_executor.get_skill_name(selected_skill_id), _get_skill_cost(selected_skill_id)])
 		selected_skill_id = ""
 		_refresh_board()
 		return
@@ -612,22 +686,29 @@ func _try_use_targeted_skill(pos: Vector2i) -> void:
 		return
 
 	var skill_name: String = skill_executor.get_skill_name(selected_skill_id)
-	var cost: int = skill_executor.get_cost(selected_skill_id)
+	var cost: int = _get_skill_cost(selected_skill_id)
 
 	if not skill_executor.execute(board, selected_skill_id, pos):
 		_set_status("%s 在 %s 施放失败。" % [skill_name, _format_board_pos(pos)])
 		return
 
 	_spend_player_energy(cost)
+	var refund := _consume_skill_refund(selected_skill_id)
+	var refund_note := ""
+
+	if refund > 0:
+		_gain_energy(BoardState.PLAYER, refund)
+		refund_note = " 触发奖励，返还 %d 点能量。" % refund
+
 	selected_skill_id = ""
 	warning_target = Vector2i(-1, -1)
-	_set_status("%s 已作用于 %s。请落子结束本回合。" % [skill_name, _format_board_pos(pos)])
+	_set_status("%s 已作用于 %s。%s请落子结束本回合。" % [skill_name, _format_board_pos(pos), refund_note])
 	_refresh_board()
 
 
 func _use_instant_skill(skill_id: String) -> void:
 	var skill_name: String = skill_executor.get_skill_name(skill_id)
-	var cost := skill_executor.get_cost(skill_id)
+	var cost := _get_skill_cost(skill_id)
 
 	if skill_id == SkillExecutorScript.SKILL_BREAK_ARRAY:
 		break_array_active = true
@@ -816,7 +897,7 @@ func _refresh_board() -> void:
 				if button.text.is_empty():
 					button.text = "*"
 				style = skill_target_style
-				button.tooltip_text = _format_skill_preview(skill_executor.preview(board, selected_skill_id, pos, player_energy))
+				button.tooltip_text = _format_skill_preview(_preview_skill(selected_skill_id, pos))
 			elif owner == BoardState.EMPTY and pos == warning_target:
 				button.text = "!"
 				style = warning_style
@@ -839,9 +920,9 @@ func _is_cell_disabled(pos: Vector2i) -> bool:
 
 
 func _format_selected_skill_prompt(skill_id: String) -> String:
-	var cost := skill_executor.get_cost(skill_id)
+	var cost := _get_skill_cost(skill_id)
 	var remaining: int = max(0, player_energy - cost)
-	return "已选择 %s：消耗 %d 点能量，施放后剩余 %d/%d。悬停高亮格可查看预览。" % [skill_executor.get_skill_name(skill_id), cost, remaining, ENERGY_MAX]
+	return "已选择 %s：消耗 %d 点能量，施放后剩余 %d/%d。悬停高亮格可查看预览。" % [skill_executor.get_skill_name(skill_id), cost, remaining, energy_max]
 
 
 func _format_skill_preview(preview: Dictionary) -> String:
@@ -855,7 +936,7 @@ func _format_skill_preview(preview: Dictionary) -> String:
 			preview.get("skill_name", "术法"),
 			preview.get("energy_cost", 0),
 			preview.get("energy_after", player_energy),
-			ENERGY_MAX,
+			energy_max,
 		]
 	]
 
@@ -895,7 +976,7 @@ func _format_cell_list(cell_list: Array) -> String:
 func _refresh_skill_buttons() -> void:
 	for skill_id in skill_buttons:
 		var button: Button = skill_buttons[skill_id]
-		var cost: int = skill_executor.get_cost(skill_id)
+		var cost: int = _get_skill_cost(skill_id)
 		var name: String = skill_executor.get_skill_name(skill_id)
 		var prefix := "选中 · " if selected_skill_id == skill_id else ""
 		var already_active: bool = skill_id == SkillExecutorScript.SKILL_BREAK_ARRAY and break_array_active
@@ -903,7 +984,7 @@ func _refresh_skill_buttons() -> void:
 
 		button.text = "%s%s\n%d 能量" % [prefix, name, cost]
 		button.tooltip_text = skill_executor.get_description(skill_id)
-		button.disabled = game_over or current_turn != BoardState.PLAYER or already_active or not skill_executor.can_afford(skill_id, player_energy)
+		button.disabled = game_over or current_turn != BoardState.PLAYER or already_active or not _can_afford_skill(skill_id)
 
 
 func _refresh_info_labels() -> void:
@@ -917,7 +998,7 @@ func _refresh_info_labels() -> void:
 
 	turn_label.text = turn_text
 	move_count_label.text = "落子数：%d" % move_count
-	energy_label.text = "己方能量：%d/%d\n敌方能量：%d/%d" % [player_energy, ENERGY_MAX, enemy_energy, ENERGY_MAX]
+	energy_label.text = "己方能量：%d/%d\n敌方能量：%d/%d" % [player_energy, energy_max, enemy_energy, BASE_ENERGY_MAX]
 	enemy_profile_label.text = "%s\n%s" % [enemy_ai.get_profile_name(), enemy_ai.get_profile_intent()]
 	enemy_intent_hint_label.text = enemy_intent_hint
 

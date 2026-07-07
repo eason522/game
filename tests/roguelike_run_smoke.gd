@@ -2,6 +2,7 @@ extends SceneTree
 
 const MapGeneratorScript := preload("res://scripts/roguelike/MapGenerator.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
+const RewardGeneratorScript := preload("res://scripts/roguelike/RewardGenerator.gd")
 
 var failures: Array = []
 
@@ -24,6 +25,7 @@ func _run() -> void:
 	_assert_linear_route_shape()
 	_assert_victories_unlock_boss()
 	_assert_defeat_locks_run()
+	_assert_reward_choice_blocks_progress_and_applies_modifier()
 	_assert_state_roundtrip()
 
 
@@ -87,9 +89,68 @@ func _assert_defeat_locks_run() -> void:
 		failures.append("run defeat: failed run should not allow entering current node")
 
 
+func _assert_reward_choice_blocks_progress_and_applies_modifier() -> void:
+	var state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
+	var generator := RewardGeneratorScript.new()
+	var reward_options := generator.generate_options(state, state.get_current_node())
+
+	if reward_options.size() != 3:
+		failures.append("run reward: expected three reward options")
+		return
+
+	state.resolve_current_node(true, reward_options)
+
+	if not state.has_pending_reward():
+		failures.append("run reward: victory should create pending rewards")
+		return
+
+	if state.current_index != 1:
+		failures.append("run reward: current node should wait while reward is pending")
+		return
+
+	if state.can_enter_node(2):
+		failures.append("run reward: next node should stay locked before reward claim")
+		return
+
+	var claimed_reward: Dictionary = reward_options[0]
+
+	if not state.claim_reward(claimed_reward.get("id", "")):
+		failures.append("run reward: expected reward claim to succeed")
+		return
+
+	if state.has_pending_reward():
+		failures.append("run reward: pending rewards should clear after claim")
+		return
+
+	if not state.can_enter_node(2):
+		failures.append("run reward: next node should unlock after reward claim")
+		return
+
+	var modifiers := state.get_battle_modifiers()
+
+	match claimed_reward.get("effect", ""):
+		"energy_max":
+			if modifiers.get("energy_max_bonus", 0) <= 0:
+				failures.append("run reward: energy max reward should affect battle modifiers")
+		"starting_energy":
+			if modifiers.get("starting_energy_bonus", 0) <= 0:
+				failures.append("run reward: starting energy reward should affect battle modifiers")
+		"extra_spirit_cells":
+			if modifiers.get("extra_spirit_cells", 0) <= 0:
+				failures.append("run reward: spirit reward should affect battle modifiers")
+		"rock_break_refund":
+			if modifiers.get("rock_break_refund_per_battle", 0) <= 0:
+				failures.append("run reward: rock refund reward should affect battle modifiers")
+		"seal_refund":
+			if modifiers.get("seal_refund_per_battle", 0) <= 0:
+				failures.append("run reward: seal refund reward should affect battle modifiers")
+
+
 func _assert_state_roundtrip() -> void:
 	var state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
-	state.resolve_current_node(true)
+	var reward_options := RewardGeneratorScript.new().generate_options(state, state.get_current_node())
+	state.resolve_current_node(true, reward_options)
+	state.claim_reward(reward_options[0].get("id", ""))
 
 	var restored := RunStateScript.new()
 	restored.load_from_dict(state.to_dict())
@@ -104,3 +165,6 @@ func _assert_state_roundtrip() -> void:
 
 	if not restored.can_enter_node(2):
 		failures.append("run save: restored state should keep next node enterable")
+
+	if restored.rewards.size() != 1:
+		failures.append("run save: restored rewards mismatch")
