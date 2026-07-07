@@ -19,12 +19,22 @@ Phase 1 is started:
 2. Open this repository folder in Godot.
 3. Run `scenes/game/BattleScene.tscn` or press Play.
 
-The current machine does not have the Godot command line available in PATH, so engine-level validation should be done after opening the project in Godot.
+On this machine Godot 4.7 is installed through WinGet, but it is not currently on PATH. The console executable is:
+
+```powershell
+C:\Users\eason\AppData\Local\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7-stable_win64_console.exe
+```
 
 ## Smoke Tests
 
-If the Godot command line is available, run:
+If `godot` is available on PATH, run:
 
 ```powershell
 godot --headless --path . --script tests/rule_checker_smoke.gd
+```
+
+Current local validation command:
+
+```powershell
+& 'C:\Users\eason\AppData\Local\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7-stable_win64_console.exe' --headless --path . --script tests/rule_checker_smoke.gd
 ```
