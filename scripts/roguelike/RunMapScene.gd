@@ -15,6 +15,7 @@ var reward_generator := RewardGeneratorScript.new()
 var run_state := RunStateScript.new()
 var loaded_from_save := false
 var status_label: Label
+var settlement_label: Label
 var reward_label: Label
 var build_summary_label: Label
 var node_list: VBoxContainer
@@ -199,6 +200,13 @@ func _build_layout() -> void:
 	status_label.add_theme_stylebox_override("normal", panel_style)
 	side.add_child(status_label)
 
+	settlement_label = Label.new()
+	settlement_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	settlement_label.add_theme_font_size_override("font_size", 15)
+	settlement_label.add_theme_color_override("font_color", Color("#f1dfb7"))
+	settlement_label.add_theme_stylebox_override("normal", panel_style)
+	side.add_child(settlement_label)
+
 	var tip := Label.new()
 	tip.text = "战斗胜利后选择奖励；事件、商店、休息点会给出一次路线选择。失败后可重新开始 Run。"
 	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -364,6 +372,9 @@ func _refresh() -> void:
 
 	if status_label == null:
 		return
+
+	if settlement_label != null:
+		settlement_label.text = "最近结算：%s" % ("暂无" if run_state.last_feedback.is_empty() else run_state.last_feedback)
 
 	if run_state.run_completed:
 		status_label.text = "本轮 Run 已通关：岩王之局告破。可以开始新 Run。"

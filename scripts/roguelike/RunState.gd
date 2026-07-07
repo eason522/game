@@ -22,6 +22,7 @@ var pending_choice_node_index := -1
 var run_completed := false
 var run_failed := false
 var coins := 2
+var last_feedback := ""
 
 
 func _init(route_nodes: Array = []) -> void:
@@ -44,6 +45,7 @@ func setup(route_nodes: Array) -> void:
 	run_completed = false
 	run_failed = false
 	coins = 2
+	last_feedback = "新的试炼已展开。"
 
 	if nodes.is_empty():
 		return
@@ -86,20 +88,25 @@ func resolve_current_node(victory: bool, reward_options: Array = []) -> void:
 	if not victory:
 		nodes[current_index]["status"] = STATUS_FAILED
 		run_failed = true
+		last_feedback = "%s 失利：本轮 Run 已锁定。" % nodes[current_index].get("title", "战斗")
 		return
 
 	nodes[current_index]["status"] = STATUS_COMPLETED
 
 	if nodes[current_index].get("type", "") == NODE_BOSS:
 		run_completed = true
+		last_feedback = "%s 胜利：岩王之局告破。" % nodes[current_index].get("title", "Boss")
 		return
 
 	if not reward_options.is_empty():
 		pending_rewards = reward_options.duplicate(true)
 		pending_reward_node_index = current_index
+		last_feedback = "%s 胜利：选择一个战利品后继续前进。" % nodes[current_index].get("title", "战斗")
 		return
 
+	var completed_title: String = nodes[current_index].get("title", "路线节点")
 	_advance_after_completed_node()
+	last_feedback = "%s 完成。%s" % [completed_title, _current_progress_feedback()]
 
 
 func claim_reward(reward_id: String) -> bool:
@@ -117,6 +124,7 @@ func claim_reward(reward_id: String) -> bool:
 		pending_rewards.clear()
 		pending_reward_node_index = -1
 		_advance_after_completed_node()
+		last_feedback = "获得奖励：%s。%s" % [reward.get("title", "未知奖励"), _current_progress_feedback()]
 		return true
 
 	return false
@@ -137,6 +145,7 @@ func open_node_choices(choice_options: Array) -> bool:
 
 	pending_node_choices = choice_options.duplicate(true)
 	pending_choice_node_index = current_index
+	last_feedback = "%s：选择一项处理方式后继续前进。" % node.get("title", "路线节点")
 	return true
 
 
@@ -159,9 +168,11 @@ func claim_node_choice(choice_id: String) -> bool:
 		coins -= cost
 		_apply_node_choice(choice)
 		nodes[pending_choice_node_index]["status"] = STATUS_COMPLETED
+		var completed_title: String = nodes[pending_choice_node_index].get("title", "路线节点")
 		pending_node_choices.clear()
 		pending_choice_node_index = -1
 		_advance_after_completed_node()
+		last_feedback = "%s 完成：%s。%s" % [completed_title, choice.get("title", "路线选择"), _current_progress_feedback()]
 		return true
 
 	return false
@@ -284,6 +295,7 @@ func to_dict() -> Dictionary:
 		"run_completed": run_completed,
 		"run_failed": run_failed,
 		"coins": coins,
+		"last_feedback": last_feedback,
 	}
 
 
@@ -298,6 +310,22 @@ func load_from_dict(data: Dictionary) -> void:
 	run_completed = data.get("run_completed", false)
 	run_failed = data.get("run_failed", false)
 	coins = data.get("coins", 2)
+	last_feedback = data.get("last_feedback", "")
+
+
+func _current_progress_feedback() -> String:
+	if run_completed:
+		return "本轮 Run 已通关。"
+
+	if run_failed:
+		return "本轮 Run 已失败。"
+
+	var current := get_current_node()
+
+	if current.is_empty():
+		return "没有新的路线节点。"
+
+	return "下一站：%s。" % current.get("title", "未知节点")
 
 
 func _find_next_playable_index(start_index: int) -> int:

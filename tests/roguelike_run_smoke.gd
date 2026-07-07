@@ -32,6 +32,7 @@ func _run() -> void:
 	_assert_route_choices_block_progress_and_apply_effects()
 	_assert_reward_rarity_stack_limits_and_prices()
 	_assert_reward_build_summary_text()
+	_assert_settlement_feedback_roundtrip()
 	_assert_state_roundtrip()
 	_assert_local_save_roundtrip()
 
@@ -378,3 +379,40 @@ func _assert_reward_build_summary_text() -> void:
 
 	if not limit_text.contains("最多 1 层") or not limit_text.contains("互斥：术法返能"):
 		failures.append("run reward display: reward limit summary should describe stack and exclusive group")
+
+
+func _assert_settlement_feedback_roundtrip() -> void:
+	var state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
+	var generator := RewardGeneratorScript.new()
+	var reward_options := generator.generate_options(state, state.get_current_node())
+	state.resolve_current_node(true, reward_options)
+
+	if not state.last_feedback.contains("胜利") or not state.last_feedback.contains("战利品"):
+		failures.append("run settlement feedback: victory should explain pending reward")
+		return
+
+	var claimed_reward: Dictionary = reward_options[0]
+	state.claim_reward(claimed_reward.get("id", ""))
+
+	if not state.last_feedback.contains("获得奖励") or not state.last_feedback.contains("下一站"):
+		failures.append("run settlement feedback: reward claim should explain progression")
+		return
+
+	var choices := generator.generate_node_choices(state, state.get_current_node())
+	state.open_node_choices(choices)
+
+	if not state.last_feedback.contains("选择一项"):
+		failures.append("run settlement feedback: route choice should explain pending choice")
+		return
+
+	state.claim_node_choice(choices[0].get("id", ""))
+
+	if not state.last_feedback.contains("完成") or not state.last_feedback.contains("下一站"):
+		failures.append("run settlement feedback: route choice claim should explain progression")
+		return
+
+	var restored := RunStateScript.new()
+	restored.load_from_dict(state.to_dict())
+
+	if restored.last_feedback != state.last_feedback:
+		failures.append("run settlement feedback: feedback should roundtrip through save data")
