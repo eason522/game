@@ -3,8 +3,8 @@ extends Control
 const BOARD_SIZE := 11
 const CELL_SIZE := Vector2(44, 44)
 const BOARD_GRID_GAP := 3
-const HEADER_STATUS_SIZE := Vector2(490, 52)
-const HEADER_FEEDBACK_SIZE := Vector2(490, 72)
+const STATUS_SLOT_SIZE := Vector2(0, 52)
+const FEEDBACK_SLOT_SIZE := Vector2(0, 72)
 const RESULT_BANNER_HEIGHT := 64.0
 const RESULT_BANNER_TOP_OFFSET := 98.0
 const BASE_ENERGY_MAX := 6
@@ -46,6 +46,7 @@ var tutorial_hint_label: Label
 var enemy_profile_label: Label
 var enemy_intent_hint_label: Label
 var board_grid: GridContainer
+var board_legend_label: Label
 var skill_bar: GridContainer
 var controls_panel: VBoxContainer
 var reset_button: Button
@@ -233,13 +234,13 @@ func _build_layout() -> void:
 	var root := MarginContainer.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_theme_constant_override("margin_left", 30)
-	root.add_theme_constant_override("margin_top", 22)
+	root.add_theme_constant_override("margin_top", 14)
 	root.add_theme_constant_override("margin_right", 30)
-	root.add_theme_constant_override("margin_bottom", 24)
+	root.add_theme_constant_override("margin_bottom", 18)
 	add_child(root)
 
 	var main := VBoxContainer.new()
-	main.add_theme_constant_override("separation", 14)
+	main.add_theme_constant_override("separation", 10)
 	root.add_child(main)
 
 	var header := HBoxContainer.new()
@@ -253,51 +254,15 @@ func _build_layout() -> void:
 
 	var title := Label.new()
 	title.text = "天元迷局"
-	title.add_theme_font_size_override("font_size", 34)
+	title.add_theme_font_size_override("font_size", 30)
 	title.add_theme_color_override("font_color", Color("#f1dfb7"))
 	title_box.add_child(title)
 
 	var subtitle := Label.new()
 	subtitle.text = "五子棋战斗原型"
-	subtitle.add_theme_font_size_override("font_size", 15)
+	subtitle.add_theme_font_size_override("font_size", 13)
 	subtitle.add_theme_color_override("font_color", Color("#8da0af"))
 	title_box.add_child(subtitle)
-
-	var status_box := VBoxContainer.new()
-	status_box.custom_minimum_size = Vector2(HEADER_STATUS_SIZE.x, HEADER_STATUS_SIZE.y + HEADER_FEEDBACK_SIZE.y + 6)
-	status_box.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	status_box.add_theme_constant_override("separation", 6)
-	header.add_child(status_box)
-
-	var status_slot := Control.new()
-	status_slot.custom_minimum_size = HEADER_STATUS_SIZE
-	status_box.add_child(status_slot)
-
-	status_label = Label.new()
-	status_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	status_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	status_label.clip_text = true
-	status_label.add_theme_font_size_override("font_size", 17)
-	status_label.add_theme_color_override("font_color", Color("#cde8df"))
-	status_label.add_theme_stylebox_override("normal", status_panel_style)
-	status_slot.add_child(status_label)
-
-	var feedback_slot := Control.new()
-	feedback_slot.custom_minimum_size = HEADER_FEEDBACK_SIZE
-	status_box.add_child(feedback_slot)
-
-	feedback_label = Label.new()
-	feedback_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	feedback_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	feedback_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	feedback_label.clip_text = true
-	feedback_label.max_lines_visible = 3
-	feedback_label.add_theme_font_size_override("font_size", 13)
-	feedback_label.add_theme_color_override("font_color", Color("#f1dfb7"))
-	feedback_label.add_theme_stylebox_override("normal", panel_style)
-	feedback_slot.add_child(feedback_label)
 
 	var content := HBoxContainer.new()
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -329,19 +294,19 @@ func _build_layout() -> void:
 
 	var board_margin := MarginContainer.new()
 	board_margin.add_theme_constant_override("margin_left", 16)
-	board_margin.add_theme_constant_override("margin_top", 12)
+	board_margin.add_theme_constant_override("margin_top", 8)
 	board_margin.add_theme_constant_override("margin_right", 16)
-	board_margin.add_theme_constant_override("margin_bottom", 12)
+	board_margin.add_theme_constant_override("margin_bottom", 8)
 	board_panel.add_child(board_margin)
 
 	var board_box := VBoxContainer.new()
 	board_box.alignment = BoxContainer.ALIGNMENT_BEGIN
-	board_box.add_theme_constant_override("separation", 10)
+	board_box.add_theme_constant_override("separation", 8)
 	board_margin.add_child(board_box)
 
 	var board_header := HBoxContainer.new()
 	board_header.alignment = BoxContainer.ALIGNMENT_CENTER
-	board_header.add_theme_constant_override("separation", 16)
+	board_header.add_theme_constant_override("separation", 12)
 	board_box.add_child(board_header)
 
 	turn_label = Label.new()
@@ -373,12 +338,12 @@ func _build_layout() -> void:
 	board_grid.add_theme_constant_override("v_separation", BOARD_GRID_GAP)
 	board_box.add_child(board_grid)
 
-	var legend := Label.new()
-	legend.text = "X 己方  /  O 敌方  /  + 灵脉  /  # 岩石  /  ! 预警"
-	legend.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	legend.add_theme_font_size_override("font_size", 14)
-	legend.add_theme_color_override("font_color", Color("#b6a785"))
-	board_box.add_child(legend)
+	board_legend_label = Label.new()
+	board_legend_label.text = "X 己方  /  O 敌方  /  + 灵脉  /  # 岩石  /  ! 预警"
+	board_legend_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	board_legend_label.add_theme_font_size_override("font_size", 14)
+	board_legend_label.add_theme_color_override("font_color", Color("#b6a785"))
+	board_box.add_child(board_legend_label)
 
 	var sidebar_scroll := ScrollContainer.new()
 	sidebar_scroll.custom_minimum_size = Vector2(360, 0)
@@ -390,6 +355,8 @@ func _build_layout() -> void:
 	sidebar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sidebar.add_theme_constant_override("separation", 12)
 	sidebar_scroll.add_child(sidebar)
+
+	_create_status_feedback_panel(sidebar)
 
 	var enemy_panel := _create_side_panel(sidebar, "敌方")
 
@@ -474,6 +441,45 @@ func _build_layout() -> void:
 	_create_cells()
 	_create_skill_buttons()
 	_refresh_demo_setting_buttons()
+
+
+func _create_status_feedback_panel(parent: Control) -> void:
+	var status_box := VBoxContainer.new()
+	status_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	status_box.add_theme_constant_override("separation", 6)
+	parent.add_child(status_box)
+
+	var status_slot := Control.new()
+	status_slot.custom_minimum_size = STATUS_SLOT_SIZE
+	status_slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	status_box.add_child(status_slot)
+
+	status_label = Label.new()
+	status_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	status_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	status_label.clip_text = true
+	status_label.add_theme_font_size_override("font_size", 17)
+	status_label.add_theme_color_override("font_color", Color("#cde8df"))
+	status_label.add_theme_stylebox_override("normal", status_panel_style)
+	status_slot.add_child(status_label)
+
+	var feedback_slot := Control.new()
+	feedback_slot.custom_minimum_size = FEEDBACK_SLOT_SIZE
+	feedback_slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	status_box.add_child(feedback_slot)
+
+	feedback_label = Label.new()
+	feedback_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	feedback_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	feedback_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	feedback_label.clip_text = true
+	feedback_label.max_lines_visible = 3
+	feedback_label.add_theme_font_size_override("font_size", 13)
+	feedback_label.add_theme_color_override("font_color", Color("#f1dfb7"))
+	feedback_label.add_theme_stylebox_override("normal", panel_style)
+	feedback_slot.add_child(feedback_label)
 
 
 func _create_side_panel(parent: Control, title_text: String) -> VBoxContainer:

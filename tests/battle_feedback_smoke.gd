@@ -60,6 +60,17 @@ func _run() -> void:
 		if board_bottom > viewport_height - 16.0:
 			failures.append("battle feedback: expected full board to fit vertically in the default viewport")
 
+		if initial_board_y > 180.0:
+			failures.append("battle feedback: expected board to start high enough after moving feedback into sidebar, got %.1f" % initial_board_y)
+
+		if scene.board_legend_label == null:
+			failures.append("battle feedback: expected board legend label to exist")
+		else:
+			var legend_bottom: float = scene.board_legend_label.global_position.y + scene.board_legend_label.size.y
+
+			if legend_bottom > viewport_height - 8.0:
+				failures.append("battle feedback: expected board legend to remain fully visible")
+
 		if scene.cells.is_empty() or scene.cells[0].is_empty():
 			failures.append("battle feedback: expected board cells to exist")
 		else:
@@ -78,10 +89,16 @@ func _run() -> void:
 		var shifted_board_bottom: float = scene.board_grid.global_position.y + scene.board_grid.size.y
 
 		if abs(shifted_board_y - initial_board_y) > 0.5:
-			failures.append("battle feedback: expected long header feedback to keep board y position stable")
+			failures.append("battle feedback: expected long sidebar feedback to keep board y position stable")
 
 		if shifted_board_bottom > viewport_height - 16.0:
-			failures.append("battle feedback: expected long header feedback to keep full board visible")
+			failures.append("battle feedback: expected long sidebar feedback to keep full board visible")
+
+		if scene.board_legend_label != null:
+			var shifted_legend_bottom: float = scene.board_legend_label.global_position.y + scene.board_legend_label.size.y
+
+			if shifted_legend_bottom > viewport_height - 8.0:
+				failures.append("battle feedback: expected long sidebar feedback not to clip board legend")
 
 		if scene.status_label == null or not scene.status_label.clip_text:
 			failures.append("battle feedback: expected status label to clip long text instead of resizing")
@@ -186,6 +203,12 @@ func _run() -> void:
 
 		if abs(banner_board_bottom - initial_board_bottom) > 0.5:
 			failures.append("battle feedback: expected result banner overlay not to resize board area")
+
+	if scene.board_legend_label != null:
+		var banner_legend_bottom: float = scene.board_legend_label.global_position.y + scene.board_legend_label.size.y
+
+		if banner_legend_bottom > scene.get_viewport_rect().size.y - 8.0:
+			failures.append("battle feedback: expected result banner overlay not to clip board legend")
 
 	if scene.controls_panel == null:
 		failures.append("battle feedback: expected controls panel to exist")
