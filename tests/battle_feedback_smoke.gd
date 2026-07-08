@@ -4,6 +4,8 @@ const BattleScene := preload("res://scenes/game/BattleScene.tscn")
 const BATTLE_NODE_INDEX_META := "tymj_battle_node_index"
 const BATTLE_RESULT_META := "tymj_battle_result"
 const BATTLE_MOVE_COUNT_META := "tymj_battle_move_count"
+const DEMO_SOUND_ENABLED_META := "tymj_demo_sound_enabled"
+const DEMO_HINTS_ENABLED_META := "tymj_demo_hints_enabled"
 
 var failures: Array = []
 
@@ -48,6 +50,38 @@ func _run() -> void:
 		failures.append("battle feedback: expected tutorial hint label to exist")
 	elif not scene.tutorial_hint_label.text.contains("中心灵脉"):
 		failures.append("battle feedback: expected opening tutorial hint to mention center spirit cells")
+
+	if scene.sound_toggle_button == null or scene.hints_toggle_button == null:
+		failures.append("battle feedback: expected demo setting toggles to exist")
+	else:
+		if not scene.sound_toggle_button.text.contains("开") or not scene.hints_toggle_button.text.contains("开"):
+			failures.append("battle feedback: expected demo setting toggles to start enabled")
+
+		scene._on_hints_toggled(false)
+
+		if root.get_meta(DEMO_HINTS_ENABLED_META, true):
+			failures.append("battle feedback: expected hint toggle to persist disabled preference")
+
+		if scene.tutorial_hint_label.visible or not scene.tutorial_hint_label.text.is_empty():
+			failures.append("battle feedback: expected tutorial hint to hide when disabled")
+
+		scene._on_hints_toggled(true)
+
+		if not scene.tutorial_hint_label.visible or not scene.tutorial_hint_label.text.contains("中心灵脉"):
+			failures.append("battle feedback: expected tutorial hint to return when re-enabled")
+
+		if scene.tone_player != null:
+			var previous_tone: String = scene.tone_player.last_tone_kind
+			scene._on_sound_toggled(false)
+			scene._play_feedback_tone("skill")
+
+			if scene.tone_player.last_tone_kind != previous_tone:
+				failures.append("battle feedback: expected disabled sound toggle to suppress tones")
+
+			if root.get_meta(DEMO_SOUND_ENABLED_META, true):
+				failures.append("battle feedback: expected sound toggle to persist disabled preference")
+
+			scene._on_sound_toggled(true)
 
 	if scene.enemy_think_delay_seconds < 0.4:
 		failures.append("battle feedback: expected enemy think delay to leave a readable beat")
@@ -115,6 +149,8 @@ func _run() -> void:
 	root.remove_meta(BATTLE_NODE_INDEX_META)
 	root.remove_meta(BATTLE_RESULT_META)
 	root.remove_meta(BATTLE_MOVE_COUNT_META)
+	root.remove_meta(DEMO_SOUND_ENABLED_META)
+	root.remove_meta(DEMO_HINTS_ENABLED_META)
 	await process_frame
 
 	if failures.is_empty():

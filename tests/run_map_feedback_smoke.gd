@@ -4,6 +4,8 @@ const MapGeneratorScript := preload("res://scripts/roguelike/MapGenerator.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
 const RunMapScene := preload("res://scenes/roguelike/RunMapScene.tscn")
 const RUN_STATE_META := "tymj_run_state"
+const DEMO_SOUND_ENABLED_META := "tymj_demo_sound_enabled"
+const DEMO_HINTS_ENABLED_META := "tymj_demo_hints_enabled"
 
 var failures: Array = []
 
@@ -63,6 +65,38 @@ func _run() -> void:
 		failures.append("run map feedback: expected route guide label to exist")
 	elif not scene.route_guide_label.text.contains("试锋之局"):
 		failures.append("run map feedback: expected opening route guide to point at first battle")
+
+	if scene.sound_toggle_button == null or scene.hints_toggle_button == null:
+		failures.append("run map feedback: expected demo setting toggles to exist")
+	else:
+		if not scene.sound_toggle_button.text.contains("开") or not scene.hints_toggle_button.text.contains("开"):
+			failures.append("run map feedback: expected demo setting toggles to start enabled")
+
+		scene._on_hints_toggled(false)
+
+		if root.get_meta(DEMO_HINTS_ENABLED_META, true):
+			failures.append("run map feedback: expected hint toggle to persist disabled preference")
+
+		if scene.route_guide_label.visible or not scene.route_guide_label.text.is_empty():
+			failures.append("run map feedback: expected route guide to hide when disabled")
+
+		scene._on_hints_toggled(true)
+
+		if not scene.route_guide_label.visible or not scene.route_guide_label.text.contains("试锋之局"):
+			failures.append("run map feedback: expected route guide to return when re-enabled")
+
+		if scene.tone_player != null:
+			var previous_tone: String = scene.tone_player.last_tone_kind
+			scene._on_sound_toggled(false)
+			scene._play_feedback_tone("progress")
+
+			if scene.tone_player.last_tone_kind != previous_tone:
+				failures.append("run map feedback: expected disabled sound toggle to suppress tones")
+
+			if root.get_meta(DEMO_SOUND_ENABLED_META, true):
+				failures.append("run map feedback: expected sound toggle to persist disabled preference")
+
+			scene._on_sound_toggled(true)
 
 	if scene.last_pulsed_node_index != 1 or scene.last_pulsed_node_status != RunStateScript.STATUS_AVAILABLE:
 		failures.append("run map feedback: expected available route node to receive an entry pulse")
@@ -139,6 +173,8 @@ func _run() -> void:
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)
+	root.remove_meta(DEMO_SOUND_ENABLED_META)
+	root.remove_meta(DEMO_HINTS_ENABLED_META)
 	await process_frame
 
 	if failures.is_empty():

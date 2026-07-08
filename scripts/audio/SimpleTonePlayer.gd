@@ -52,6 +52,7 @@ var last_tone_duration := 0.0
 var last_tone_volume := 0.0
 var last_tone_count := 0
 var muted := false
+var feedback_enabled := true
 
 
 func _ready() -> void:
@@ -69,6 +70,9 @@ func _exit_tree() -> void:
 
 func play_kind(kind: String) -> void:
 	if kind.is_empty():
+		return
+
+	if not feedback_enabled:
 		return
 
 	var tones: Array = _tones_for_kind(kind)
@@ -106,6 +110,13 @@ func play_kind(kind: String) -> void:
 			float(tone.get("duration", 0.06)),
 			float(tone.get("volume", 0.12))
 		)
+
+
+func set_feedback_enabled(value: bool) -> void:
+	feedback_enabled = value
+
+	if not feedback_enabled and audio_player != null and audio_player.playing:
+		audio_player.stop()
 
 
 func _ensure_audio_player() -> void:

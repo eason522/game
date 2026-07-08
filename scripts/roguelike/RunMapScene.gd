@@ -5,6 +5,8 @@ const BATTLE_NODE_INDEX_META := "tymj_battle_node_index"
 const BATTLE_RESULT_META := "tymj_battle_result"
 const BATTLE_MOVE_COUNT_META := "tymj_battle_move_count"
 const BATTLE_ENEMY_PROFILE_META := "tymj_battle_enemy_profile_id"
+const DEMO_SOUND_ENABLED_META := "tymj_demo_sound_enabled"
+const DEMO_HINTS_ENABLED_META := "tymj_demo_hints_enabled"
 const BATTLE_SCENE_PATH := "res://scenes/game/BattleScene.tscn"
 const MapGeneratorScript := preload("res://scripts/roguelike/MapGenerator.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
@@ -26,6 +28,8 @@ var settlement_label: Label
 var route_guide_label: Label
 var reward_label: Label
 var build_summary_label: Label
+var sound_toggle_button: Button
+var hints_toggle_button: Button
 var tone_player
 var node_list: VBoxContainer
 var node_buttons: Array = []
@@ -37,6 +41,8 @@ var node_button_tweens: Dictionary = {}
 var last_pulsed_node_index := -1
 var last_pulsed_node_status := ""
 var route_node_pulse_seconds := ROUTE_NODE_PULSE_IN_SECONDS + ROUTE_NODE_PULSE_OUT_SECONDS
+var sound_feedback_enabled := true
+var route_hints_enabled := true
 var settlement_tween: Tween
 var reward_panel_tween: Tween
 var panel_style: StyleBoxFlat
@@ -55,12 +61,19 @@ var boss_button_hover_style: StyleBoxFlat
 
 
 func _ready() -> void:
+	_read_demo_preferences()
 	_create_styles()
 	_load_or_create_run_state()
 	_apply_pending_battle_result()
 	_build_layout()
 	_create_audio_feedback()
 	_refresh()
+
+
+func _read_demo_preferences() -> void:
+	var root := get_tree().root
+	sound_feedback_enabled = root.get_meta(DEMO_SOUND_ENABLED_META, true)
+	route_hints_enabled = root.get_meta(DEMO_HINTS_ENABLED_META, true)
 
 
 func _create_styles() -> void:
@@ -235,8 +248,55 @@ func _build_layout() -> void:
 	route_guide_label.add_theme_stylebox_override("normal", panel_style)
 	side.add_child(route_guide_label)
 
+	var settings_panel := _create_settings_panel()
+	side.add_child(settings_panel)
+
 	_create_reward_panel(side)
 	_create_node_buttons()
+
+
+func _create_settings_panel() -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", panel_style)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 14)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_right", 14)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	panel.add_child(margin)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	margin.add_child(box)
+
+	var title := Label.new()
+	title.text = "Demo 设置"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color("#b8c5d0"))
+	box.add_child(title)
+
+	sound_toggle_button = Button.new()
+	sound_toggle_button.toggle_mode = true
+	sound_toggle_button.button_pressed = sound_feedback_enabled
+	sound_toggle_button.custom_minimum_size = Vector2(0, 38)
+	sound_toggle_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sound_toggle_button.toggled.connect(_on_sound_toggled)
+	_apply_button_theme(sound_toggle_button)
+	box.add_child(sound_toggle_button)
+
+	hints_toggle_button = Button.new()
+	hints_toggle_button.toggle_mode = true
+	hints_toggle_button.button_pressed = route_hints_enabled
+	hints_toggle_button.custom_minimum_size = Vector2(0, 38)
+	hints_toggle_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hints_toggle_button.toggled.connect(_on_hints_toggled)
+	_apply_button_theme(hints_toggle_button)
+	box.add_child(hints_toggle_button)
+
+	_refresh_demo_setting_buttons()
+	return panel
 
 
 func _create_reward_panel(parent: Control) -> void:
@@ -298,6 +358,34 @@ func _create_audio_feedback() -> void:
 	tone_player = SimpleTonePlayerScript.new()
 	tone_player.name = "RunMapTonePlayer"
 	add_child(tone_player)
+	tone_player.set_feedback_enabled(sound_feedback_enabled)
+
+
+func _on_sound_toggled(enabled: bool) -> void:
+	sound_feedback_enabled = enabled
+	get_tree().root.set_meta(DEMO_SOUND_ENABLED_META, sound_feedback_enabled)
+
+	if tone_player != null:
+		tone_player.set_feedback_enabled(sound_feedback_enabled)
+
+	_refresh_demo_setting_buttons()
+
+
+func _on_hints_toggled(enabled: bool) -> void:
+	route_hints_enabled = enabled
+	get_tree().root.set_meta(DEMO_HINTS_ENABLED_META, route_hints_enabled)
+	_refresh_demo_setting_buttons()
+	_refresh()
+
+
+func _refresh_demo_setting_buttons() -> void:
+	if sound_toggle_button != null:
+		sound_toggle_button.text = "音效提示：开" if sound_feedback_enabled else "音效提示：关"
+		sound_toggle_button.button_pressed = sound_feedback_enabled
+
+	if hints_toggle_button != null:
+		hints_toggle_button.text = "入门提示：开" if route_hints_enabled else "入门提示：关"
+		hints_toggle_button.button_pressed = route_hints_enabled
 
 
 func _apply_button_theme(button: Button) -> void:
@@ -420,7 +508,8 @@ func _refresh() -> void:
 		status_label.text = "%s当前节点：%s\n%s\n星砂：%d" % [save_prefix, current.get("title", "无"), current.get("description", ""), run_state.coins]
 
 	if route_guide_label != null:
-		route_guide_label.text = _route_guide_text()
+		route_guide_label.visible = route_hints_enabled
+		route_guide_label.text = _route_guide_text() if route_hints_enabled else ""
 
 	_refresh_reward_panel()
 
@@ -712,7 +801,7 @@ func _settlement_text_color_for_kind(kind: String) -> Color:
 
 
 func _play_feedback_tone(kind: String) -> void:
-	if tone_player != null:
+	if sound_feedback_enabled and tone_player != null:
 		tone_player.play_kind(kind)
 
 

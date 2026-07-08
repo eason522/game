@@ -10,6 +10,8 @@ const BATTLE_NODE_INDEX_META := "tymj_battle_node_index"
 const BATTLE_RESULT_META := "tymj_battle_result"
 const BATTLE_MOVE_COUNT_META := "tymj_battle_move_count"
 const BATTLE_ENEMY_PROFILE_META := "tymj_battle_enemy_profile_id"
+const DEMO_SOUND_ENABLED_META := "tymj_demo_sound_enabled"
+const DEMO_HINTS_ENABLED_META := "tymj_demo_hints_enabled"
 const ENEMY_THINK_DELAY_SECONDS := 0.42
 const TURN_RHYTHM_FADE_SECONDS := 0.14
 const TURN_RHYTHM_SETTLE_SECONDS := 0.12
@@ -43,6 +45,8 @@ var skill_bar: GridContainer
 var reset_button: Button
 var return_to_map_button: Button
 var enemy_profile_button: Button
+var sound_toggle_button: Button
+var hints_toggle_button: Button
 var tone_player
 var cells: Array = []
 var skill_buttons: Dictionary = {}
@@ -87,6 +91,8 @@ var enemy_think_delay_seconds := ENEMY_THINK_DELAY_SECONDS
 var turn_rhythm_pulse_seconds := TURN_RHYTHM_FADE_SECONDS + TURN_RHYTHM_SETTLE_SECONDS
 var result_banner_animation_seconds := RESULT_BANNER_FADE_SECONDS + RESULT_BANNER_POP_SECONDS + RESULT_BANNER_SETTLE_SECONDS
 var feedback_flash_seconds := FEEDBACK_FLASH_SECONDS
+var sound_feedback_enabled := true
+var tutorial_hints_enabled := true
 
 var empty_style: StyleBoxFlat
 var spirit_style: StyleBoxFlat
@@ -116,6 +122,7 @@ var disabled_button_style: StyleBoxFlat
 
 func _ready() -> void:
 	_read_run_context()
+	_read_demo_preferences()
 	_create_styles()
 	_build_layout()
 	_create_audio_feedback()
@@ -135,6 +142,12 @@ func _read_run_context() -> void:
 
 	if enemy_profile_ids.has(forced_enemy_profile_id):
 		enemy_profile_index = enemy_profile_ids.find(forced_enemy_profile_id)
+
+
+func _read_demo_preferences() -> void:
+	var root := get_tree().root
+	sound_feedback_enabled = root.get_meta(DEMO_SOUND_ENABLED_META, true)
+	tutorial_hints_enabled = root.get_meta(DEMO_HINTS_ENABLED_META, true)
 
 
 func _load_run_build_modifiers(root: Window) -> void:
@@ -392,6 +405,24 @@ func _build_layout() -> void:
 	_apply_button_theme(enemy_profile_button)
 	controls_panel.add_child(enemy_profile_button)
 
+	sound_toggle_button = Button.new()
+	sound_toggle_button.toggle_mode = true
+	sound_toggle_button.button_pressed = sound_feedback_enabled
+	sound_toggle_button.custom_minimum_size = Vector2(0, 38)
+	sound_toggle_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sound_toggle_button.toggled.connect(_on_sound_toggled)
+	_apply_button_theme(sound_toggle_button)
+	controls_panel.add_child(sound_toggle_button)
+
+	hints_toggle_button = Button.new()
+	hints_toggle_button.toggle_mode = true
+	hints_toggle_button.button_pressed = tutorial_hints_enabled
+	hints_toggle_button.custom_minimum_size = Vector2(0, 38)
+	hints_toggle_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hints_toggle_button.toggled.connect(_on_hints_toggled)
+	_apply_button_theme(hints_toggle_button)
+	controls_panel.add_child(hints_toggle_button)
+
 	reset_button = Button.new()
 	reset_button.text = "重新开始"
 	reset_button.custom_minimum_size = Vector2(0, 44)
@@ -412,6 +443,7 @@ func _build_layout() -> void:
 
 	_create_cells()
 	_create_skill_buttons()
+	_refresh_demo_setting_buttons()
 
 
 func _create_side_panel(parent: Control, title_text: String) -> VBoxContainer:
@@ -493,6 +525,34 @@ func _create_audio_feedback() -> void:
 	tone_player = SimpleTonePlayerScript.new()
 	tone_player.name = "BattleTonePlayer"
 	add_child(tone_player)
+	tone_player.set_feedback_enabled(sound_feedback_enabled)
+
+
+func _on_sound_toggled(enabled: bool) -> void:
+	sound_feedback_enabled = enabled
+	get_tree().root.set_meta(DEMO_SOUND_ENABLED_META, sound_feedback_enabled)
+
+	if tone_player != null:
+		tone_player.set_feedback_enabled(sound_feedback_enabled)
+
+	_refresh_demo_setting_buttons()
+
+
+func _on_hints_toggled(enabled: bool) -> void:
+	tutorial_hints_enabled = enabled
+	get_tree().root.set_meta(DEMO_HINTS_ENABLED_META, tutorial_hints_enabled)
+	_refresh_demo_setting_buttons()
+	_refresh_info_labels()
+
+
+func _refresh_demo_setting_buttons() -> void:
+	if sound_toggle_button != null:
+		sound_toggle_button.text = "音效提示：开" if sound_feedback_enabled else "音效提示：关"
+		sound_toggle_button.button_pressed = sound_feedback_enabled
+
+	if hints_toggle_button != null:
+		hints_toggle_button.text = "入门提示：开" if tutorial_hints_enabled else "入门提示：关"
+		hints_toggle_button.button_pressed = tutorial_hints_enabled
 
 
 func _start_new_game() -> void:
@@ -1077,7 +1137,7 @@ func _get_feedback_style(kind: String, fallback: StyleBoxFlat) -> StyleBoxFlat:
 
 
 func _play_feedback_tone(kind: String) -> void:
-	if tone_player != null:
+	if sound_feedback_enabled and tone_player != null:
 		tone_player.play_kind(kind)
 
 
@@ -1251,7 +1311,8 @@ func _refresh_info_labels() -> void:
 	move_count_label.text = "落子数：%d" % move_count
 	energy_label.text = "己方能量：%d/%d\n敌方能量：%d/%d" % [player_energy, energy_max, enemy_energy, BASE_ENERGY_MAX]
 	if tutorial_hint_label != null:
-		tutorial_hint_label.text = _battle_tutorial_hint()
+		tutorial_hint_label.visible = tutorial_hints_enabled
+		tutorial_hint_label.text = _battle_tutorial_hint() if tutorial_hints_enabled else ""
 	enemy_profile_label.text = "%s\n%s" % [enemy_ai.get_profile_name(), enemy_ai.get_profile_intent()]
 	enemy_intent_hint_label.text = enemy_intent_hint
 
