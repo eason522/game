@@ -443,6 +443,10 @@ func _claim_panel_choice_at(index: int) -> void:
 		_claim_reward_at(index)
 		return
 
+	if _should_show_boss_feel_buttons():
+		_record_boss_feel_at(index)
+		return
+
 	_claim_node_choice_at(index)
 
 
@@ -572,6 +576,23 @@ func _refresh_reward_panel() -> void:
 
 		return
 
+	if _should_show_boss_feel_buttons():
+		reward_label.text = "Boss 前 5 手体感记录\n当前记录：%s" % run_state.get_boss_opening_feel_label()
+		var feel_options := _boss_feel_options()
+
+		for index in range(reward_buttons.size()):
+			var button: Button = reward_buttons[index]
+			var has_option := index < feel_options.size()
+			button.visible = has_option
+			button.disabled = not has_option
+
+			if has_option:
+				var option: Dictionary = feel_options[index]
+				button.text = "%s\n%s" % [option.get("title", ""), option.get("description", "")]
+				button.tooltip_text = option.get("description", "")
+
+		return
+
 	var claimed_text := "" if last_claimed_reward_summary.is_empty() else "\n刚获得：%s" % last_claimed_reward_summary
 	reward_label.text = "当前构筑%s\n星砂：%d\n已获奖励：%s" % [
 		claimed_text,
@@ -582,6 +603,53 @@ func _refresh_reward_panel() -> void:
 	for button in reward_buttons:
 		button.visible = false
 		button.tooltip_text = ""
+
+
+func _should_show_boss_feel_buttons() -> bool:
+	if run_state.has_pending_reward() or run_state.has_pending_node_choice():
+		return false
+
+	if not run_state.run_completed and not run_state.run_failed:
+		return false
+
+	for record in run_state.get_battle_pacing_records():
+		if record.get("type", "") == RunStateScript.NODE_BOSS:
+			return true
+
+	return false
+
+
+func _record_boss_feel_at(index: int) -> void:
+	var options := _boss_feel_options()
+
+	if index < 0 or index >= options.size():
+		return
+
+	var option: Dictionary = options[index]
+
+	if run_state.record_boss_opening_feel(option.get("id", "")):
+		_persist_run_state()
+		_refresh()
+
+
+func _boss_feel_options() -> Array:
+	return [
+		{
+			"id": RunStateScript.BOSS_OPENING_FEEL_STABLE,
+			"title": "更稳",
+			"description": "静息调气后前 5 手压力明显降低。",
+		},
+		{
+			"id": RunStateScript.BOSS_OPENING_FEEL_PRESSURE,
+			"title": "仍压迫",
+			"description": "岩王前 5 手仍明显卡手或被岩阵压制。",
+		},
+		{
+			"id": RunStateScript.BOSS_OPENING_FEEL_UNCLEAR,
+			"title": "需再测",
+			"description": "体感不明确，先保留本轮数值再补样本。",
+		},
+	]
 
 
 func _mark_claimed_reward_feedback(reward: Dictionary) -> void:
@@ -796,6 +864,8 @@ func _feedback_kind_label(kind: String) -> String:
 			return "路线选择"
 		"choice_claimed":
 			return "节点结算"
+		"boss_feel":
+			return "Boss 体感"
 		"progress":
 			return "推进"
 		_:

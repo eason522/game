@@ -253,6 +253,42 @@ func _run() -> void:
 	if scene.route_guide_label == null or not scene.route_guide_label.text.contains("商店") or not scene.route_guide_label.text.contains("星砂"):
 		failures.append("run map feedback: expected shop guide to mention shop and starsand")
 
+	scene.run_state.pending_node_choices.clear()
+	scene.run_state.pending_choice_node_index = -1
+	scene.run_state.run_completed = true
+	scene.run_state.nodes[3]["actual_turn_count"] = 16
+	scene.run_state.nodes[3]["actual_pacing_result"] = "target"
+	scene.run_state.nodes[5]["actual_turn_count"] = 19
+	scene.run_state.nodes[5]["actual_pacing_result"] = "target"
+	scene.run_state.nodes[7]["actual_turn_count"] = 26
+	scene.run_state.nodes[7]["actual_pacing_result"] = "target"
+	scene.run_state.nodes[7]["actual_pacing_delta"] = 0
+	scene._refresh()
+
+	await process_frame
+
+	if scene.reward_label == null or not scene.reward_label.text.contains("Boss 前 5 手体感记录"):
+		failures.append("run map feedback: expected boss feel recording panel after boss run is complete")
+
+	if scene.reward_buttons.size() < 3 or not scene.reward_buttons[0].visible or not scene.reward_buttons[0].text.contains("更稳"):
+		failures.append("run map feedback: expected boss feel buttons to be visible")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("前 5 手体感未记录"):
+		failures.append("run map feedback: expected boss validation to request first-five-turn feel")
+
+	scene._claim_panel_choice_at(0)
+
+	await process_frame
+
+	if scene.run_state.boss_opening_feel != RunStateScript.BOSS_OPENING_FEEL_STABLE:
+		failures.append("run map feedback: expected boss feel button to record stable opening feel")
+
+	if scene.settlement_label == null or not scene.settlement_label.text.contains("Boss 体感"):
+		failures.append("run map feedback: expected boss feel record to update settlement feedback")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("前 5 手记录为更稳"):
+		failures.append("run map feedback: expected boss validation to show recorded stable feel")
+
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)
 	root.remove_meta(DEMO_SOUND_ENABLED_META)

@@ -12,6 +12,9 @@ const NODE_SHOP := "shop"
 const NODE_REST := "rest"
 const NODE_BOSS := "boss"
 const STARTING_COINS := 1
+const BOSS_OPENING_FEEL_STABLE := "stable"
+const BOSS_OPENING_FEEL_PRESSURE := "pressure"
+const BOSS_OPENING_FEEL_UNCLEAR := "unclear"
 
 var nodes: Array = []
 var rewards: Array = []
@@ -25,6 +28,7 @@ var run_failed := false
 var coins := STARTING_COINS
 var last_feedback := ""
 var last_feedback_kind := ""
+var boss_opening_feel := ""
 
 
 func _init(route_nodes: Array = []) -> void:
@@ -49,6 +53,7 @@ func setup(route_nodes: Array) -> void:
 	coins = STARTING_COINS
 	last_feedback = "新的试炼已展开。"
 	last_feedback_kind = "run_start"
+	boss_opening_feel = ""
 
 	if nodes.is_empty():
 		return
@@ -374,6 +379,28 @@ func get_battle_pacing_records() -> Array:
 	return records
 
 
+func record_boss_opening_feel(feel: String) -> bool:
+	if not [BOSS_OPENING_FEEL_STABLE, BOSS_OPENING_FEEL_PRESSURE, BOSS_OPENING_FEEL_UNCLEAR].has(feel):
+		return false
+
+	boss_opening_feel = feel
+	last_feedback = "Boss 前 5 手体感：%s。" % get_boss_opening_feel_label()
+	last_feedback_kind = "boss_feel"
+	return true
+
+
+func get_boss_opening_feel_label() -> String:
+	match boss_opening_feel:
+		BOSS_OPENING_FEEL_STABLE:
+			return "静息调气后更稳"
+		BOSS_OPENING_FEEL_PRESSURE:
+			return "仍有明显压迫"
+		BOSS_OPENING_FEEL_UNCLEAR:
+			return "暂不明确，需再测"
+		_:
+			return "未记录"
+
+
 func _record_battle_pacing(node_index: int, actual_turn_count: int) -> void:
 	if actual_turn_count <= 0 or node_index < 0 or node_index >= nodes.size():
 		return
@@ -471,6 +498,7 @@ func to_dict() -> Dictionary:
 		"coins": coins,
 		"last_feedback": last_feedback,
 		"last_feedback_kind": last_feedback_kind,
+		"boss_opening_feel": boss_opening_feel,
 	}
 
 
@@ -487,6 +515,7 @@ func load_from_dict(data: Dictionary) -> void:
 	coins = data.get("coins", STARTING_COINS)
 	last_feedback = data.get("last_feedback", "")
 	last_feedback_kind = data.get("last_feedback_kind", "")
+	boss_opening_feel = data.get("boss_opening_feel", "")
 
 
 func _current_progress_feedback() -> String:

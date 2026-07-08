@@ -396,6 +396,10 @@ func get_boss_pressure_validation_lines(run_state) -> Array:
 			rest_text,
 		],
 	]
+	var feel_line := _boss_opening_feel_line(run_state)
+
+	if not feel_line.is_empty():
+		lines.append(feel_line)
 
 	match boss_record.get("actual_pacing_result", ""):
 		"over":
@@ -428,6 +432,7 @@ func get_boss_live_checklist_lines(run_state) -> Array:
 			boss_record.get("target_turn_min", 0),
 			boss_record.get("target_turn_max", 0),
 		])
+		lines.append(_boss_opening_feel_prompt_line(run_state))
 
 	if recorded_battles < total_battles:
 		lines.append("Boss 实机检查：继续打到 Boss 结算，再判断 Boss 上限是否需要单轴调整")
@@ -606,12 +611,13 @@ func _boss_pressure_review_text(biggest_delta_record: Dictionary) -> String:
 
 func _rest_focus_review_text(run_state, full_sample_ready: bool) -> String:
 	var has_rest_focus := _has_reward_source(run_state, RewardGeneratorScript.REST_FOCUS_SOURCE_ID)
+	var feel_text := _boss_opening_feel_review_suffix(run_state)
 
 	if has_rest_focus and full_sample_ready:
-		return "静息调气已验证，复核 Boss 前 5 手是否更稳"
+		return "静息调气已验证，复核 Boss 前 5 手是否更稳%s" % feel_text
 
 	if has_rest_focus:
-		return "静息调气已取得，需打到 Boss 后验证体感"
+		return "静息调气已取得，需打到 Boss 后验证体感%s" % feel_text
 
 	return "静息调气尚未验证，Boss 前补强结论需保留"
 
@@ -636,6 +642,40 @@ func _boss_post_entry_check_line(boss_record: Dictionary) -> String:
 			return "Boss 实机检查：Boss 目标内，保留 Boss 上限并记录前 5 手体感"
 		_:
 			return "Boss 实机检查：Boss 结果待判断，补一次可复盘记录"
+
+
+func _boss_opening_feel_prompt_line(run_state) -> String:
+	if run_state == null or not run_state.has_method("get_boss_opening_feel_label"):
+		return "Boss 实机检查：结算后记录前 5 手体感"
+
+	var feel_label: String = run_state.get_boss_opening_feel_label()
+
+	if run_state.boss_opening_feel.is_empty():
+		return "Boss 实机检查：请记录前 5 手体感：更稳 / 仍压迫 / 需再测"
+
+	return "Boss 实机检查：前 5 手体感已记录为：%s" % feel_label
+
+
+func _boss_opening_feel_line(run_state) -> String:
+	if run_state == null or not run_state.has_method("get_boss_opening_feel_label") or run_state.boss_opening_feel.is_empty():
+		return "Boss 校验：前 5 手体感未记录，先补一次主观结论"
+
+	match run_state.boss_opening_feel:
+		RunStateScript.BOSS_OPENING_FEEL_STABLE:
+			return "Boss 校验：前 5 手记录为更稳，静息调气补强可保留"
+		RunStateScript.BOSS_OPENING_FEEL_PRESSURE:
+			return "Boss 校验：前 5 手仍有压迫，下一轮优先复核 Boss 上限或开局资源"
+		RunStateScript.BOSS_OPENING_FEEL_UNCLEAR:
+			return "Boss 校验：前 5 手体感暂不明确，先补一轮可复盘样本"
+		_:
+			return ""
+
+
+func _boss_opening_feel_review_suffix(run_state) -> String:
+	if run_state == null or not run_state.has_method("get_boss_opening_feel_label") or run_state.boss_opening_feel.is_empty():
+		return "，前 5 手体感待记录"
+
+	return "，前 5 手：%s" % run_state.get_boss_opening_feel_label()
 
 
 func _is_rest_step_active(run_state) -> bool:

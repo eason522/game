@@ -26,6 +26,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - run map now shows a live playtest review that summarizes full-run target ratio, Boss pressure, rest-focus validation, and the priority tuning axis
 - run map now includes a Boss validation line that compares the live Boss record against target turns, baseline turns, and rest-focus activation
 - run map now includes a Boss live checklist for rest-focus verification, pre-Boss resource recording, Boss cap review, and first-five-turn feel checks
+- run map now lets completed Boss runs record the first-five-turn feel as stable, pressured, or unclear, and preserves that note in the run save
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement
@@ -49,7 +50,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - display smoke tests for reward build summaries, effect descriptions, stack-limit text, and exclusive-group text
 - settlement feedback smoke tests for victory, reward-claim, route-choice, and save roundtrips
 - battle feedback smoke tests for action logs, cell flashes, and result banners
-- run map feedback smoke tests for typed settlement labels, tone triggers, live playtest checklist/verdict/review/Boss validation display, and tuning candidate display
+- run map feedback smoke tests for typed settlement labels, tone triggers, live playtest checklist/verdict/review/Boss validation display, Boss feel recording, and tuning candidate display
 
 ## Run Locally
 

@@ -397,6 +397,28 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: baseline boss validation should keep the boss cap")
 		return
 
+	if not _lines_contain(baseline_boss_validation, "前 5 手体感未记录"):
+		failures.append("run playtest simulator: baseline boss validation should ask for first-five-turn feel")
+		return
+
+	var baseline_state = report.get("state")
+
+	if not baseline_state.record_boss_opening_feel(RunStateScript.BOSS_OPENING_FEEL_STABLE):
+		failures.append("run playtest simulator: expected boss opening feel record to succeed")
+		return
+
+	var recorded_boss_validation := simulator.get_boss_pressure_validation_lines(baseline_state)
+
+	if not _lines_contain(recorded_boss_validation, "前 5 手记录为更稳"):
+		failures.append("run playtest simulator: boss validation should include recorded stable opening feel")
+		return
+
+	var recorded_review := simulator.get_live_playtest_review_lines(baseline_state)
+
+	if not _lines_contain(recorded_review, "前 5 手：静息调气后更稳"):
+		failures.append("run playtest simulator: live review should include recorded boss opening feel")
+		return
+
 	var slow_boss_validation := simulator.get_boss_pressure_validation_lines(slow_report.get("state"))
 
 	if not _lines_contain(slow_boss_validation, "Boss 偏慢") or not _lines_contain(slow_boss_validation, "Boss 上限"):
@@ -539,6 +561,18 @@ func _assert_state_roundtrip() -> void:
 
 	if restored.rewards.size() != 1:
 		failures.append("run save: restored rewards mismatch")
+
+	if not state.record_boss_opening_feel(RunStateScript.BOSS_OPENING_FEEL_PRESSURE):
+		failures.append("run save: expected boss feel record to be accepted")
+		return
+
+	restored.load_from_dict(state.to_dict())
+
+	if restored.boss_opening_feel != RunStateScript.BOSS_OPENING_FEEL_PRESSURE:
+		failures.append("run save: boss opening feel should roundtrip")
+
+	if restored.get_boss_opening_feel_label() != "仍有明显压迫":
+		failures.append("run save: boss opening feel label should describe pressure")
 
 
 func _assert_local_save_roundtrip() -> void:
