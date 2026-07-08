@@ -11,6 +11,7 @@ const NODE_EVENT := "event"
 const NODE_SHOP := "shop"
 const NODE_REST := "rest"
 const NODE_BOSS := "boss"
+const STARTING_COINS := 1
 
 var nodes: Array = []
 var rewards: Array = []
@@ -21,7 +22,7 @@ var pending_reward_node_index := -1
 var pending_choice_node_index := -1
 var run_completed := false
 var run_failed := false
-var coins := 2
+var coins := STARTING_COINS
 var last_feedback := ""
 var last_feedback_kind := ""
 
@@ -45,7 +46,7 @@ func setup(route_nodes: Array) -> void:
 	pending_choice_node_index = -1
 	run_completed = false
 	run_failed = false
-	coins = 2
+	coins = STARTING_COINS
 	last_feedback = "新的试炼已展开。"
 	last_feedback_kind = "run_start"
 
@@ -483,7 +484,7 @@ func load_from_dict(data: Dictionary) -> void:
 	pending_choice_node_index = data.get("pending_choice_node_index", -1)
 	run_completed = data.get("run_completed", false)
 	run_failed = data.get("run_failed", false)
-	coins = data.get("coins", 2)
+	coins = data.get("coins", STARTING_COINS)
 	last_feedback = data.get("last_feedback", "")
 	last_feedback_kind = data.get("last_feedback_kind", "")
 

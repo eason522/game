@@ -32,7 +32,7 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 
-	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("剩余目标 58-84 手"):
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("剩余目标 60-88 手"):
 		failures.append("run map feedback: expected run pacing to summarize remaining turn target")
 
 	if scene.node_buttons.size() <= 1 or not scene.node_buttons[1].tooltip_text.contains("目标节奏：10-16 手"):

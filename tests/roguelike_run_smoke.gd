@@ -74,6 +74,12 @@ func _assert_linear_route_shape() -> void:
 	if nodes[1].get("target_turn_min", 0) != 10 or nodes[1].get("target_turn_max", 0) != 16:
 		failures.append("run route: first battle should include target turn pacing")
 
+	if nodes[3].get("target_turn_min", 0) != 13 or nodes[3].get("target_turn_max", 0) != 20:
+		failures.append("run route: fast battle should use tuned turn pacing")
+
+	if nodes[5].get("target_turn_min", 0) != 15 or nodes[5].get("target_turn_max", 0) != 22:
+		failures.append("run route: defender battle should use tuned turn pacing")
+
 	if nodes[7].get("target_turn_min", 0) != 22 or nodes[7].get("target_turn_max", 0) != 30:
 		failures.append("run route: boss should include target turn pacing")
 
@@ -91,7 +97,7 @@ func _assert_run_pacing_summary() -> void:
 		failures.append("run pacing: fresh run should have four remaining battle nodes")
 		return
 
-	if pacing.get("remaining_turn_min", 0) != 58 or pacing.get("remaining_turn_max", 0) != 84:
+	if pacing.get("remaining_turn_min", 0) != 60 or pacing.get("remaining_turn_max", 0) != 88:
 		failures.append("run pacing: fresh run should summarize full target turn range")
 		return
 
@@ -108,7 +114,7 @@ func _assert_run_pacing_summary() -> void:
 		failures.append("run pacing: battle completion should update battle counts")
 		return
 
-	if pacing.get("remaining_turn_min", 0) != 48 or pacing.get("remaining_turn_max", 0) != 68:
+	if pacing.get("remaining_turn_min", 0) != 50 or pacing.get("remaining_turn_max", 0) != 72:
 		failures.append("run pacing: battle completion should remove the first battle turn target")
 		return
 
@@ -118,7 +124,7 @@ func _assert_run_pacing_summary() -> void:
 		failures.append("run pacing: display lines should include battle progress")
 		return
 
-	if not pacing_lines.has("星砂 2，商店价 2/3/4"):
+	if not pacing_lines.has("星砂 1，商店价 2/3/5"):
 		failures.append("run pacing: display lines should include starsand and shop price gradient")
 
 
@@ -398,7 +404,7 @@ func _assert_route_choices_block_progress_and_apply_effects() -> void:
 		failures.append("run route choice: expected event coin choice to succeed")
 		return
 
-	if state.coins != 4:
+	if state.coins != 3:
 		failures.append("run route choice: event coin choice should add starsand")
 		return
 

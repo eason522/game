@@ -25,7 +25,7 @@ const RARITY_LABELS := {
 const RARITY_PRICES := {
 	RARITY_COMMON: 2,
 	RARITY_UNCOMMON: 3,
-	RARITY_RARE: 4,
+	RARITY_RARE: 5,
 }
 
 const EXCLUSIVE_GROUP_LABELS := {
@@ -236,7 +236,7 @@ func get_shop_price_range_text() -> String:
 	return "%d/%d/%d" % [
 		RARITY_PRICES.get(RARITY_COMMON, 2),
 		RARITY_PRICES.get(RARITY_UNCOMMON, 3),
-		RARITY_PRICES.get(RARITY_RARE, 4),
+		RARITY_PRICES.get(RARITY_RARE, 5),
 	]
 
 
@@ -374,7 +374,7 @@ func _battle_tuning_line(pacing: Dictionary) -> String:
 
 func _economy_tuning_line(run_state) -> String:
 	var common_price: int = RARITY_PRICES.get(RARITY_COMMON, 2)
-	var rare_price: int = RARITY_PRICES.get(RARITY_RARE, 4)
+	var rare_price: int = RARITY_PRICES.get(RARITY_RARE, 5)
 
 	if not _has_upcoming_shop(run_state):
 		return "星砂：后续无商店，重点观察事件支出吸引力"

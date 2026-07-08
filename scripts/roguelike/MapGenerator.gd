@@ -8,6 +8,11 @@ const NODE_SHOP := "shop"
 const NODE_REST := "rest"
 const NODE_BOSS := "boss"
 
+const TUNED_TURN_TARGETS := {
+	3: {"min": 13, "max": 20},
+	5: {"min": 15, "max": 22},
+}
+
 
 func generate_linear_route() -> Array:
 	return [
@@ -23,6 +28,10 @@ func generate_linear_route() -> Array:
 
 
 func _make_node(index: int, node_type: String, title: String, description: String, enemy_profile_id: String, target_turn_min: int = 0, target_turn_max: int = 0) -> Dictionary:
+	var tuned_target: Dictionary = TUNED_TURN_TARGETS.get(index, {})
+	var resolved_target_min: int = tuned_target.get("min", target_turn_min)
+	var resolved_target_max: int = tuned_target.get("max", target_turn_max)
+
 	return {
 		"id": "node_%d" % index,
 		"index": index,
@@ -30,7 +39,7 @@ func _make_node(index: int, node_type: String, title: String, description: Strin
 		"title": title,
 		"description": description,
 		"enemy_profile_id": enemy_profile_id,
-		"target_turn_min": target_turn_min,
-		"target_turn_max": target_turn_max,
+		"target_turn_min": resolved_target_min,
+		"target_turn_max": resolved_target_max,
 		"status": "locked",
 	}
