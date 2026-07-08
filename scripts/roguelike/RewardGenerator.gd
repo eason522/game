@@ -28,6 +28,7 @@ const RARITY_PRICES := {
 	RARITY_RARE: 5,
 }
 
+const REST_FOCUS_SOURCE_ID := "rest_focus"
 const REST_FOCUS_STARTING_ENERGY_BONUS := 2
 
 const EXCLUSIVE_GROUP_LABELS := {
@@ -201,7 +202,7 @@ func _generate_rest_choices(node: Dictionary) -> Array:
 			"choice_type": CHOICE_REWARD,
 			"effect": EFFECT_STARTING_ENERGY,
 			"amount": REST_FOCUS_STARTING_ENERGY_BONUS,
-			"source_id": "rest_focus",
+			"source_id": REST_FOCUS_SOURCE_ID,
 			"rarity": RARITY_COMMON,
 			"max_stack": 2,
 		},
@@ -351,6 +352,35 @@ func get_run_tuning_lines(run_state) -> Array:
 	return lines
 
 
+func get_boss_prep_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_battle_modifiers"):
+		return ["Boss 准备：暂无 Run 数据"]
+
+	if not _has_remaining_boss(run_state):
+		return ["Boss 准备：岩王已结算，记录本轮手感"]
+
+	var modifiers: Dictionary = run_state.get_battle_modifiers()
+	var rest_focus_bonus := _sum_reward_amount_from_source(run_state, REST_FOCUS_SOURCE_ID)
+	var lines: Array = [
+		"Boss 准备：开局能量 +%d，能量上限 +%d，额外灵脉 +%d，奖励 %d，星砂 %d" % [
+			modifiers.get("starting_energy_bonus", 0),
+			modifiers.get("energy_max_bonus", 0),
+			modifiers.get("extra_spirit_cells", 0),
+			run_state.rewards.size(),
+			run_state.coins,
+		],
+	]
+
+	if rest_focus_bonus > 0:
+		lines.append("Boss 准备：静息调气已生效（开局能量 +%d），观察岩王前 5 手是否更稳" % rest_focus_bonus)
+	elif _is_rest_step_active(run_state):
+		lines.append("Boss 准备：休息点可选静息调气 +%d，适合补岩王开局压力" % REST_FOCUS_STARTING_ENERGY_BONUS)
+	else:
+		lines.append("Boss 准备：尚未拿到静息调气，先观察现有构筑能否扛住岩王开局")
+
+	return lines
+
+
 func _battle_tuning_line(pacing: Dictionary) -> String:
 	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
 
@@ -435,6 +465,33 @@ func _has_remaining_boss(run_state) -> bool:
 			return true
 
 	return false
+
+
+func _is_rest_step_active(run_state) -> bool:
+	if run_state == null:
+		return false
+
+	if run_state.has_method("has_pending_node_choice") and run_state.has_pending_node_choice():
+		var choice_index: int = run_state.pending_choice_node_index
+
+		if choice_index >= 0 and choice_index < run_state.nodes.size():
+			return run_state.nodes[choice_index].get("type", "") == NODE_REST
+
+	var current_node: Dictionary = run_state.get_current_node() if run_state.has_method("get_current_node") else {}
+	return current_node.get("type", "") == NODE_REST
+
+
+func _sum_reward_amount_from_source(run_state, source_id: String) -> int:
+	if run_state == null:
+		return 0
+
+	var total := 0
+
+	for reward in run_state.rewards:
+		if reward.get("source_id", reward.get("id", "")) == source_id:
+			total += reward.get("amount", 0)
+
+	return total
 
 
 func _make_reward(template: Dictionary, suffix: String) -> Dictionary:

@@ -31,6 +31,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Run 节奏"):
 		failures.append("run map feedback: expected build panel to show run pacing")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Boss 准备"):
+		failures.append("run map feedback: expected build panel to show boss prep summary")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("尚未拿到静息调气"):
+		failures.append("run map feedback: expected boss prep summary to mention missing rest focus")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 
@@ -148,6 +154,22 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("校准关注"):
 		failures.append("run map feedback: expected playtest comparison to show calibration focus")
+
+	scene.run_state.rewards.append({
+		"id": "rest_focus_test",
+		"source_id": "rest_focus",
+		"title": "静息调气",
+		"effect": "starting_energy",
+		"amount": 2,
+		"rarity": "common",
+		"max_stack": 2,
+	})
+	scene._refresh()
+
+	await process_frame
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("静息调气已生效"):
+		failures.append("run map feedback: expected boss prep summary to show active rest focus")
 
 	var reward_options: Array = scene.reward_generator.generate_options(scene.run_state, scene.run_state.get_current_node())
 	scene.run_state.resolve_current_node(true, reward_options, 14)

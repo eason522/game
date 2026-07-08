@@ -661,6 +661,27 @@ func _assert_reward_build_summary_text() -> void:
 
 	if not limit_text.contains("最多 1 层") or not limit_text.contains("互斥：术法返能"):
 		failures.append("run reward display: reward limit summary should describe stack and exclusive group")
+		return
+
+	var boss_prep_lines := generator.get_boss_prep_lines(state)
+
+	if not _lines_contain(boss_prep_lines, "Boss 准备") or not _lines_contain(boss_prep_lines, "尚未拿到静息调气"):
+		failures.append("run reward display: boss prep should call out missing rest focus")
+		return
+
+	state.rewards.append({
+		"id": "rest_focus_test",
+		"source_id": RewardGeneratorScript.REST_FOCUS_SOURCE_ID,
+		"title": "静息调气",
+		"effect": RewardGeneratorScript.EFFECT_STARTING_ENERGY,
+		"amount": RewardGeneratorScript.REST_FOCUS_STARTING_ENERGY_BONUS,
+		"rarity": RewardGeneratorScript.RARITY_COMMON,
+		"max_stack": 2,
+	})
+	boss_prep_lines = generator.get_boss_prep_lines(state)
+
+	if not _lines_contain(boss_prep_lines, "静息调气已生效") or not _lines_contain(boss_prep_lines, "开局能量 +2"):
+		failures.append("run reward display: boss prep should show active rest focus bonus")
 
 
 func _assert_settlement_feedback_roundtrip() -> void:
