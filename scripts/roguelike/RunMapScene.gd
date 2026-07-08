@@ -508,36 +508,8 @@ func _baseline_playtest_summary_text() -> String:
 
 
 func _playtest_comparison_text() -> String:
-	var current_pacing := run_state.get_run_pacing_summary()
-	var recorded_battles: int = current_pacing.get("recorded_battle_nodes", 0)
-
-	if recorded_battles <= 0:
-		return "等待首场实机记录"
-
-	var baseline_report := playtest_simulator.run_baseline()
-	var baseline_pacing: Dictionary = baseline_report.get("pacing", {})
-	var total_battles: int = current_pacing.get("total_battle_nodes", 0)
-	var current_average: int = current_pacing.get("actual_turn_average", 0)
-	var baseline_average: int = baseline_pacing.get("actual_turn_average", 0)
-	var average_delta := current_average - baseline_average
-
-	return "已测 %d/%d，均值 %d 手，较基准 %s，目标内 %d/%d，星砂 %d，奖励 %d" % [
-		recorded_battles,
-		total_battles,
-		current_average,
-		_signed_int_text(average_delta),
-		current_pacing.get("on_target_count", 0),
-		recorded_battles,
-		run_state.coins,
-		run_state.rewards.size(),
-	]
-
-
-func _signed_int_text(value: int) -> String:
-	if value > 0:
-		return "+%d" % value
-
-	return str(value)
+	var comparison := playtest_simulator.compare_run_to_baseline(run_state)
+	return " / ".join(comparison.get("lines", []))
 
 
 func _refresh_settlement_feedback() -> void:

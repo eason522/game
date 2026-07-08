@@ -261,6 +261,24 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: tuning lines should summarize on-target battle pacing")
 		return
 
+	var slow_report := simulator.run_baseline([9, 22, 24, 34])
+	var comparison := simulator.compare_run_to_baseline(slow_report.get("state"))
+	var comparison_lines: Array = comparison.get("lines", [])
+
+	if not _lines_contain(comparison_lines, "最大偏差"):
+		failures.append("run playtest simulator: comparison should call out the largest baseline delta")
+		return
+
+	if not _lines_contain(comparison_lines, "校准关注"):
+		failures.append("run playtest simulator: comparison should include a calibration attention line")
+		return
+
+	var biggest_delta: Dictionary = comparison.get("biggest_delta_record", {})
+
+	if biggest_delta.get("title", "") != "岩王之局" or biggest_delta.get("baseline_delta", 0) <= 0:
+		failures.append("run playtest simulator: boss should be the largest slow baseline delta")
+		return
+
 
 func _assert_victories_unlock_boss() -> void:
 	var state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())

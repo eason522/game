@@ -68,6 +68,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("目标内 1/1"):
 		failures.append("run map feedback: expected playtest comparison to show on-target actual count")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("最大偏差：试锋之局"):
+		failures.append("run map feedback: expected playtest comparison to show largest baseline delta")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("校准关注"):
+		failures.append("run map feedback: expected playtest comparison to show calibration focus")
+
 	scene.run_state.last_feedback = "获得奖励：灵息深蓄。下一站：残谱石室。"
 	scene.run_state.last_feedback_kind = "reward_claimed"
 	scene._refresh()
