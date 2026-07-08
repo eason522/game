@@ -279,6 +279,22 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: boss should be the largest slow baseline delta")
 		return
 
+	var matrix := simulator.run_sample_matrix()
+	var samples: Array = matrix.get("samples", [])
+	var display_lines: Array = matrix.get("display_lines", [])
+
+	if samples.size() != 4:
+		failures.append("run playtest simulator: sample matrix should include four pacing scenarios")
+		return
+
+	if not _lines_contain(display_lines, "偏慢") or not _lines_contain(display_lines, "Boss 压力"):
+		failures.append("run playtest simulator: sample matrix should summarize slow and boss-pressure scenarios")
+		return
+
+	if not _lines_contain(display_lines, "矩阵关注"):
+		failures.append("run playtest simulator: sample matrix should include a focus line")
+		return
+
 
 func _assert_victories_unlock_boss() -> void:
 	var state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())

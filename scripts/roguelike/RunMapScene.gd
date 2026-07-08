@@ -481,12 +481,13 @@ func _refresh_build_summary() -> void:
 	var build_lines := reward_generator.get_build_summary_lines(run_state)
 	var pacing_lines := reward_generator.get_run_pacing_lines(run_state)
 	var tuning_lines := reward_generator.get_run_tuning_lines(run_state)
-	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s\n调参建议：%s\n基准试玩：%s\n实测对照：%s" % [
+	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s\n调参建议：%s\n基准试玩：%s\n实测对照：%s\n样本矩阵：%s" % [
 		" / ".join(build_lines),
 		" / ".join(pacing_lines),
 		" / ".join(tuning_lines),
 		_baseline_playtest_summary_text(),
 		_playtest_comparison_text(),
+		_sample_matrix_text(),
 	]
 
 
@@ -510,6 +511,11 @@ func _baseline_playtest_summary_text() -> String:
 func _playtest_comparison_text() -> String:
 	var comparison := playtest_simulator.compare_run_to_baseline(run_state)
 	return " / ".join(comparison.get("lines", []))
+
+
+func _sample_matrix_text() -> String:
+	var matrix := playtest_simulator.run_sample_matrix()
+	return " / ".join(matrix.get("display_lines", []))
 
 
 func _refresh_settlement_feedback() -> void:

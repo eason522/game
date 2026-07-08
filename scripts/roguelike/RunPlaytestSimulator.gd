@@ -122,6 +122,42 @@ func compare_run_to_baseline(run_state) -> Dictionary:
 	}
 
 
+func run_sample_matrix() -> Dictionary:
+	var scenarios: Array = [
+		{"id": "baseline", "label": "基准", "turns": []},
+		{"id": "fast", "label": "偏快", "turns": [8, 11, 13, 19]},
+		{"id": "slow", "label": "偏慢", "turns": [18, 24, 26, 34]},
+		{"id": "boss_pressure", "label": "Boss 压力", "turns": [13, 17, 19, 36]},
+	]
+	var samples: Array = []
+	var summary_lines: Array = []
+
+	for scenario in scenarios:
+		var report := run_baseline(scenario.get("turns", []))
+		var pacing: Dictionary = report.get("pacing", {})
+		var sample := {
+			"id": scenario.get("id", ""),
+			"label": scenario.get("label", ""),
+			"completed": report.get("completed", false) and not report.get("safety_exhausted", false),
+			"recorded_battles": pacing.get("recorded_battle_nodes", 0),
+			"on_target_battles": pacing.get("on_target_count", 0),
+			"total_turns": pacing.get("actual_turn_total", 0),
+			"coins": report.get("coins", 0),
+			"reward_count": report.get("reward_count", 0),
+			"summary": _sample_matrix_line(scenario.get("label", ""), report),
+		}
+		samples.append(sample)
+		summary_lines.append(sample.get("summary", ""))
+
+	var focus_lines := _sample_matrix_focus_lines(samples)
+	return {
+		"samples": samples,
+		"summary_lines": summary_lines,
+		"focus_lines": focus_lines,
+		"display_lines": summary_lines + focus_lines,
+	}
+
+
 func _turn_sample_for_node(node: Dictionary, actual_turn_counts: Array, sample_index: int) -> int:
 	if sample_index >= 0 and sample_index < actual_turn_counts.size():
 		return max(1, int(actual_turn_counts[sample_index]))
@@ -192,6 +228,51 @@ func _comparison_attention_line(pacing: Dictionary, biggest_delta_record: Dictio
 			return "校准关注：Boss 较基准偏快，优先观察岩阵压制是否不足"
 
 	return "校准关注：实测接近基准，先保持数值并观察手感"
+
+
+func _sample_matrix_line(label: String, report: Dictionary) -> String:
+	var pacing: Dictionary = report.get("pacing", {})
+	var status_text := "可通关" if report.get("completed", false) and not report.get("safety_exhausted", false) else "需复查"
+	return "%s：%s，%d/%d 目标内，总 %d 手，星砂 %d，奖励 %d" % [
+		label,
+		status_text,
+		pacing.get("on_target_count", 0),
+		pacing.get("recorded_battle_nodes", 0),
+		pacing.get("actual_turn_total", 0),
+		report.get("coins", 0),
+		report.get("reward_count", 0),
+	]
+
+
+func _sample_matrix_focus_lines(samples: Array) -> Array:
+	var lines: Array = []
+	var has_route_failure := false
+	var slow_total := 0
+	var fast_total := 0
+	var boss_pressure_total := 0
+
+	for sample in samples:
+		if not sample.get("completed", false):
+			has_route_failure = true
+
+		match sample.get("id", ""):
+			"slow":
+				slow_total = sample.get("total_turns", 0)
+			"fast":
+				fast_total = sample.get("total_turns", 0)
+			"boss_pressure":
+				boss_pressure_total = sample.get("total_turns", 0)
+
+	if has_route_failure:
+		lines.append("矩阵关注：存在未通关样本，先检查路线推进或奖励领取阻塞")
+	elif slow_total > 88 or boss_pressure_total > 88:
+		lines.append("矩阵关注：压力样本越过 88 手，优先校准 Boss 手数与后段构筑强度")
+	elif fast_total < 60:
+		lines.append("矩阵关注：偏快样本低于 60 手，早期奖励和星砂不宜继续加速")
+	else:
+		lines.append("矩阵关注：样本均在总目标附近，可进入实机手感验证")
+
+	return lines
 
 
 func _signed_int_text(value: int) -> String:
