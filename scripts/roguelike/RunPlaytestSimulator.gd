@@ -375,6 +375,43 @@ func get_live_playtest_review_lines(run_state) -> Array:
 	]
 
 
+func get_live_run_closeout_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
+		return ["实机收口：暂无 Run 数据，先开始一轮完整试玩"]
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var total_battles: int = pacing.get("total_battle_nodes", 0)
+
+	if recorded_battles < total_battles:
+		return ["实机收口：样本未齐 %d/%d，本轮只记录过程，不关闭结论" % [recorded_battles, total_battles]]
+
+	if run_state.run_failed:
+		return ["实机收口：Run 已失败，先复盘失败节点与 Boss 前资源，不落新数值"]
+
+	if run_state.boss_opening_feel.is_empty():
+		return ["实机收口：完整 Run 已齐，但 Boss 前 5 手体感未记录；先补体感再定结论"]
+
+	var candidates := get_single_axis_tuning_candidates(run_state)
+	var first_candidate := "无明确候选"
+
+	if not candidates.is_empty():
+		first_candidate = String(candidates[0]).trim_prefix("单轴候选：")
+
+	match run_state.boss_opening_feel:
+		RunStateScript.BOSS_OPENING_FEEL_STABLE:
+			if _is_live_sample_close_to_baseline(pacing, compare_run_to_baseline(run_state)):
+				return ["实机收口：完整 Run 可收口，静息调气体感更稳，保持当前数值"]
+
+			return ["实机收口：Boss 体感更稳，下一轮仅按优先候选复核：%s" % first_candidate]
+		RunStateScript.BOSS_OPENING_FEEL_PRESSURE:
+			return ["实机收口：Boss 前 5 手仍压迫，本轮转入 Boss 手感轴，不动普通战斗"]
+		RunStateScript.BOSS_OPENING_FEEL_UNCLEAR:
+			return ["实机收口：Boss 体感需再测，本轮保留记录，先补一轮可复盘样本"]
+		_:
+			return ["实机收口：体感记录异常，先复核 Boss 前 5 手结论"]
+
+
 func get_boss_pressure_validation_lines(run_state) -> Array:
 	if run_state == null or not run_state.has_method("get_run_pacing_summary") or not run_state.has_method("get_battle_pacing_records"):
 		return ["Boss 校验：暂无 Run 数据，先完成一轮实机记录"]

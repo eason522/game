@@ -61,6 +61,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("暂只记录体感"):
 		failures.append("run map feedback: expected live review to avoid conclusions before a full sample")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("实机收口"):
+		failures.append("run map feedback: expected build panel to show live run closeout")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("本轮只记录过程"):
+		failures.append("run map feedback: expected fresh closeout to keep the sample open")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Boss 校验"):
 		failures.append("run map feedback: expected build panel to show boss validation")
 
@@ -276,6 +282,9 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("前 5 手体感未记录"):
 		failures.append("run map feedback: expected boss validation to request first-five-turn feel")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("先补体感再定结论"):
+		failures.append("run map feedback: expected closeout to require boss feel before conclusion")
+
 	scene._claim_panel_choice_at(0)
 
 	await process_frame
@@ -288,6 +297,9 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("前 5 手记录为更稳"):
 		failures.append("run map feedback: expected boss validation to show recorded stable feel")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("完整 Run 可收口"):
+		failures.append("run map feedback: expected closeout to finish after stable boss feel")
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)
