@@ -289,6 +289,45 @@ func get_live_playtest_decision_lines(run_state) -> Array:
 	]
 
 
+func get_live_playtest_verdict_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
+		return ["实机判定：暂无 Run 数据，不进入调参"]
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var total_battles: int = pacing.get("total_battle_nodes", 0)
+
+	if recorded_battles < total_battles:
+		return ["实机判定：样本未齐 %d/%d，不进入调参" % [recorded_battles, total_battles]]
+
+	if run_state.run_failed:
+		return ["实机判定：Run 已失败，先复盘失败节点，不直接改数值"]
+
+	var comparison := compare_run_to_baseline(run_state)
+	var candidates := get_single_axis_tuning_candidates(run_state)
+	var first_candidate := ""
+
+	if not candidates.is_empty():
+		first_candidate = String(candidates[0]).trim_prefix("单轴候选：")
+
+	if _is_live_sample_close_to_baseline(pacing, comparison):
+		return ["实机判定：保持当前数值，进入下一轮手感观察"]
+
+	if first_candidate.contains("Boss 手数轴"):
+		return ["实机判定：只动 Boss 手数轴，先复核 Boss 上限与静息调气体感"]
+
+	if first_candidate.contains("普通战斗轴"):
+		return ["实机判定：只动普通战斗轴，下一轮按最大偏差节点小步改目标手数"]
+
+	if first_candidate.contains("星砂轴"):
+		return ["实机判定：只动星砂轴，先验证商店前购买压力"]
+
+	if first_candidate.contains("奖励轴"):
+		return ["实机判定：只动奖励轴，先验证 Boss 前构筑密度"]
+
+	return ["实机判定：候选不明确，保持当前数值并补一轮实机样本"]
+
+
 func get_live_playtest_review_lines(run_state) -> Array:
 	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
 		return ["实机复盘：暂无 Run 数据，先开始一轮完整试玩"]
@@ -425,6 +464,21 @@ func _comparison_attention_line(pacing: Dictionary, biggest_delta_record: Dictio
 			return "校准关注：Boss 较基准偏快，优先观察岩阵压制是否不足"
 
 	return "校准关注：实测接近基准，先保持数值并观察手感"
+
+
+func _is_live_sample_close_to_baseline(pacing: Dictionary, comparison: Dictionary) -> bool:
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+
+	if recorded_battles <= 0:
+		return false
+
+	if pacing.get("on_target_count", 0) != recorded_battles:
+		return false
+
+	if abs(comparison.get("average_delta", 0)) > 1:
+		return false
+
+	return String(comparison.get("attention", "")).contains("实测接近基准")
 
 
 func _live_playtest_next_step_line(run_state, recorded_battles: int, total_battles: int) -> String:

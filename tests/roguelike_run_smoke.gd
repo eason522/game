@@ -351,6 +351,24 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: completed decision should expose the priority tuning axis")
 		return
 
+	var fresh_verdict := simulator.get_live_playtest_verdict_lines(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
+
+	if not _lines_contain(fresh_verdict, "实机判定") or not _lines_contain(fresh_verdict, "不进入调参"):
+		failures.append("run playtest simulator: fresh verdict should block tuning before a full sample")
+		return
+
+	var baseline_verdict := simulator.get_live_playtest_verdict_lines(report.get("state"))
+
+	if not _lines_contain(baseline_verdict, "保持当前数值"):
+		failures.append("run playtest simulator: on-target baseline verdict should keep current tuning")
+		return
+
+	var full_verdict := simulator.get_live_playtest_verdict_lines(slow_report.get("state"))
+
+	if not _lines_contain(full_verdict, "只动 Boss 手数轴"):
+		failures.append("run playtest simulator: completed slow run verdict should isolate boss tuning")
+		return
+
 	var fresh_review := simulator.get_live_playtest_review_lines(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
 
 	if not _lines_contain(fresh_review, "实机复盘") or not _lines_contain(fresh_review, "暂只记录体感"):

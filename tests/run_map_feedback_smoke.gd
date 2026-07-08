@@ -49,6 +49,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("不落数值"):
 		failures.append("run map feedback: expected live decision to block tuning before full sample")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("实机判定"):
+		failures.append("run map feedback: expected build panel to show live playtest verdict")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("不进入调参"):
+		failures.append("run map feedback: expected fresh verdict to block tuning")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("实机复盘"):
 		failures.append("run map feedback: expected build panel to show live playtest review")
 
