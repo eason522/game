@@ -78,7 +78,7 @@ func get_current_node() -> Dictionary:
 	return nodes[current_index]
 
 
-func resolve_current_node(victory: bool, reward_options: Array = []) -> void:
+func resolve_current_node(victory: bool, reward_options: Array = [], actual_turn_count: int = 0) -> void:
 	if current_index < 0 or current_index >= nodes.size():
 		return
 
@@ -86,11 +86,13 @@ func resolve_current_node(victory: bool, reward_options: Array = []) -> void:
 	pending_reward_node_index = -1
 	pending_node_choices.clear()
 	pending_choice_node_index = -1
+	_record_battle_pacing(current_index, actual_turn_count)
+	var pacing_feedback := _format_battle_pacing_feedback(nodes[current_index])
 
 	if not victory:
 		nodes[current_index]["status"] = STATUS_FAILED
 		run_failed = true
-		last_feedback = "%s 失利：本轮 Run 已锁定。" % nodes[current_index].get("title", "战斗")
+		last_feedback = "%s 失利：本轮 Run 已锁定。%s" % [nodes[current_index].get("title", "战斗"), pacing_feedback]
 		last_feedback_kind = "defeat"
 		return
 
@@ -98,14 +100,14 @@ func resolve_current_node(victory: bool, reward_options: Array = []) -> void:
 
 	if nodes[current_index].get("type", "") == NODE_BOSS:
 		run_completed = true
-		last_feedback = "%s 胜利：岩王之局告破。" % nodes[current_index].get("title", "Boss")
+		last_feedback = "%s 胜利：岩王之局告破。%s" % [nodes[current_index].get("title", "Boss"), pacing_feedback]
 		last_feedback_kind = "complete"
 		return
 
 	if not reward_options.is_empty():
 		pending_rewards = reward_options.duplicate(true)
 		pending_reward_node_index = current_index
-		last_feedback = "%s 胜利：选择一个战利品后继续前进。" % nodes[current_index].get("title", "战斗")
+		last_feedback = "%s 胜利：选择一个战利品后继续前进。%s" % [nodes[current_index].get("title", "战斗"), pacing_feedback]
 		last_feedback_kind = "victory"
 		return
 
@@ -292,6 +294,12 @@ func get_run_pacing_summary() -> Dictionary:
 		"remaining_turn_max": 0,
 		"current_target_turn_min": 0,
 		"current_target_turn_max": 0,
+		"recorded_battle_nodes": 0,
+		"actual_turn_total": 0,
+		"actual_turn_average": 0,
+		"under_target_count": 0,
+		"on_target_count": 0,
+		"over_target_count": 0,
 	}
 
 	for node in nodes:
@@ -305,6 +313,19 @@ func get_run_pacing_summary() -> Dictionary:
 		summary["total_battle_nodes"] += 1
 		summary["total_turn_min"] += target_min
 		summary["total_turn_max"] += target_max
+		var actual_turn_count: int = node.get("actual_turn_count", 0)
+
+		if actual_turn_count > 0:
+			summary["recorded_battle_nodes"] += 1
+			summary["actual_turn_total"] += actual_turn_count
+
+			match node.get("actual_pacing_result", ""):
+				"under":
+					summary["under_target_count"] += 1
+				"over":
+					summary["over_target_count"] += 1
+				"target":
+					summary["on_target_count"] += 1
 
 		if node.get("status", STATUS_LOCKED) == STATUS_COMPLETED:
 			summary["completed_battle_nodes"] += 1
@@ -318,7 +339,110 @@ func get_run_pacing_summary() -> Dictionary:
 			summary["current_target_turn_min"] = target_min
 			summary["current_target_turn_max"] = target_max
 
+	if summary["recorded_battle_nodes"] > 0:
+		summary["actual_turn_average"] = int(round(float(summary["actual_turn_total"]) / float(summary["recorded_battle_nodes"])))
+
 	return summary
+
+
+func get_battle_pacing_records() -> Array:
+	var records: Array = []
+
+	for node in nodes:
+		var node_type: String = node.get("type", "")
+
+		if node_type != NODE_BATTLE and node_type != NODE_BOSS:
+			continue
+
+		var actual_turn_count: int = node.get("actual_turn_count", 0)
+
+		if actual_turn_count <= 0:
+			continue
+
+		records.append({
+			"node_index": node.get("index", -1),
+			"title": node.get("title", ""),
+			"type": node_type,
+			"target_turn_min": node.get("target_turn_min", 0),
+			"target_turn_max": node.get("target_turn_max", 0),
+			"actual_turn_count": actual_turn_count,
+			"actual_pacing_result": node.get("actual_pacing_result", ""),
+			"actual_pacing_delta": node.get("actual_pacing_delta", 0),
+		})
+
+	return records
+
+
+func _record_battle_pacing(node_index: int, actual_turn_count: int) -> void:
+	if actual_turn_count <= 0 or node_index < 0 or node_index >= nodes.size():
+		return
+
+	var node: Dictionary = nodes[node_index]
+	var node_type: String = node.get("type", "")
+
+	if node_type != NODE_BATTLE and node_type != NODE_BOSS:
+		return
+
+	nodes[node_index]["actual_turn_count"] = actual_turn_count
+	nodes[node_index]["actual_pacing_result"] = _classify_battle_pacing(node, actual_turn_count)
+	nodes[node_index]["actual_pacing_delta"] = _battle_pacing_delta(node, actual_turn_count)
+
+
+func _classify_battle_pacing(node: Dictionary, actual_turn_count: int) -> String:
+	var target_min: int = node.get("target_turn_min", 0)
+	var target_max: int = node.get("target_turn_max", 0)
+
+	if target_min > 0 and actual_turn_count < target_min:
+		return "under"
+
+	if target_max > 0 and actual_turn_count > target_max:
+		return "over"
+
+	if target_min > 0 and target_max > 0:
+		return "target"
+
+	return "unknown"
+
+
+func _battle_pacing_delta(node: Dictionary, actual_turn_count: int) -> int:
+	var target_min: int = node.get("target_turn_min", 0)
+	var target_max: int = node.get("target_turn_max", 0)
+
+	if target_min > 0 and actual_turn_count < target_min:
+		return actual_turn_count - target_min
+
+	if target_max > 0 and actual_turn_count > target_max:
+		return actual_turn_count - target_max
+
+	return 0
+
+
+func _format_battle_pacing_feedback(node: Dictionary) -> String:
+	var actual_turn_count: int = node.get("actual_turn_count", 0)
+
+	if actual_turn_count <= 0:
+		return ""
+
+	var target_min: int = node.get("target_turn_min", 0)
+	var target_max: int = node.get("target_turn_max", 0)
+	var result_label := _battle_pacing_label(node.get("actual_pacing_result", ""))
+
+	if target_min > 0 and target_max > 0:
+		return "本场 %d 手，目标 %d-%d 手（%s）。" % [actual_turn_count, target_min, target_max, result_label]
+
+	return "本场 %d 手（%s）。" % [actual_turn_count, result_label]
+
+
+func _battle_pacing_label(result: String) -> String:
+	match result:
+		"under":
+			return "偏快"
+		"over":
+			return "偏慢"
+		"target":
+			return "目标内"
+		_:
+			return "待判断"
 
 
 func _advance_after_completed_node() -> void:

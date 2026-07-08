@@ -313,6 +313,8 @@ func get_run_pacing_lines(run_state) -> Array:
 	var remaining_max: int = pacing.get("remaining_turn_max", 0)
 	var current_min: int = pacing.get("current_target_turn_min", 0)
 	var current_max: int = pacing.get("current_target_turn_max", 0)
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var actual_average: int = pacing.get("actual_turn_average", 0)
 	var lines: Array = [
 		"战斗进度 %d/%d，剩余 %d 场" % [completed_battles, total_battles, remaining_battles],
 	]
@@ -322,6 +324,15 @@ func get_run_pacing_lines(run_state) -> Array:
 
 	if current_min > 0 and current_max > 0:
 		lines.append("当前目标 %d-%d 手" % [current_min, current_max])
+
+	if recorded_battles > 0:
+		lines.append("实测 %d 场，均值 %d 手，目标内 %d/偏快 %d/偏慢 %d" % [
+			recorded_battles,
+			actual_average,
+			pacing.get("on_target_count", 0),
+			pacing.get("under_target_count", 0),
+			pacing.get("over_target_count", 0),
+		])
 
 	lines.append("星砂 %d，商店价 %s" % [run_state.coins, get_shop_price_range_text()])
 	return lines

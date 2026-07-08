@@ -1,6 +1,9 @@
 extends SceneTree
 
 const BattleScene := preload("res://scenes/game/BattleScene.tscn")
+const BATTLE_NODE_INDEX_META := "tymj_battle_node_index"
+const BATTLE_RESULT_META := "tymj_battle_result"
+const BATTLE_MOVE_COUNT_META := "tymj_battle_move_count"
 
 var failures: Array = []
 
@@ -10,6 +13,7 @@ func _init() -> void:
 
 
 func _run() -> void:
+	root.set_meta(BATTLE_NODE_INDEX_META, 1)
 	var scene := BattleScene.instantiate()
 	root.add_child(scene)
 
@@ -70,7 +74,19 @@ func _run() -> void:
 	if scene.tone_player == null or scene.tone_player.last_tone_kind != "victory":
 		failures.append("battle feedback: expected victory banner to trigger a victory tone")
 
+	scene.move_count = 17
+	scene._record_battle_result(true)
+
+	if root.get_meta(BATTLE_RESULT_META, "") != "victory":
+		failures.append("battle feedback: expected run battle result metadata")
+
+	if root.get_meta(BATTLE_MOVE_COUNT_META, 0) != 17:
+		failures.append("battle feedback: expected run battle move-count metadata")
+
 	scene.queue_free()
+	root.remove_meta(BATTLE_NODE_INDEX_META)
+	root.remove_meta(BATTLE_RESULT_META)
+	root.remove_meta(BATTLE_MOVE_COUNT_META)
 	await process_frame
 
 	if failures.is_empty():

@@ -3,6 +3,7 @@ extends Control
 const RUN_STATE_META := "tymj_run_state"
 const BATTLE_NODE_INDEX_META := "tymj_battle_node_index"
 const BATTLE_RESULT_META := "tymj_battle_result"
+const BATTLE_MOVE_COUNT_META := "tymj_battle_move_count"
 const BATTLE_ENEMY_PROFILE_META := "tymj_battle_enemy_profile_id"
 const BATTLE_SCENE_PATH := "res://scenes/game/BattleScene.tscn"
 const MapGeneratorScript := preload("res://scripts/roguelike/MapGenerator.gd")
@@ -107,6 +108,7 @@ func _apply_pending_battle_result() -> void:
 
 	var result: String = root.get_meta(BATTLE_RESULT_META)
 	var node_index: int = root.get_meta(BATTLE_NODE_INDEX_META, -1)
+	var move_count: int = root.get_meta(BATTLE_MOVE_COUNT_META, 0)
 
 	if node_index == run_state.current_index:
 		var reward_options: Array = []
@@ -117,11 +119,12 @@ func _apply_pending_battle_result() -> void:
 			if current_node.get("type", "") != RunStateScript.NODE_BOSS:
 				reward_options = reward_generator.generate_options(run_state, current_node)
 
-		run_state.resolve_current_node(result == "victory", reward_options)
+		run_state.resolve_current_node(result == "victory", reward_options, move_count)
 
 	_persist_run_state()
 	root.remove_meta(BATTLE_RESULT_META)
 	root.remove_meta(BATTLE_NODE_INDEX_META)
+	root.remove_meta(BATTLE_MOVE_COUNT_META)
 	root.remove_meta(BATTLE_ENEMY_PROFILE_META)
 
 
@@ -375,7 +378,7 @@ func _refresh() -> void:
 			_type_mark(node.get("type", "")),
 			node.get("title", ""),
 			status_text,
-			enemy_text,
+			"%s%s" % [enemy_text, _node_pacing_text(node)],
 		]
 		button.tooltip_text = _node_tooltip(node)
 		button.disabled = not run_state.can_enter_node(index)
@@ -637,7 +640,33 @@ func _node_tooltip(node: Dictionary) -> String:
 	if target_min > 0 and target_max > 0:
 		parts.append("目标节奏：%d-%d 手" % [target_min, target_max])
 
+	var actual_turn_count: int = node.get("actual_turn_count", 0)
+
+	if actual_turn_count > 0:
+		parts.append("实测节奏：%d 手，%s" % [actual_turn_count, _pacing_result_label(node.get("actual_pacing_result", ""))])
+
 	return "\n".join(parts)
+
+
+func _node_pacing_text(node: Dictionary) -> String:
+	var actual_turn_count: int = node.get("actual_turn_count", 0)
+
+	if actual_turn_count <= 0:
+		return ""
+
+	return " · 实测 %d 手（%s）" % [actual_turn_count, _pacing_result_label(node.get("actual_pacing_result", ""))]
+
+
+func _pacing_result_label(result: String) -> String:
+	match result:
+		"under":
+			return "偏快"
+		"over":
+			return "偏慢"
+		"target":
+			return "目标内"
+		_:
+			return "待判断"
 
 
 func _node_type_label(node_type: String) -> String:

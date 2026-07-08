@@ -8,6 +8,7 @@ const RUN_MAP_SCENE_PATH := "res://scenes/roguelike/RunMapScene.tscn"
 const RUN_STATE_META := "tymj_run_state"
 const BATTLE_NODE_INDEX_META := "tymj_battle_node_index"
 const BATTLE_RESULT_META := "tymj_battle_result"
+const BATTLE_MOVE_COUNT_META := "tymj_battle_move_count"
 const BATTLE_ENEMY_PROFILE_META := "tymj_battle_enemy_profile_id"
 const SkillExecutorScript := preload("res://scripts/skills/SkillExecutor.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
@@ -909,6 +910,7 @@ func _record_battle_result(player_won: bool) -> void:
 		return
 
 	get_tree().root.set_meta(BATTLE_RESULT_META, "victory" if player_won else "defeat")
+	get_tree().root.set_meta(BATTLE_MOVE_COUNT_META, move_count)
 
 
 func _return_to_run_map() -> void:

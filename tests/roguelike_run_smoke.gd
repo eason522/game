@@ -27,6 +27,7 @@ func _init() -> void:
 func _run() -> void:
 	_assert_linear_route_shape()
 	_assert_run_pacing_summary()
+	_assert_battle_pacing_records_and_roundtrip()
 	_assert_victories_unlock_boss()
 	_assert_defeat_locks_run()
 	_assert_reward_choice_blocks_progress_and_applies_modifier()
@@ -118,6 +119,59 @@ func _assert_run_pacing_summary() -> void:
 
 	if not pacing_lines.has("星砂 2，商店价 2/3/4"):
 		failures.append("run pacing: display lines should include starsand and shop price gradient")
+
+
+func _assert_battle_pacing_records_and_roundtrip() -> void:
+	var state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
+	var generator := RewardGeneratorScript.new()
+	var reward_options := generator.generate_options(state, state.get_current_node())
+	state.resolve_current_node(true, reward_options, 14)
+	var records := state.get_battle_pacing_records()
+
+	if records.size() != 1:
+		failures.append("run pacing records: expected first battle record")
+		return
+
+	if records[0].get("actual_turn_count", 0) != 14:
+		failures.append("run pacing records: expected actual turn count to be stored")
+		return
+
+	if records[0].get("actual_pacing_result", "") != "target":
+		failures.append("run pacing records: expected first battle to be inside target range")
+		return
+
+	var pacing := state.get_run_pacing_summary()
+
+	if pacing.get("recorded_battle_nodes", 0) != 1 or pacing.get("actual_turn_average", 0) != 14:
+		failures.append("run pacing records: expected recorded battle average")
+		return
+
+	if pacing.get("on_target_count", 0) != 1:
+		failures.append("run pacing records: expected target-range count")
+		return
+
+	var pacing_lines := generator.get_run_pacing_lines(state)
+	var found_actual_line := false
+
+	for line in pacing_lines:
+		if line.contains("实测 1 场") and line.contains("均值 14 手"):
+			found_actual_line = true
+			break
+
+	if not found_actual_line:
+		failures.append("run pacing records: expected display lines to include actual pacing summary")
+		return
+
+	if not state.last_feedback.contains("本场 14 手"):
+		failures.append("run pacing records: expected settlement feedback to include actual turn count")
+		return
+
+	var restored := RunStateScript.new()
+	restored.load_from_dict(state.to_dict())
+	var restored_records := restored.get_battle_pacing_records()
+
+	if restored_records.size() != 1 or restored_records[0].get("actual_turn_count", 0) != 14:
+		failures.append("run pacing records: expected actual counts to roundtrip through save data")
 
 
 func _assert_victories_unlock_boss() -> void:

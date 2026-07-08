@@ -35,6 +35,21 @@ func _run() -> void:
 	if scene.node_buttons.size() <= 1 or not scene.node_buttons[1].tooltip_text.contains("目标节奏：10-16 手"):
 		failures.append("run map feedback: expected battle tooltip to show target turn pacing")
 
+	scene.run_state.nodes[1]["actual_turn_count"] = 14
+	scene.run_state.nodes[1]["actual_pacing_result"] = "target"
+	scene._refresh()
+
+	await process_frame
+
+	if scene.node_buttons.size() <= 1 or not scene.node_buttons[1].text.contains("实测 14 手"):
+		failures.append("run map feedback: expected battle node button to show actual pacing")
+
+	if scene.node_buttons.size() <= 1 or not scene.node_buttons[1].tooltip_text.contains("实测节奏：14 手"):
+		failures.append("run map feedback: expected battle tooltip to show actual pacing")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("实测 1 场，均值 14 手"):
+		failures.append("run map feedback: expected build panel to show actual pacing summary")
+
 	scene.run_state.last_feedback = "获得奖励：灵息深蓄。下一站：残谱石室。"
 	scene.run_state.last_feedback_kind = "reward_claimed"
 	scene._refresh()
