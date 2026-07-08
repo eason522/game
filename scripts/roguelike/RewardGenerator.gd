@@ -232,6 +232,14 @@ func get_price_for_reward(reward: Dictionary) -> int:
 	return RARITY_PRICES.get(reward.get("rarity", RARITY_COMMON), 2)
 
 
+func get_shop_price_range_text() -> String:
+	return "%d/%d/%d" % [
+		RARITY_PRICES.get(RARITY_COMMON, 2),
+		RARITY_PRICES.get(RARITY_UNCOMMON, 3),
+		RARITY_PRICES.get(RARITY_RARE, 4),
+	]
+
+
 func get_reward_effect_summary(reward: Dictionary) -> String:
 	var amount: int = reward.get("amount", 0)
 
@@ -290,6 +298,32 @@ func get_build_summary_lines(run_state) -> Array:
 	if lines.is_empty():
 		lines.append("暂未形成构筑")
 
+	return lines
+
+
+func get_run_pacing_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
+		return ["暂无节奏数据"]
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var total_battles: int = pacing.get("total_battle_nodes", 0)
+	var completed_battles: int = pacing.get("completed_battle_nodes", 0)
+	var remaining_battles: int = pacing.get("remaining_battle_nodes", 0)
+	var remaining_min: int = pacing.get("remaining_turn_min", 0)
+	var remaining_max: int = pacing.get("remaining_turn_max", 0)
+	var current_min: int = pacing.get("current_target_turn_min", 0)
+	var current_max: int = pacing.get("current_target_turn_max", 0)
+	var lines: Array = [
+		"战斗进度 %d/%d，剩余 %d 场" % [completed_battles, total_battles, remaining_battles],
+	]
+
+	if remaining_min > 0 and remaining_max > 0:
+		lines.append("剩余目标 %d-%d 手" % [remaining_min, remaining_max])
+
+	if current_min > 0 and current_max > 0:
+		lines.append("当前目标 %d-%d 手" % [current_min, current_max])
+
+	lines.append("星砂 %d，商店价 %s" % [run_state.coins, get_shop_price_range_text()])
 	return lines
 
 

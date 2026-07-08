@@ -281,6 +281,46 @@ func get_choice_titles() -> Array:
 	return titles
 
 
+func get_run_pacing_summary() -> Dictionary:
+	var summary := {
+		"total_battle_nodes": 0,
+		"completed_battle_nodes": 0,
+		"remaining_battle_nodes": 0,
+		"total_turn_min": 0,
+		"total_turn_max": 0,
+		"remaining_turn_min": 0,
+		"remaining_turn_max": 0,
+		"current_target_turn_min": 0,
+		"current_target_turn_max": 0,
+	}
+
+	for node in nodes:
+		var node_type: String = node.get("type", "")
+
+		if node_type != NODE_BATTLE and node_type != NODE_BOSS:
+			continue
+
+		var target_min: int = node.get("target_turn_min", 0)
+		var target_max: int = node.get("target_turn_max", 0)
+		summary["total_battle_nodes"] += 1
+		summary["total_turn_min"] += target_min
+		summary["total_turn_max"] += target_max
+
+		if node.get("status", STATUS_LOCKED) == STATUS_COMPLETED:
+			summary["completed_battle_nodes"] += 1
+			continue
+
+		summary["remaining_battle_nodes"] += 1
+		summary["remaining_turn_min"] += target_min
+		summary["remaining_turn_max"] += target_max
+
+		if node.get("index", -1) == current_index:
+			summary["current_target_turn_min"] = target_min
+			summary["current_target_turn_max"] = target_max
+
+	return summary
+
+
 func _advance_after_completed_node() -> void:
 	var next_index := _find_next_playable_index(current_index)
 

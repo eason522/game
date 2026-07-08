@@ -26,6 +26,7 @@ func _init() -> void:
 
 func _run() -> void:
 	_assert_linear_route_shape()
+	_assert_run_pacing_summary()
 	_assert_victories_unlock_boss()
 	_assert_defeat_locks_run()
 	_assert_reward_choice_blocks_progress_and_applies_modifier()
@@ -67,6 +68,56 @@ func _assert_linear_route_shape() -> void:
 
 	if nodes[7].get("enemy_profile_id", "") != EnemyAI.PROFILE_ROCK_BOSS:
 		failures.append("run route: boss node should use rock boss profile")
+
+	if nodes[1].get("target_turn_min", 0) != 10 or nodes[1].get("target_turn_max", 0) != 16:
+		failures.append("run route: first battle should include target turn pacing")
+
+	if nodes[7].get("target_turn_min", 0) != 22 or nodes[7].get("target_turn_max", 0) != 30:
+		failures.append("run route: boss should include target turn pacing")
+
+
+func _assert_run_pacing_summary() -> void:
+	var state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
+	var generator := RewardGeneratorScript.new()
+	var pacing := state.get_run_pacing_summary()
+
+	if pacing.get("total_battle_nodes", 0) != 4:
+		failures.append("run pacing: expected three battles plus boss")
+		return
+
+	if pacing.get("remaining_battle_nodes", 0) != 4:
+		failures.append("run pacing: fresh run should have four remaining battle nodes")
+		return
+
+	if pacing.get("remaining_turn_min", 0) != 58 or pacing.get("remaining_turn_max", 0) != 84:
+		failures.append("run pacing: fresh run should summarize full target turn range")
+		return
+
+	if pacing.get("current_target_turn_min", 0) != 10 or pacing.get("current_target_turn_max", 0) != 16:
+		failures.append("run pacing: current battle should expose its target turn range")
+		return
+
+	var reward_options := generator.generate_options(state, state.get_current_node())
+	state.resolve_current_node(true, reward_options)
+	state.claim_reward(reward_options[0].get("id", ""))
+	pacing = state.get_run_pacing_summary()
+
+	if pacing.get("completed_battle_nodes", 0) != 1 or pacing.get("remaining_battle_nodes", 0) != 3:
+		failures.append("run pacing: battle completion should update battle counts")
+		return
+
+	if pacing.get("remaining_turn_min", 0) != 48 or pacing.get("remaining_turn_max", 0) != 68:
+		failures.append("run pacing: battle completion should remove the first battle turn target")
+		return
+
+	var pacing_lines := generator.get_run_pacing_lines(state)
+
+	if not pacing_lines.has("战斗进度 1/4，剩余 3 场"):
+		failures.append("run pacing: display lines should include battle progress")
+		return
+
+	if not pacing_lines.has("星砂 2，商店价 2/3/4"):
+		failures.append("run pacing: display lines should include starsand and shop price gradient")
 
 
 func _assert_victories_unlock_boss() -> void:

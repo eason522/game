@@ -473,8 +473,12 @@ func _refresh_build_summary() -> void:
 	if build_summary_label == null:
 		return
 
-	var lines := reward_generator.get_build_summary_lines(run_state)
-	build_summary_label.text = "构筑效果：%s" % " / ".join(lines)
+	var build_lines := reward_generator.get_build_summary_lines(run_state)
+	var pacing_lines := reward_generator.get_run_pacing_lines(run_state)
+	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s" % [
+		" / ".join(build_lines),
+		" / ".join(pacing_lines),
+	]
 
 
 func _refresh_settlement_feedback() -> void:
@@ -626,6 +630,12 @@ func _node_tooltip(node: Dictionary) -> String:
 
 	if not enemy.is_empty():
 		parts.append(enemy.trim_prefix(" · "))
+
+	var target_min: int = node.get("target_turn_min", 0)
+	var target_max: int = node.get("target_turn_max", 0)
+
+	if target_min > 0 and target_max > 0:
+		parts.append("目标节奏：%d-%d 手" % [target_min, target_max])
 
 	return "\n".join(parts)
 
