@@ -478,9 +478,11 @@ func _refresh_build_summary() -> void:
 
 	var build_lines := reward_generator.get_build_summary_lines(run_state)
 	var pacing_lines := reward_generator.get_run_pacing_lines(run_state)
-	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s" % [
+	var tuning_lines := reward_generator.get_run_tuning_lines(run_state)
+	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s\n调参建议：%s" % [
 		" / ".join(build_lines),
 		" / ".join(pacing_lines),
+		" / ".join(tuning_lines),
 	]
 
 

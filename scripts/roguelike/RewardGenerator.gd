@@ -338,6 +338,103 @@ func get_run_pacing_lines(run_state) -> Array:
 	return lines
 
 
+func get_run_tuning_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
+		return ["调参建议：暂无数据"]
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var lines: Array = [_battle_tuning_line(pacing)]
+	lines.append(_economy_tuning_line(run_state))
+	lines.append(_reward_tuning_line(run_state, pacing))
+	return lines
+
+
+func _battle_tuning_line(pacing: Dictionary) -> String:
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+
+	if recorded_battles <= 0:
+		return "手数：先完成 1 场以上实测再微调"
+
+	var under_count: int = pacing.get("under_target_count", 0)
+	var over_count: int = pacing.get("over_target_count", 0)
+	var on_target_count: int = pacing.get("on_target_count", 0)
+	var majority_threshold: int = max(1, int(ceil(float(recorded_battles) * 0.5)))
+
+	if under_count >= majority_threshold and under_count > over_count:
+		return "手数：多场偏快，普通战斗目标可上调 2 手或放缓早期奖励"
+
+	if over_count >= majority_threshold and over_count > under_count:
+		return "手数：多场偏慢，普通战斗目标可下调 2 手或提高早期资源"
+
+	if on_target_count >= under_count + over_count:
+		return "手数：当前样本落在目标内，暂不改普通战斗目标"
+
+	return "手数：样本分化，优先按偏差最大的节点微调"
+
+
+func _economy_tuning_line(run_state) -> String:
+	var common_price: int = RARITY_PRICES.get(RARITY_COMMON, 2)
+	var rare_price: int = RARITY_PRICES.get(RARITY_RARE, 4)
+
+	if not _has_upcoming_shop(run_state):
+		return "星砂：后续无商店，重点观察事件支出吸引力"
+
+	if run_state.coins < common_price:
+		return "星砂：到店前不足普通商品，事件收入可 +1 或普通价格 -1"
+
+	if run_state.coins >= rare_price:
+		return "星砂：已可买史诗商品，先观察商店是否过宽"
+
+	return "星砂：可覆盖普通商店价，价格梯度暂稳"
+
+
+func _reward_tuning_line(run_state, pacing: Dictionary) -> String:
+	var completed_battles: int = pacing.get("completed_battle_nodes", 0)
+	var reward_count: int = run_state.rewards.size()
+
+	if run_state.has_method("has_pending_reward") and run_state.has_pending_reward():
+		return "奖励：待领奖状态正常，领取后再看构筑增速"
+
+	if completed_battles <= 0:
+		return "奖励：首战后检查三选一是否过早定型"
+
+	if reward_count < completed_battles:
+		return "奖励：已完成战斗多于已获奖励，确认是否被路线选择阻塞"
+
+	if reward_count >= 3 and _has_remaining_boss(run_state):
+		return "奖励：Boss 前构筑较饱满，留意奖励密度是否偏高"
+
+	return "奖励：胜利奖励节奏稳定，继续收集完整 Run 样本"
+
+
+func _has_upcoming_shop(run_state) -> bool:
+	if run_state == null:
+		return false
+
+	for node in run_state.nodes:
+		if node.get("index", -1) < run_state.current_index:
+			continue
+
+		if node.get("type", "") == NODE_SHOP and node.get("status", "") != "completed":
+			return true
+
+	return false
+
+
+func _has_remaining_boss(run_state) -> bool:
+	if run_state == null:
+		return false
+
+	for node in run_state.nodes:
+		if node.get("index", -1) < run_state.current_index:
+			continue
+
+		if node.get("type", "") == "boss" and node.get("status", "") != "completed":
+			return true
+
+	return false
+
+
 func _make_reward(template: Dictionary, suffix: String) -> Dictionary:
 	var reward := template.duplicate(true)
 	var source_id: String = template.get("id", "reward")

@@ -28,6 +28,7 @@ func _run() -> void:
 	_assert_linear_route_shape()
 	_assert_run_pacing_summary()
 	_assert_battle_pacing_records_and_roundtrip()
+	_assert_run_tuning_lines()
 	_assert_victories_unlock_boss()
 	_assert_defeat_locks_run()
 	_assert_reward_choice_blocks_progress_and_applies_modifier()
@@ -172,6 +173,42 @@ func _assert_battle_pacing_records_and_roundtrip() -> void:
 
 	if restored_records.size() != 1 or restored_records[0].get("actual_turn_count", 0) != 14:
 		failures.append("run pacing records: expected actual counts to roundtrip through save data")
+
+
+func _assert_run_tuning_lines() -> void:
+	var generator := RewardGeneratorScript.new()
+	var fresh_state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
+	var fresh_lines := generator.get_run_tuning_lines(fresh_state)
+
+	if not _lines_contain(fresh_lines, "先完成 1 场"):
+		failures.append("run tuning: fresh run should ask for actual-play samples")
+		return
+
+	var fast_state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
+	var fast_rewards := generator.generate_options(fast_state, fast_state.get_current_node())
+	fast_state.resolve_current_node(true, fast_rewards, 8)
+	var fast_lines := generator.get_run_tuning_lines(fast_state)
+
+	if not _lines_contain(fast_lines, "偏快"):
+		failures.append("run tuning: under-target battle should suggest fast pacing")
+		return
+
+	if not _lines_contain(fast_lines, "待领奖"):
+		failures.append("run tuning: pending reward should be called out")
+		return
+
+	var slow_state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
+	slow_state.coins = 1
+	slow_state.resolve_current_node(true, [], 19)
+	var slow_lines := generator.get_run_tuning_lines(slow_state)
+
+	if not _lines_contain(slow_lines, "偏慢"):
+		failures.append("run tuning: over-target battle should suggest slow pacing")
+		return
+
+	if not _lines_contain(slow_lines, "不足普通商品"):
+		failures.append("run tuning: low starsand before shop should be called out")
+		return
 
 
 func _assert_victories_unlock_boss() -> void:
@@ -540,3 +577,11 @@ func _assert_settlement_feedback_roundtrip() -> void:
 
 	if restored.last_feedback_kind != state.last_feedback_kind:
 		failures.append("run settlement feedback: feedback type should roundtrip through save data")
+
+
+func _lines_contain(lines: Array, needle: String) -> bool:
+	for line in lines:
+		if String(line).contains(needle):
+			return true
+
+	return false
