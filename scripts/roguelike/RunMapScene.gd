@@ -21,6 +21,8 @@ var build_summary_label: Label
 var node_list: VBoxContainer
 var node_buttons: Array = []
 var reward_buttons: Array = []
+var last_rendered_feedback := ""
+var settlement_tween: Tween
 var panel_style: StyleBoxFlat
 var button_style: StyleBoxFlat
 var button_hover_style: StyleBoxFlat
@@ -374,7 +376,7 @@ func _refresh() -> void:
 		return
 
 	if settlement_label != null:
-		settlement_label.text = "最近结算：%s" % ("暂无" if run_state.last_feedback.is_empty() else run_state.last_feedback)
+		_refresh_settlement_feedback()
 
 	if run_state.run_completed:
 		status_label.text = "本轮 Run 已通关：岩王之局告破。可以开始新 Run。"
@@ -464,6 +466,75 @@ func _refresh_build_summary() -> void:
 
 	var lines := reward_generator.get_build_summary_lines(run_state)
 	build_summary_label.text = "构筑效果：%s" % " / ".join(lines)
+
+
+func _refresh_settlement_feedback() -> void:
+	var feedback := "暂无" if run_state.last_feedback.is_empty() else run_state.last_feedback
+	var kind_label := _feedback_kind_label(run_state.last_feedback_kind)
+	var rendered := "%s：%s" % [kind_label, feedback]
+	settlement_label.text = rendered
+	settlement_label.add_theme_stylebox_override("normal", _settlement_style_for_kind(run_state.last_feedback_kind))
+	settlement_label.add_theme_color_override("font_color", _settlement_text_color_for_kind(run_state.last_feedback_kind))
+
+	if rendered != last_rendered_feedback:
+		last_rendered_feedback = rendered
+		_pulse_settlement_feedback()
+
+
+func _pulse_settlement_feedback() -> void:
+	if settlement_label == null:
+		return
+
+	if settlement_tween != null:
+		settlement_tween.kill()
+
+	settlement_label.modulate = Color(1, 1, 1, 0.62)
+	settlement_tween = create_tween()
+	settlement_tween.tween_property(settlement_label, "modulate", Color(1, 1, 1, 1), 0.22)
+
+
+func _feedback_kind_label(kind: String) -> String:
+	match kind:
+		"run_start":
+			return "新局"
+		"victory":
+			return "战斗胜利"
+		"defeat":
+			return "战斗失利"
+		"complete":
+			return "通关"
+		"reward_claimed":
+			return "奖励领取"
+		"choice_pending":
+			return "路线选择"
+		"choice_claimed":
+			return "节点结算"
+		"progress":
+			return "推进"
+		_:
+			return "最近结算"
+
+
+func _settlement_style_for_kind(kind: String) -> StyleBoxFlat:
+	match kind:
+		"victory", "complete", "reward_claimed":
+			return _make_panel_style(Color("#283b32"), Color("#d8b64d"))
+		"defeat":
+			return _make_panel_style(Color("#432d31"), Color("#d87568"))
+		"choice_pending", "choice_claimed":
+			return _make_panel_style(Color("#303246"), Color("#8da5d8"))
+		_:
+			return panel_style
+
+
+func _settlement_text_color_for_kind(kind: String) -> Color:
+	match kind:
+		"defeat":
+			return Color("#ffd0c8")
+		"choice_pending", "choice_claimed":
+			return Color("#dbe6ff")
+		_:
+			return Color("#f1dfb7")
 
 
 func _apply_node_button_style(button: Button, node: Dictionary) -> void:

@@ -19,6 +19,7 @@ var skill_executor := SkillExecutorScript.new()
 
 var status_label: Label
 var feedback_label: Label
+var result_banner_label: Label
 var turn_label: Label
 var move_count_label: Label
 var energy_label: Label
@@ -66,6 +67,7 @@ var twin_piece_active := false
 var feedback_log: Array = []
 var feedback_flashes: Dictionary = {}
 var feedback_flash_token := 0
+var result_banner_tween: Tween
 
 var empty_style: StyleBoxFlat
 var spirit_style: StyleBoxFlat
@@ -244,6 +246,17 @@ func _build_layout() -> void:
 	feedback_label.add_theme_color_override("font_color", Color("#f1dfb7"))
 	feedback_label.add_theme_stylebox_override("normal", panel_style)
 	status_box.add_child(feedback_label)
+
+	result_banner_label = Label.new()
+	result_banner_label.visible = false
+	result_banner_label.custom_minimum_size = Vector2(0, 58)
+	result_banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_banner_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	result_banner_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	result_banner_label.add_theme_font_size_override("font_size", 24)
+	result_banner_label.add_theme_color_override("font_color", Color("#fff4d6"))
+	result_banner_label.add_theme_stylebox_override("normal", status_panel_style)
+	main.add_child(result_banner_label)
 
 	var content := HBoxContainer.new()
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -462,6 +475,7 @@ func _start_new_game() -> void:
 	break_array_active = false
 	twin_piece_active = false
 	_clear_feedback()
+	_hide_result_banner()
 	_begin_turn(BoardState.PLAYER)
 	_set_status("对阵 %s：选择空格落子，或先使用术法。" % enemy_ai.get_profile_name())
 	_show_feedback("战斗开始：己方获得起始能量 %d/%d。" % [player_energy, energy_max], [], "")
@@ -850,6 +864,7 @@ func _finish_turn(owner: int) -> void:
 		var winner := "你获胜" if owner == BoardState.PLAYER else "敌方获胜"
 		_record_battle_result(owner == BoardState.PLAYER)
 		_set_status("%s：连线 %s。可以重新开始。" % [winner, _format_line(winning_line)])
+		_show_result_banner(owner == BoardState.PLAYER, _format_line(winning_line))
 		_refresh_board()
 		return
 
@@ -864,6 +879,7 @@ func _set_draw() -> void:
 	game_over = true
 	_record_battle_result(false)
 	_set_status("平局。可以重新开始。")
+	_show_result_banner(false, "棋盘已无可落子")
 	_refresh_board()
 
 
@@ -893,6 +909,39 @@ func _clear_feedback() -> void:
 
 	if feedback_label != null:
 		feedback_label.text = "最近动作会显示在这里。"
+
+
+func _hide_result_banner() -> void:
+	if result_banner_tween != null:
+		result_banner_tween.kill()
+		result_banner_tween = null
+
+	if result_banner_label != null:
+		result_banner_label.visible = false
+		result_banner_label.modulate = Color(1, 1, 1, 1)
+		result_banner_label.scale = Vector2.ONE
+
+
+func _show_result_banner(player_won: bool, detail: String) -> void:
+	if result_banner_label == null:
+		return
+
+	if result_banner_tween != null:
+		result_banner_tween.kill()
+
+	var title := "胜利" if player_won else "失利"
+	var hint := "返回路线领取战利品" if player_won and launched_from_run else "重新整备后再战"
+	var banner_style := _make_panel_style(Color("#243f35") if player_won else Color("#472e31"), Color("#f0c65a") if player_won else Color("#d87568"))
+
+	result_banner_label.text = "%s  ·  %s\n%s" % [title, detail, hint]
+	result_banner_label.add_theme_stylebox_override("normal", banner_style)
+	result_banner_label.visible = true
+	result_banner_label.modulate = Color(1, 1, 1, 0.0)
+	result_banner_label.scale = Vector2.ONE
+	result_banner_tween = create_tween()
+	result_banner_tween.tween_property(result_banner_label, "modulate", Color(1, 1, 1, 1), 0.18)
+	result_banner_tween.tween_property(result_banner_label, "scale", Vector2(1.02, 1.02), 0.12)
+	result_banner_tween.tween_property(result_banner_label, "scale", Vector2.ONE, 0.12)
 
 
 func _show_feedback(text: String, target_cells: Array = [], kind: String = "skill") -> void:

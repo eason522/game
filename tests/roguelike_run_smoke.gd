@@ -391,11 +391,19 @@ func _assert_settlement_feedback_roundtrip() -> void:
 		failures.append("run settlement feedback: victory should explain pending reward")
 		return
 
+	if state.last_feedback_kind != "victory":
+		failures.append("run settlement feedback: victory should be typed for UI feedback")
+		return
+
 	var claimed_reward: Dictionary = reward_options[0]
 	state.claim_reward(claimed_reward.get("id", ""))
 
 	if not state.last_feedback.contains("获得奖励") or not state.last_feedback.contains("下一站"):
 		failures.append("run settlement feedback: reward claim should explain progression")
+		return
+
+	if state.last_feedback_kind != "reward_claimed":
+		failures.append("run settlement feedback: reward claim should be typed for UI feedback")
 		return
 
 	var choices := generator.generate_node_choices(state, state.get_current_node())
@@ -405,10 +413,18 @@ func _assert_settlement_feedback_roundtrip() -> void:
 		failures.append("run settlement feedback: route choice should explain pending choice")
 		return
 
+	if state.last_feedback_kind != "choice_pending":
+		failures.append("run settlement feedback: route choice should be typed for UI feedback")
+		return
+
 	state.claim_node_choice(choices[0].get("id", ""))
 
 	if not state.last_feedback.contains("完成") or not state.last_feedback.contains("下一站"):
 		failures.append("run settlement feedback: route choice claim should explain progression")
+		return
+
+	if state.last_feedback_kind != "choice_claimed":
+		failures.append("run settlement feedback: route choice claim should be typed for UI feedback")
 		return
 
 	var restored := RunStateScript.new()
@@ -416,3 +432,6 @@ func _assert_settlement_feedback_roundtrip() -> void:
 
 	if restored.last_feedback != state.last_feedback:
 		failures.append("run settlement feedback: feedback should roundtrip through save data")
+
+	if restored.last_feedback_kind != state.last_feedback_kind:
+		failures.append("run settlement feedback: feedback type should roundtrip through save data")
