@@ -410,6 +410,35 @@ func get_boss_pressure_validation_lines(run_state) -> Array:
 	return lines
 
 
+func get_boss_live_checklist_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary") or not run_state.has_method("get_battle_pacing_records"):
+		return ["Boss 实机检查：暂无 Run 数据，先推进到休息点并记录 Boss 前构筑"]
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var total_battles: int = pacing.get("total_battle_nodes", 0)
+	var boss_record := _boss_pacing_record(run_state.get_battle_pacing_records())
+	var lines: Array = []
+
+	if boss_record.is_empty():
+		lines.append(_boss_pre_entry_check_line(run_state))
+	else:
+		lines.append("Boss 实机检查：岩王已记录 %d 手，核对目标 %d-%d 与静息调气体感" % [
+			boss_record.get("actual_turn_count", 0),
+			boss_record.get("target_turn_min", 0),
+			boss_record.get("target_turn_max", 0),
+		])
+
+	if recorded_battles < total_battles:
+		lines.append("Boss 实机检查：继续打到 Boss 结算，再判断 Boss 上限是否需要单轴调整")
+	elif boss_record.is_empty():
+		lines.append("Boss 实机检查：完整样本缺少 Boss 记录，先复核路线结算回传")
+	else:
+		lines.append(_boss_post_entry_check_line(boss_record))
+
+	return lines
+
+
 func get_single_axis_tuning_candidates(run_state) -> Array:
 	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
 		return ["单轴候选：暂无 Run 数据，先完成一次实机记录"]
@@ -585,6 +614,42 @@ func _rest_focus_review_text(run_state, full_sample_ready: bool) -> String:
 		return "静息调气已取得，需打到 Boss 后验证体感"
 
 	return "静息调气尚未验证，Boss 前补强结论需保留"
+
+
+func _boss_pre_entry_check_line(run_state) -> String:
+	if _is_rest_step_active(run_state):
+		return "Boss 实机检查：当前在休息点，优先确认静息调气 +2 或记录未选原因"
+
+	if _has_reward_source(run_state, RewardGeneratorScript.REST_FOCUS_SOURCE_ID):
+		return "Boss 实机检查：静息调气已生效，进 Boss 前记录开局能量、奖励数和星砂"
+
+	return "Boss 实机检查：尚未验证静息调气，进 Boss 前确认是否经过休息点"
+
+
+func _boss_post_entry_check_line(boss_record: Dictionary) -> String:
+	match boss_record.get("actual_pacing_result", ""):
+		"over":
+			return "Boss 实机检查：Boss 偏慢，只复核 Boss 上限或休息点体感"
+		"under":
+			return "Boss 实机检查：Boss 偏快，先记录岩阵压制是否不足"
+		"target":
+			return "Boss 实机检查：Boss 目标内，保留 Boss 上限并记录前 5 手体感"
+		_:
+			return "Boss 实机检查：Boss 结果待判断，补一次可复盘记录"
+
+
+func _is_rest_step_active(run_state) -> bool:
+	if run_state == null:
+		return false
+
+	if run_state.has_method("has_pending_node_choice") and run_state.has_pending_node_choice():
+		var choice_index: int = run_state.pending_choice_node_index
+
+		if choice_index >= 0 and choice_index < run_state.nodes.size():
+			return run_state.nodes[choice_index].get("type", "") == RunStateScript.NODE_REST
+
+	var current_node: Dictionary = run_state.get_current_node() if run_state.has_method("get_current_node") else {}
+	return current_node.get("type", "") == RunStateScript.NODE_REST
 
 
 func _has_reward_source(run_state, source_id: String) -> bool:

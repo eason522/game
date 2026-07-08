@@ -67,6 +67,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("先打到 Boss 结算"):
 		failures.append("run map feedback: expected boss validation to wait for boss settlement")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Boss 实机检查"):
+		failures.append("run map feedback: expected build panel to show boss live checklist")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("进 Boss 前确认是否经过休息点"):
+		failures.append("run map feedback: expected boss live checklist to mention rest-step verification")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 
@@ -203,6 +209,9 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("静息调气已生效"):
 		failures.append("run map feedback: expected boss prep summary to show active rest focus")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("进 Boss 前记录开局能量"):
+		failures.append("run map feedback: expected boss live checklist to mention pre-boss resource recording")
 
 	var reward_options: Array = scene.reward_generator.generate_options(scene.run_state, scene.run_state.get_current_node())
 	scene.run_state.resolve_current_node(true, reward_options, 14)
