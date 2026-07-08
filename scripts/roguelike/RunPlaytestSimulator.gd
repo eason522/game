@@ -687,6 +687,54 @@ func get_editor_run_acceptance_lines(run_state) -> Array:
 	return lines
 
 
+func get_editor_next_action_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_current_node"):
+		return ["编辑器指引：从路线图开始完整 Run"]
+
+	if run_state.run_failed:
+		return ["编辑器指引：记录失败节点、失败前资源和重开原因后开始新 Run"]
+
+	if run_state.run_completed:
+		var pressure_level := _boss_opening_pressure_level(run_state)
+
+		if pressure_level == RunStateScript.BOSS_OPENING_PRESSURE_HIGH:
+			return ["编辑器指引：本轮先不改普通战斗，下一轮只复核 Boss 开局资源和岩阵压迫"]
+
+		if run_state.boss_opening_feel.is_empty():
+			return ["编辑器指引：点击 Boss 前 5 手体感按钮，完成本轮主观记录"]
+
+		match run_state.boss_opening_feel:
+			RunStateScript.BOSS_OPENING_FEEL_STABLE:
+				return ["编辑器指引：本轮可停手，记录 Demo 验收结论并保持当前数值"]
+			RunStateScript.BOSS_OPENING_FEEL_PRESSURE:
+				return ["编辑器指引：下一轮只复核 Boss 手感轴，不动普通战斗"]
+			RunStateScript.BOSS_OPENING_FEEL_UNCLEAR:
+				return ["编辑器指引：保留记录，补一轮可复盘样本"]
+
+	if run_state.has_pending_reward():
+		return ["编辑器指引：先领取战利品，再看构筑摘要和下一站目标手数"]
+
+	if run_state.has_pending_node_choice():
+		return ["编辑器指引：处理%s选择，记录星砂、奖励和是否拿到静息调气" % _pending_choice_type_label(run_state)]
+
+	var current_node: Dictionary = run_state.get_current_node()
+	var title: String = current_node.get("title", "当前节点")
+
+	match current_node.get("type", ""):
+		RunStateScript.NODE_BATTLE:
+			return ["编辑器指引：进入%s，结束后核对实测手数和奖励选择" % title]
+		RunStateScript.NODE_BOSS:
+			return ["编辑器指引：进入%s，重点看第 1/3/5 手快照、可用能量和反制点" % title]
+		RunStateScript.NODE_EVENT:
+			return ["编辑器指引：处理%s，记录星砂变化是否支撑后续商店" % title]
+		RunStateScript.NODE_SHOP:
+			return ["编辑器指引：处理%s，优先验证星砂能否买到目标奖励" % title]
+		RunStateScript.NODE_REST:
+			return ["编辑器指引：处理%s，优先选择或记录未选静息调气" % title]
+		_:
+			return ["编辑器指引：选择当前可进入节点继续完整 Run"]
+
+
 func get_single_axis_tuning_candidates(run_state) -> Array:
 	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
 		return ["单轴候选：暂无 Run 数据，先完成一次实机记录"]
@@ -941,6 +989,15 @@ func _is_rest_step_active(run_state) -> bool:
 
 	var current_node: Dictionary = run_state.get_current_node() if run_state.has_method("get_current_node") else {}
 	return current_node.get("type", "") == RunStateScript.NODE_REST
+
+
+func _pending_choice_type_label(run_state) -> String:
+	var choice_index: int = run_state.pending_choice_node_index
+
+	if choice_index < 0 or choice_index >= run_state.nodes.size():
+		return "路线"
+
+	return _snapshot_node_type_label(run_state.nodes[choice_index].get("type", ""))
 
 
 func _has_reward_source(run_state, source_id: String) -> bool:

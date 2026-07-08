@@ -97,6 +97,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("实机样本未齐"):
 		failures.append("run map feedback: expected fresh editor acceptance to wait for full sample")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("编辑器指引"):
+		failures.append("run map feedback: expected build panel to show editor next-action guide")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("进入试锋之局"):
+		failures.append("run map feedback: expected fresh editor guide to point at the first battle")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 
@@ -246,6 +252,9 @@ func _run() -> void:
 	if scene.route_guide_label == null or not scene.route_guide_label.text.contains("战利品"):
 		failures.append("run map feedback: expected pending reward guide to explain reward choice")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("先领取战利品"):
+		failures.append("run map feedback: expected editor guide to prioritize pending reward claim")
+
 	scene._claim_reward_at(0)
 
 	await process_frame
@@ -276,6 +285,9 @@ func _run() -> void:
 
 	if scene.route_guide_label == null or not scene.route_guide_label.text.contains("商店") or not scene.route_guide_label.text.contains("星砂"):
 		failures.append("run map feedback: expected shop guide to mention shop and starsand")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("处理商店选择"):
+		failures.append("run map feedback: expected editor guide to name pending shop choice")
 
 	scene.run_state.pending_node_choices.clear()
 	scene.run_state.pending_choice_node_index = -1
@@ -407,6 +419,9 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("只做 Boss-only 复核"):
 		failures.append("run map feedback: expected editor acceptance to isolate pressure-heavy boss review")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("下一轮只复核 Boss 开局资源"):
+		failures.append("run map feedback: expected editor guide to isolate the next boss review")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("完整 Run 已齐且 Boss 快照压力偏高"):
 		failures.append("run map feedback: expected closeout to stay open for pressure-heavy snapshot")
 
@@ -477,6 +492,9 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("可作为本轮 Demo 实机验收"):
 		failures.append("run map feedback: expected editor acceptance to close stable full-run evidence")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("本轮可停手"):
+		failures.append("run map feedback: expected editor guide to stop after stable full-run acceptance")
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)
