@@ -9,6 +9,7 @@ const RESULT_BANNER_HEIGHT := 64.0
 const RESULT_BANNER_TOP_OFFSET := 98.0
 const BASE_ENERGY_MAX := 6
 const ROCK_BOSS_ROCK_INTERVAL := 3
+const BOSS_OPENING_OBSERVATION_MOVES := 5
 const RUN_MAP_SCENE_PATH := "res://scenes/roguelike/RunMapScene.tscn"
 const RUN_STATE_META := "tymj_run_state"
 const BATTLE_NODE_INDEX_META := "tymj_battle_node_index"
@@ -1367,7 +1368,15 @@ func _refresh_info_labels() -> void:
 
 func _battle_tutorial_hint() -> String:
 	if game_over:
+		if _is_rock_boss_battle():
+			return "入门提示：返回路线后记录 Boss 前 5 手体感，作为本轮收口证据。"
+
 		return "入门提示：战斗结束后返回路线，胜利会进入战利品三选一。"
+
+	var boss_opening_hint := _boss_opening_observation_hint()
+
+	if not boss_opening_hint.is_empty():
+		return boss_opening_hint
 
 	if current_turn != BoardState.PLAYER:
 		return "入门提示：敌方思考时观察意图面板，下一手优先堵住四连或争夺灵脉。"
@@ -1384,8 +1393,37 @@ func _battle_tutorial_hint() -> String:
 	return "入门提示：目标是连成五子；看到敌方四连时，优先封堵关键点。"
 
 
+func _boss_opening_observation_hint() -> String:
+	if not _is_rock_boss_battle() or move_count >= BOSS_OPENING_OBSERVATION_MOVES:
+		return ""
+
+	var observed_move: int = clamp(move_count + 1, 1, BOSS_OPENING_OBSERVATION_MOVES)
+	var focus := "记录开局岩阵是否卡住中心路线"
+
+	if observed_move >= 5:
+		focus = "确认 5 手内是否有破岩、封手或连线反制点"
+	elif observed_move >= 3:
+		focus = "核对可用能量、灵脉落点和岩阵压迫"
+
+	var rhythm := "己方行动前先看安全落点"
+
+	if current_turn != BoardState.PLAYER:
+		rhythm = "敌方思考时观察下一手压迫方向"
+
+	return "入门提示：Boss 前 5 手观察（%d/%d）：%s；%s。" % [
+		observed_move,
+		BOSS_OPENING_OBSERVATION_MOVES,
+		focus,
+		rhythm,
+	]
+
+
+func _is_rock_boss_battle() -> bool:
+	return enemy_ai != null and enemy_ai.get_profile_id() == EnemyAI.PROFILE_ROCK_BOSS
+
+
 func _format_enemy_intro() -> String:
-	if enemy_ai.get_profile_id() == EnemyAI.PROFILE_ROCK_BOSS:
+	if _is_rock_boss_battle():
 		return "岩王开局布置岩阵，并每 %d 个敌方回合尝试生成岩石。" % ROCK_BOSS_ROCK_INTERVAL
 
 	return "当前棋风：%s。落子后会显示具体意图。" % enemy_ai.get_profile_intent()

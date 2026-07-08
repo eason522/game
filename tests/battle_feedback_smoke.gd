@@ -111,6 +111,39 @@ func _run() -> void:
 	elif not scene.tutorial_hint_label.text.contains("中心灵脉"):
 		failures.append("battle feedback: expected opening tutorial hint to mention center spirit cells")
 
+	scene.enemy_ai.set_profile(EnemyAI.PROFILE_ROCK_BOSS)
+	scene.move_count = 0
+	scene.current_turn = BoardState.PLAYER
+	scene.game_over = false
+	scene._refresh_info_labels()
+
+	if scene.tutorial_hint_label == null or not scene.tutorial_hint_label.text.contains("Boss 前 5 手观察") or not scene.tutorial_hint_label.text.contains("岩阵"):
+		failures.append("battle feedback: expected rock boss opening hint to guide first-five-turn observation")
+
+	scene.move_count = 2
+	scene._refresh_info_labels()
+
+	if scene.tutorial_hint_label == null or not scene.tutorial_hint_label.text.contains("可用能量"):
+		failures.append("battle feedback: expected rock boss opening hint to call out available energy by move three")
+
+	scene.move_count = 4
+	scene._refresh_info_labels()
+
+	if scene.tutorial_hint_label == null or not scene.tutorial_hint_label.text.contains("反制点"):
+		failures.append("battle feedback: expected rock boss opening hint to call out counterplay by move five")
+
+	scene.game_over = true
+	scene._refresh_info_labels()
+
+	if scene.tutorial_hint_label == null or not scene.tutorial_hint_label.text.contains("返回路线") or not scene.tutorial_hint_label.text.contains("体感"):
+		failures.append("battle feedback: expected rock boss ending hint to ask for first-five-turn feel record")
+
+	scene.enemy_ai.set_profile(EnemyAI.PROFILE_NOVICE)
+	scene.move_count = 0
+	scene.current_turn = BoardState.PLAYER
+	scene.game_over = false
+	scene._refresh_info_labels()
+
 	if scene.sound_toggle_button == null or scene.hints_toggle_button == null:
 		failures.append("battle feedback: expected demo setting toggles to exist")
 	else:

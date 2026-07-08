@@ -30,6 +30,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - live tuning verdicts now treat pressured or unclear first-five-turn Boss feel as a priority signal even when turn counts are on target
 - run map now includes a live run closeout line that keeps incomplete samples open, requires Boss first-five-turn feel, and only closes the run when the evidence is ready
 - run map now shows a Boss pressure follow-up checklist that focuses the next live sample on rest-focus resources, opening rock pressure, available energy, and first-five-turn counterplay
+- Rock King battles now show first-five-turn observation hints inside the battle tutorial panel so live playtests can track opening rock pressure before recording route-side feel
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement
