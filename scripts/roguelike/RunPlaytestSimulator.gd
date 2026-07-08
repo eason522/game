@@ -621,6 +621,72 @@ func get_boss_live_checklist_lines(run_state) -> Array:
 	return lines
 
 
+func get_editor_run_acceptance_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary") or not run_state.has_method("get_battle_pacing_records"):
+		return ["编辑器验收：暂无 Run 数据，先从路线图开始完整试玩"]
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var total_battles: int = pacing.get("total_battle_nodes", 0)
+
+	if recorded_battles < total_battles:
+		return [
+			"编辑器验收：实机样本未齐 %d/%d，继续按路线打到 Boss 结算" % [recorded_battles, total_battles],
+			"编辑器验收：Boss 结算后补前 5 手体感，再看快照判读与静息复核",
+		]
+
+	if run_state.run_failed:
+		return ["编辑器验收：Run 已失败，先记录失败节点、Boss 前资源与重开原因"]
+
+	var boss_record := _boss_pacing_record(run_state.get_battle_pacing_records())
+
+	if boss_record.is_empty():
+		return ["编辑器验收：完整样本缺少 Boss 记录，先复核结算回传"]
+
+	var pressure_level := _boss_opening_pressure_level(run_state)
+	var pressure_text := _boss_opening_pressure_acceptance_label(pressure_level)
+	var feel_label: String = run_state.get_boss_opening_feel_label() if run_state.has_method("get_boss_opening_feel_label") else "未记录"
+	var rest_text := "静息调气已生效" if _has_reward_source(run_state, RewardGeneratorScript.REST_FOCUS_SOURCE_ID) else "静息调气未验证"
+	var lines: Array = [
+		"编辑器验收：完整 Run %d/%d 场，目标内 %d/%d，总 %d 手，%s" % [
+			recorded_battles,
+			total_battles,
+			pacing.get("on_target_count", 0),
+			recorded_battles,
+			pacing.get("actual_turn_total", 0),
+			rest_text,
+		],
+		"编辑器验收：Boss %d 手，快照%s，体感：%s" % [
+			boss_record.get("actual_turn_count", 0),
+			pressure_text,
+			feel_label,
+		],
+	]
+
+	if pressure_level == RunStateScript.BOSS_OPENING_PRESSURE_HIGH:
+		lines.append("编辑器验收：压力偏高，只做 Boss-only 复核，不动普通战斗")
+		return lines
+
+	if run_state.boss_opening_feel.is_empty():
+		lines.append("编辑器验收：先点选 Boss 前 5 手体感，本轮暂不关闭结论")
+		return lines
+
+	match run_state.boss_opening_feel:
+		RunStateScript.BOSS_OPENING_FEEL_STABLE:
+			if pressure_level == RunStateScript.BOSS_OPENING_PRESSURE_STABLE and pacing.get("on_target_count", 0) == recorded_battles:
+				lines.append("编辑器验收：可作为本轮 Demo 实机验收，保持当前数值")
+			else:
+				lines.append("编辑器验收：体感更稳但仍需复看一轮 Boss 开局")
+		RunStateScript.BOSS_OPENING_FEEL_PRESSURE:
+			lines.append("编辑器验收：体感仍压迫，转入 Boss 手感轴复核")
+		RunStateScript.BOSS_OPENING_FEEL_UNCLEAR:
+			lines.append("编辑器验收：体感不明确，保留记录并补一轮可复盘样本")
+		_:
+			lines.append("编辑器验收：体感记录异常，先复核按钮写入")
+
+	return lines
+
+
 func get_single_axis_tuning_candidates(run_state) -> Array:
 	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
 		return ["单轴候选：暂无 Run 数据，先完成一次实机记录"]
@@ -1055,6 +1121,18 @@ func _boss_opening_pressure_level(run_state) -> String:
 		return ""
 
 	return run_state.get_boss_opening_pressure_level()
+
+
+func _boss_opening_pressure_acceptance_label(pressure_level: String) -> String:
+	match pressure_level:
+		RunStateScript.BOSS_OPENING_PRESSURE_HIGH:
+			return "压力偏高"
+		RunStateScript.BOSS_OPENING_PRESSURE_REVIEW:
+			return "需复看"
+		RunStateScript.BOSS_OPENING_PRESSURE_STABLE:
+			return "暂稳"
+		_:
+			return "未记录"
 
 
 func _boss_opening_evidence_suffix(run_state) -> String:

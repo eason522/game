@@ -91,6 +91,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("进 Boss 前确认是否经过休息点"):
 		failures.append("run map feedback: expected boss live checklist to mention rest-step verification")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("编辑器验收"):
+		failures.append("run map feedback: expected build panel to show editor run acceptance")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("实机样本未齐"):
+		failures.append("run map feedback: expected fresh editor acceptance to wait for full sample")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 
@@ -398,6 +404,9 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("先只复核 Boss 开局资源"):
 		failures.append("run map feedback: expected pressure-heavy verdict to avoid normal battle tuning")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("只做 Boss-only 复核"):
+		failures.append("run map feedback: expected editor acceptance to isolate pressure-heavy boss review")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("完整 Run 已齐且 Boss 快照压力偏高"):
 		failures.append("run map feedback: expected closeout to stay open for pressure-heavy snapshot")
 
@@ -465,6 +474,9 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("快照暂稳且体感更稳"):
 		failures.append("run map feedback: expected rest-focus audit to keep boosted stable boss feel")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("可作为本轮 Demo 实机验收"):
+		failures.append("run map feedback: expected editor acceptance to close stable full-run evidence")
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)

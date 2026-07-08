@@ -732,10 +732,11 @@ func _refresh_build_summary() -> void:
 	var boss_followup_lines := playtest_simulator.get_boss_pressure_followup_lines(run_state)
 	var rest_focus_audit_lines := playtest_simulator.get_rest_focus_feel_audit_lines(run_state)
 	var boss_live_checklist_lines := playtest_simulator.get_boss_live_checklist_lines(run_state)
+	var editor_acceptance_lines := playtest_simulator.get_editor_run_acceptance_lines(run_state)
 	var boss_validation_lines := playtest_simulator.get_boss_pressure_validation_lines(run_state)
 	var boss_observation_lines := run_state.get_boss_opening_observation_lines()
 	var boss_pressure_lines := run_state.get_boss_opening_pressure_lines()
-	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n调参建议：%s\n基准试玩：%s\n实测对照：%s\n样本矩阵：%s\n矩阵落点：%s\n试玩检查：%s\n调参候选：%s" % [
+	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n调参建议：%s\n基准试玩：%s\n实测对照：%s\n样本矩阵：%s\n矩阵落点：%s\n试玩检查：%s\n调参候选：%s" % [
 		" / ".join(build_lines),
 		" / ".join(pacing_lines),
 		" / ".join(boss_prep_lines),
@@ -749,6 +750,7 @@ func _refresh_build_summary() -> void:
 		" / ".join(boss_followup_lines),
 		" / ".join(rest_focus_audit_lines),
 		" / ".join(boss_live_checklist_lines),
+		" / ".join(editor_acceptance_lines),
 		" / ".join(tuning_lines),
 		_baseline_playtest_summary_text(),
 		_playtest_comparison_text(),
