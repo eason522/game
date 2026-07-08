@@ -275,12 +275,57 @@ func _run() -> void:
 	scene.run_state.nodes[7]["actual_turn_count"] = 26
 	scene.run_state.nodes[7]["actual_pacing_result"] = "target"
 	scene.run_state.nodes[7]["actual_pacing_delta"] = 0
+	scene.run_state.record_boss_opening_observation({
+		"enemy": "岩王",
+		"total_moves": 5,
+		"snapshots": [
+			{
+				"move_count": 1,
+				"actor": "己方",
+				"position": "F6",
+				"player_energy": 2,
+				"rock_count": 6,
+				"playable_count": 114,
+				"focus": "开局岩阵",
+			},
+			{
+				"move_count": 3,
+				"actor": "己方",
+				"position": "F7",
+				"player_energy": 3,
+				"rock_count": 6,
+				"playable_count": 112,
+				"focus": "能量与岩阵",
+			},
+			{
+				"move_count": 5,
+				"actor": "己方",
+				"position": "G7",
+				"player_energy": 4,
+				"rock_count": 6,
+				"playable_count": 110,
+				"focus": "反制点",
+			},
+		],
+	})
 	scene._refresh()
 
 	await process_frame
 
 	if scene.reward_label == null or not scene.reward_label.text.contains("Boss 前 5 手体感记录"):
 		failures.append("run map feedback: expected boss feel recording panel after boss run is complete")
+
+	if scene.reward_label == null or not scene.reward_label.text.contains("Boss 前 5 手快照") or not scene.reward_label.text.contains("第 5 手"):
+		failures.append("run map feedback: expected boss feel panel to show opening observation snapshots")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Boss 前 5 手快照") or not scene.build_summary_label.text.contains("反制点"):
+		failures.append("run map feedback: expected build panel to show boss opening observation snapshots")
+
+	var restored_state := RunStateScript.new()
+	restored_state.load_from_dict(scene.run_state.to_dict())
+
+	if not " / ".join(restored_state.get_boss_opening_observation_lines()).contains("第 3 手"):
+		failures.append("run map feedback: expected boss opening snapshots to survive state serialization")
 
 	if scene.reward_buttons.size() < 3 or not scene.reward_buttons[0].visible or not scene.reward_buttons[0].text.contains("更稳"):
 		failures.append("run map feedback: expected boss feel buttons to be visible")

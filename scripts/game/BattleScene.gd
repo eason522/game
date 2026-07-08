@@ -16,6 +16,7 @@ const BATTLE_NODE_INDEX_META := "tymj_battle_node_index"
 const BATTLE_RESULT_META := "tymj_battle_result"
 const BATTLE_MOVE_COUNT_META := "tymj_battle_move_count"
 const BATTLE_ENEMY_PROFILE_META := "tymj_battle_enemy_profile_id"
+const BOSS_OPENING_OBSERVATION_META := "tymj_boss_opening_observation"
 const DEMO_SOUND_ENABLED_META := "tymj_demo_sound_enabled"
 const DEMO_HINTS_ENABLED_META := "tymj_demo_hints_enabled"
 const ENEMY_THINK_DELAY_SECONDS := 0.42
@@ -93,6 +94,7 @@ var twin_piece_active := false
 var feedback_log: Array = []
 var feedback_flashes: Dictionary = {}
 var feedback_flash_token := 0
+var boss_opening_observation_snapshots: Array = []
 var result_banner_tween: Tween
 var turn_rhythm_tween: Tween
 var enemy_think_delay_seconds := ENEMY_THINK_DELAY_SECONDS
@@ -603,6 +605,7 @@ func _start_new_game() -> void:
 	last_move_owner = BoardState.EMPTY
 	move_count = 0
 	enemy_turn_count = 0
+	boss_opening_observation_snapshots.clear()
 	rock_break_refunds_left = rock_break_refunds_per_battle
 	seal_refunds_left = seal_refunds_per_battle
 	player_energy = min(energy_max, starting_player_energy_bonus)
@@ -680,6 +683,7 @@ func _on_cell_pressed(pos: Vector2i) -> void:
 	warning_target = Vector2i(-1, -1)
 	_record_move(pos, BoardState.PLAYER)
 	_apply_terrain_reward(pos, BoardState.PLAYER)
+	_capture_boss_opening_observation(BoardState.PLAYER, pos)
 	var skill_notes := _resolve_player_piece_skills(pos)
 	_show_feedback("己方落子 %s。" % _format_board_pos(pos), [pos], "player")
 	_finish_turn(BoardState.PLAYER)
@@ -711,6 +715,7 @@ func _play_enemy_turn() -> void:
 	board.place_piece(move, BoardState.ENEMY)
 	_record_move(move, BoardState.ENEMY)
 	_apply_terrain_reward(move, BoardState.ENEMY)
+	_capture_boss_opening_observation(BoardState.ENEMY, move)
 	_show_feedback("%s 落子 %s。" % [enemy_ai.get_profile_name(), _format_board_pos(move)], [move], "enemy")
 	_finish_turn(BoardState.ENEMY)
 
@@ -1029,6 +1034,9 @@ func _record_battle_result(player_won: bool) -> void:
 	get_tree().root.set_meta(BATTLE_RESULT_META, "victory" if player_won else "defeat")
 	get_tree().root.set_meta(BATTLE_MOVE_COUNT_META, move_count)
 
+	if _is_rock_boss_battle() and not boss_opening_observation_snapshots.is_empty():
+		get_tree().root.set_meta(BOSS_OPENING_OBSERVATION_META, _boss_opening_observation_payload())
+
 
 func _return_to_run_map() -> void:
 	if not launched_from_run or not game_over:
@@ -1182,6 +1190,68 @@ func _record_move(pos: Vector2i, owner: int) -> void:
 	last_move = pos
 	last_move_owner = owner
 	move_count += 1
+
+
+func _capture_boss_opening_observation(owner: int, pos: Vector2i) -> void:
+	if not _is_rock_boss_battle() or not [1, 3, 5].has(move_count):
+		return
+
+	for snapshot in boss_opening_observation_snapshots:
+		if snapshot.get("move_count", 0) == move_count:
+			return
+
+	boss_opening_observation_snapshots.append({
+		"move_count": move_count,
+		"actor": "己方" if owner == BoardState.PLAYER else enemy_ai.get_profile_name(),
+		"position": _format_board_pos(pos),
+		"player_energy": player_energy,
+		"enemy_energy": enemy_energy,
+		"rock_count": _count_terrain(BoardState.TERRAIN_ROCK),
+		"playable_count": board.get_playable_cells(BoardState.PLAYER).size(),
+		"player_piece_count": _count_pieces(BoardState.PLAYER),
+		"enemy_piece_count": _count_pieces(BoardState.ENEMY),
+		"focus": _boss_opening_focus_for_move(move_count),
+	})
+
+
+func _boss_opening_observation_payload() -> Dictionary:
+	return {
+		"enemy": enemy_ai.get_profile_name(),
+		"total_moves": min(move_count, BOSS_OPENING_OBSERVATION_MOVES),
+		"snapshots": boss_opening_observation_snapshots.duplicate(true),
+	}
+
+
+func _boss_opening_focus_for_move(observed_move: int) -> String:
+	if observed_move >= 5:
+		return "反制点"
+
+	if observed_move >= 3:
+		return "能量与岩阵"
+
+	return "开局岩阵"
+
+
+func _count_terrain(terrain: String) -> int:
+	var count := 0
+
+	for y in range(board.height):
+		for x in range(board.width):
+			if board.get_terrain(Vector2i(x, y)) == terrain:
+				count += 1
+
+	return count
+
+
+func _count_pieces(owner: int) -> int:
+	var count := 0
+
+	for y in range(board.height):
+		for x in range(board.width):
+			if board.get_piece(Vector2i(x, y)) == owner:
+				count += 1
+
+	return count
 
 
 func _format_board_pos(pos: Vector2i) -> String:

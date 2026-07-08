@@ -29,6 +29,7 @@ var coins := STARTING_COINS
 var last_feedback := ""
 var last_feedback_kind := ""
 var boss_opening_feel := ""
+var boss_opening_observation := {}
 
 
 func _init(route_nodes: Array = []) -> void:
@@ -54,6 +55,7 @@ func setup(route_nodes: Array) -> void:
 	last_feedback = "新的试炼已展开。"
 	last_feedback_kind = "run_start"
 	boss_opening_feel = ""
+	boss_opening_observation.clear()
 
 	if nodes.is_empty():
 		return
@@ -389,6 +391,40 @@ func record_boss_opening_feel(feel: String) -> bool:
 	return true
 
 
+func record_boss_opening_observation(observation: Dictionary) -> bool:
+	var snapshots: Array = observation.get("snapshots", [])
+
+	if snapshots.is_empty():
+		return false
+
+	boss_opening_observation = observation.duplicate(true)
+	return true
+
+
+func get_boss_opening_observation_lines() -> Array:
+	var snapshots: Array = boss_opening_observation.get("snapshots", [])
+
+	if snapshots.is_empty():
+		return ["Boss 前 5 手快照：尚未记录战内观察。"]
+
+	var lines: Array = [
+		"Boss 前 5 手快照：已记录 %d 个关键手" % snapshots.size(),
+	]
+
+	for snapshot in snapshots:
+		lines.append("第 %d 手 %s %s：%s，能量 %d，岩石 %d，可落点 %d" % [
+			snapshot.get("move_count", 0),
+			snapshot.get("actor", "行动方"),
+			snapshot.get("position", ""),
+			snapshot.get("focus", "观察"),
+			snapshot.get("player_energy", 0),
+			snapshot.get("rock_count", 0),
+			snapshot.get("playable_count", 0),
+		])
+
+	return lines
+
+
 func get_boss_opening_feel_label() -> String:
 	match boss_opening_feel:
 		BOSS_OPENING_FEEL_STABLE:
@@ -499,6 +535,7 @@ func to_dict() -> Dictionary:
 		"last_feedback": last_feedback,
 		"last_feedback_kind": last_feedback_kind,
 		"boss_opening_feel": boss_opening_feel,
+		"boss_opening_observation": boss_opening_observation.duplicate(true),
 	}
 
 
@@ -516,6 +553,7 @@ func load_from_dict(data: Dictionary) -> void:
 	last_feedback = data.get("last_feedback", "")
 	last_feedback_kind = data.get("last_feedback_kind", "")
 	boss_opening_feel = data.get("boss_opening_feel", "")
+	boss_opening_observation = data.get("boss_opening_observation", {}).duplicate(true)
 
 
 func _current_progress_feedback() -> String:

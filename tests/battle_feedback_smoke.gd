@@ -4,6 +4,7 @@ const BattleScene := preload("res://scenes/game/BattleScene.tscn")
 const BATTLE_NODE_INDEX_META := "tymj_battle_node_index"
 const BATTLE_RESULT_META := "tymj_battle_result"
 const BATTLE_MOVE_COUNT_META := "tymj_battle_move_count"
+const BOSS_OPENING_OBSERVATION_META := "tymj_boss_opening_observation"
 const DEMO_SOUND_ENABLED_META := "tymj_demo_sound_enabled"
 const DEMO_HINTS_ENABLED_META := "tymj_demo_hints_enabled"
 
@@ -137,6 +138,27 @@ func _run() -> void:
 
 	if scene.tutorial_hint_label == null or not scene.tutorial_hint_label.text.contains("返回路线") or not scene.tutorial_hint_label.text.contains("体感"):
 		failures.append("battle feedback: expected rock boss ending hint to ask for first-five-turn feel record")
+
+	scene.game_over = false
+	scene.move_count = 1
+	scene.player_energy = 2
+	scene._capture_boss_opening_observation(BoardState.PLAYER, Vector2i(5, 5))
+	scene.move_count = 3
+	scene.player_energy = 3
+	scene._capture_boss_opening_observation(BoardState.PLAYER, Vector2i(5, 6))
+	scene.move_count = 5
+	scene.player_energy = 4
+	scene._capture_boss_opening_observation(BoardState.PLAYER, Vector2i(6, 6))
+
+	if scene.boss_opening_observation_snapshots.size() != 3:
+		failures.append("battle feedback: expected rock boss first-five-turn snapshots to collect key moves")
+
+	scene.move_count = 17
+	scene._record_battle_result(true)
+	var boss_observation: Dictionary = root.get_meta(BOSS_OPENING_OBSERVATION_META, {})
+
+	if boss_observation.get("snapshots", []).size() != 3:
+		failures.append("battle feedback: expected rock boss result metadata to include opening snapshots")
 
 	scene.enemy_ai.set_profile(EnemyAI.PROFILE_NOVICE)
 	scene.move_count = 0
@@ -272,6 +294,7 @@ func _run() -> void:
 	root.remove_meta(BATTLE_NODE_INDEX_META)
 	root.remove_meta(BATTLE_RESULT_META)
 	root.remove_meta(BATTLE_MOVE_COUNT_META)
+	root.remove_meta(BOSS_OPENING_OBSERVATION_META)
 	root.remove_meta(DEMO_SOUND_ENABLED_META)
 	root.remove_meta(DEMO_HINTS_ENABLED_META)
 	await process_frame

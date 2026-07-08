@@ -5,6 +5,7 @@ const BATTLE_NODE_INDEX_META := "tymj_battle_node_index"
 const BATTLE_RESULT_META := "tymj_battle_result"
 const BATTLE_MOVE_COUNT_META := "tymj_battle_move_count"
 const BATTLE_ENEMY_PROFILE_META := "tymj_battle_enemy_profile_id"
+const BOSS_OPENING_OBSERVATION_META := "tymj_boss_opening_observation"
 const DEMO_SOUND_ENABLED_META := "tymj_demo_sound_enabled"
 const DEMO_HINTS_ENABLED_META := "tymj_demo_hints_enabled"
 const BATTLE_SCENE_PATH := "res://scenes/game/BattleScene.tscn"
@@ -135,23 +136,27 @@ func _apply_pending_battle_result() -> void:
 	var result: String = root.get_meta(BATTLE_RESULT_META)
 	var node_index: int = root.get_meta(BATTLE_NODE_INDEX_META, -1)
 	var move_count: int = root.get_meta(BATTLE_MOVE_COUNT_META, 0)
+	var boss_opening_observation: Dictionary = root.get_meta(BOSS_OPENING_OBSERVATION_META, {})
 
 	if node_index == run_state.current_index:
 		var reward_options: Array = []
+		var current_node := run_state.get_current_node()
 
 		if result == "victory":
-			var current_node := run_state.get_current_node()
-
 			if current_node.get("type", "") != RunStateScript.NODE_BOSS:
 				reward_options = reward_generator.generate_options(run_state, current_node)
 
 		run_state.resolve_current_node(result == "victory", reward_options, move_count)
+
+		if current_node.get("type", "") == RunStateScript.NODE_BOSS and not boss_opening_observation.is_empty():
+			run_state.record_boss_opening_observation(boss_opening_observation)
 
 	_persist_run_state()
 	root.remove_meta(BATTLE_RESULT_META)
 	root.remove_meta(BATTLE_NODE_INDEX_META)
 	root.remove_meta(BATTLE_MOVE_COUNT_META)
 	root.remove_meta(BATTLE_ENEMY_PROFILE_META)
+	root.remove_meta(BOSS_OPENING_OBSERVATION_META)
 
 
 func _build_layout() -> void:
@@ -577,7 +582,10 @@ func _refresh_reward_panel() -> void:
 		return
 
 	if _should_show_boss_feel_buttons():
-		reward_label.text = "Boss 前 5 手体感记录\n当前记录：%s" % run_state.get_boss_opening_feel_label()
+		reward_label.text = "Boss 前 5 手体感记录\n当前记录：%s\n%s" % [
+			run_state.get_boss_opening_feel_label(),
+			"\n".join(run_state.get_boss_opening_observation_lines()),
+		]
 		var feel_options := _boss_feel_options()
 
 		for index in range(reward_buttons.size()):
@@ -724,10 +732,12 @@ func _refresh_build_summary() -> void:
 	var boss_followup_lines := playtest_simulator.get_boss_pressure_followup_lines(run_state)
 	var boss_live_checklist_lines := playtest_simulator.get_boss_live_checklist_lines(run_state)
 	var boss_validation_lines := playtest_simulator.get_boss_pressure_validation_lines(run_state)
-	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n调参建议：%s\n基准试玩：%s\n实测对照：%s\n样本矩阵：%s\n矩阵落点：%s\n试玩检查：%s\n调参候选：%s" % [
+	var boss_observation_lines := run_state.get_boss_opening_observation_lines()
+	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n调参建议：%s\n基准试玩：%s\n实测对照：%s\n样本矩阵：%s\n矩阵落点：%s\n试玩检查：%s\n调参候选：%s" % [
 		" / ".join(build_lines),
 		" / ".join(pacing_lines),
 		" / ".join(boss_prep_lines),
+		" / ".join(boss_observation_lines),
 		" / ".join(playtest_snapshot_lines),
 		" / ".join(playtest_decision_lines),
 		" / ".join(playtest_verdict_lines),
