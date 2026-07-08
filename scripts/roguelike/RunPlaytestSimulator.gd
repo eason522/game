@@ -482,6 +482,61 @@ func get_boss_pressure_followup_lines(run_state) -> Array:
 	return lines
 
 
+func get_rest_focus_feel_audit_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary") or not run_state.has_method("get_battle_pacing_records"):
+		return ["静息复核：暂无 Run 数据，先推进到休息点和 Boss"]
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var total_battles: int = pacing.get("total_battle_nodes", 0)
+	var has_rest_focus := _has_reward_source(run_state, RewardGeneratorScript.REST_FOCUS_SOURCE_ID)
+
+	if recorded_battles < total_battles:
+		if has_rest_focus:
+			return ["静息复核：静息调气已拿到，继续补齐 Boss 样本后判断前 5 手压力"]
+
+		if _is_rest_step_active(run_state):
+			return ["静息复核：当前在休息点，优先选择或记录未选静息调气"]
+
+		return ["静息复核：样本未齐 %d/%d，先确认休息点是否拿到静息调气" % [recorded_battles, total_battles]]
+
+	var boss_record := _boss_pacing_record(run_state.get_battle_pacing_records())
+
+	if boss_record.is_empty():
+		return ["静息复核：完整样本缺少 Boss 记录，先复核结算回传"]
+
+	var rest_text := "静息调气已生效" if has_rest_focus else "静息调气未验证"
+	var feel_label: String = run_state.get_boss_opening_feel_label() if run_state.has_method("get_boss_opening_feel_label") else "未记录"
+	var pressure_level := _boss_opening_pressure_level(run_state)
+	var lines: Array = [
+		"静息复核：%s，Boss %d 手，前 5 手：%s" % [
+			rest_text,
+			boss_record.get("actual_turn_count", 0),
+			feel_label,
+		],
+	]
+
+	match pressure_level:
+		RunStateScript.BOSS_OPENING_PRESSURE_HIGH:
+			if has_rest_focus:
+				lines.append("静息复核：已补强但快照仍高压，下一轮只看开局岩阵、能量和反制点")
+			else:
+				lines.append("静息复核：快照高压且未验证静息调气，先复核休息点选择")
+		RunStateScript.BOSS_OPENING_PRESSURE_REVIEW:
+			lines.append("静息复核：快照需复看，先补体感记录再判断补强是否足够")
+		RunStateScript.BOSS_OPENING_PRESSURE_STABLE:
+			if run_state.boss_opening_feel == RunStateScript.BOSS_OPENING_FEEL_STABLE:
+				lines.append("静息复核：快照暂稳且体感更稳，补强可保留")
+			elif run_state.boss_opening_feel == RunStateScript.BOSS_OPENING_FEEL_PRESSURE:
+				lines.append("静息复核：快照暂稳但体感仍压迫，下一轮只复核 Boss 手感")
+			else:
+				lines.append("静息复核：快照暂稳，先补前 5 手体感再收口")
+		_:
+			lines.append("静息复核：尚无快照判读，先完成 Boss 前 5 手自动记录")
+
+	return lines
+
+
 func get_boss_pressure_validation_lines(run_state) -> Array:
 	if run_state == null or not run_state.has_method("get_run_pacing_summary") or not run_state.has_method("get_battle_pacing_records"):
 		return ["Boss 校验：暂无 Run 数据，先完成一轮实机记录"]

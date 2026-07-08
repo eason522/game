@@ -73,6 +73,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("开局能量"):
 		failures.append("run map feedback: expected fresh boss followup to mention pre-boss resources")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("静息复核"):
+		failures.append("run map feedback: expected build panel to show rest-focus feel audit")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("先确认休息点是否拿到静息调气"):
+		failures.append("run map feedback: expected fresh rest-focus audit to wait for rest verification")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Boss 校验"):
 		failures.append("run map feedback: expected build panel to show boss validation")
 
@@ -398,6 +404,9 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Boss 快照轴"):
 		failures.append("run map feedback: expected tuning candidates to include boss snapshot axis")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("已补强但快照仍高压"):
+		failures.append("run map feedback: expected rest-focus audit to flag boosted but pressured boss snapshot")
+
 	scene.run_state.record_boss_opening_observation({
 		"enemy": "岩王",
 		"total_moves": 5,
@@ -453,6 +462,9 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("体感更稳且目标内"):
 		failures.append("run map feedback: expected boss followup to show stable verification")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("快照暂稳且体感更稳"):
+		failures.append("run map feedback: expected rest-focus audit to keep boosted stable boss feel")
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)
