@@ -555,6 +555,13 @@ func _assert_route_choices_block_progress_and_apply_effects() -> void:
 
 	if state.rewards.is_empty():
 		failures.append("run route choice: shop purchase should add a build reward")
+		return
+
+	var rest_choices := generator.generate_node_choices(state, state.nodes[6])
+
+	if rest_choices[0].get("id", "") != "rest_focus_6" or rest_choices[0].get("amount", 0) != 2:
+		failures.append("run route choice: rest focus should grant +2 starting energy for boss prep")
+		return
 
 
 func _assert_reward_rarity_stack_limits_and_prices() -> void:

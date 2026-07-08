@@ -364,7 +364,7 @@ func _sample_matrix_action_lines(samples: Array) -> Array:
 		lines.append("矩阵落点：偏慢样本高于 88 手，若实机接近则普通战斗目标 -2 或后段奖励 +1")
 
 	if not boss_pressure_sample.is_empty() and boss_pressure_sample.get("on_target_battles", 0) < boss_pressure_sample.get("recorded_battles", 0):
-		lines.append("矩阵落点：Boss 压力样本有越界，优先复核 Boss 上限 30 手与休息点补强")
+		lines.append("矩阵落点：Boss 压力样本有越界，优先复核 Boss 上限 30 手与休息点静息调气 +2")
 
 	if lines.is_empty():
 		lines.append("矩阵落点：样本暂稳，下一轮只按实机最大偏差做小步调整")
@@ -387,7 +387,7 @@ func _candidate_line_for_biggest_delta(record: Dictionary) -> String:
 
 	if node_type == RunStateScript.NODE_BOSS:
 		if delta > 0:
-			return "单轴候选：Boss 手数轴，%s 偏慢；优先复核 Boss 上限或休息点补强" % title
+			return "单轴候选：Boss 手数轴，%s 偏慢；优先复核 Boss 上限或休息点静息调气 +2" % title
 
 		if delta < 0:
 			return "单轴候选：Boss 手数轴，%s 偏快；先观察岩阵压制是否不足" % title

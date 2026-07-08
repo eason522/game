@@ -28,6 +28,8 @@ const RARITY_PRICES := {
 	RARITY_RARE: 5,
 }
 
+const REST_FOCUS_STARTING_ENERGY_BONUS := 2
+
 const EXCLUSIVE_GROUP_LABELS := {
 	"skill_refund": "术法返能",
 	"energy_core": "开局核心",
@@ -195,10 +197,10 @@ func _generate_rest_choices(node: Dictionary) -> Array:
 		{
 			"id": "rest_focus_%d" % node_index,
 			"title": "静息调气",
-			"description": "后续战斗开局额外获得 1 点能量。",
+			"description": "后续战斗开局额外获得 %d 点能量。" % REST_FOCUS_STARTING_ENERGY_BONUS,
 			"choice_type": CHOICE_REWARD,
 			"effect": EFFECT_STARTING_ENERGY,
-			"amount": 1,
+			"amount": REST_FOCUS_STARTING_ENERGY_BONUS,
 			"source_id": "rest_focus",
 			"rarity": RARITY_COMMON,
 			"max_stack": 2,
