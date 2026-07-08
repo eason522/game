@@ -419,6 +419,34 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: live review should include recorded boss opening feel")
 		return
 
+	var pressure_state = simulator.run_baseline().get("state")
+	pressure_state.record_boss_opening_feel(RunStateScript.BOSS_OPENING_FEEL_PRESSURE)
+	var pressure_candidates := simulator.get_single_axis_tuning_candidates(pressure_state)
+
+	if not _lines_contain(pressure_candidates, "Boss 手感轴") or not _lines_contain(pressure_candidates, "前 5 手仍压迫"):
+		failures.append("run playtest simulator: pressured boss feel should become the priority tuning candidate")
+		return
+
+	var pressure_verdict := simulator.get_live_playtest_verdict_lines(pressure_state)
+
+	if not _lines_contain(pressure_verdict, "Boss 前 5 手仍压迫") or not _lines_contain(pressure_verdict, "不动普通战斗"):
+		failures.append("run playtest simulator: pressured boss feel should block keep-current verdict")
+		return
+
+	var pressure_decision := simulator.get_live_playtest_decision_lines(pressure_state)
+
+	if not _lines_contain(pressure_decision, "Boss 手感轴") or not _lines_contain(pressure_decision, "仍有明显压迫"):
+		failures.append("run playtest simulator: live decision should include pressured boss feel evidence")
+		return
+
+	var unclear_state = simulator.run_baseline().get("state")
+	unclear_state.record_boss_opening_feel(RunStateScript.BOSS_OPENING_FEEL_UNCLEAR)
+	var unclear_verdict := simulator.get_live_playtest_verdict_lines(unclear_state)
+
+	if not _lines_contain(unclear_verdict, "体感不明确") or not _lines_contain(unclear_verdict, "补一轮"):
+		failures.append("run playtest simulator: unclear boss feel should request another reviewable sample")
+		return
+
 	var slow_boss_validation := simulator.get_boss_pressure_validation_lines(slow_report.get("state"))
 
 	if not _lines_contain(slow_boss_validation, "Boss 偏慢") or not _lines_contain(slow_boss_validation, "Boss 上限"):

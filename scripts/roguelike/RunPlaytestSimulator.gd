@@ -285,7 +285,10 @@ func get_live_playtest_decision_lines(run_state) -> Array:
 			pacing.get("actual_turn_total", 0),
 		],
 		"实机结论：优先候选：%s" % first_candidate,
-		"实机结论：证据：%s" % String(comparison.get("attention", "校准关注：实测接近基准")).trim_prefix("校准关注："),
+		"实机结论：证据：%s%s" % [
+			String(comparison.get("attention", "校准关注：实测接近基准")).trim_prefix("校准关注："),
+			_boss_opening_feel_evidence_suffix(run_state),
+		],
 	]
 
 
@@ -309,6 +312,12 @@ func get_live_playtest_verdict_lines(run_state) -> Array:
 
 	if not candidates.is_empty():
 		first_candidate = String(candidates[0]).trim_prefix("单轴候选：")
+
+	if run_state.boss_opening_feel == RunStateScript.BOSS_OPENING_FEEL_PRESSURE:
+		return ["实机判定：Boss 前 5 手仍压迫，先只复核 Boss 上限或开局资源，不动普通战斗"]
+
+	if run_state.boss_opening_feel == RunStateScript.BOSS_OPENING_FEEL_UNCLEAR:
+		return ["实机判定：Boss 前 5 手体感不明确，保持当前数值并补一轮可复盘样本"]
 
 	if _is_live_sample_close_to_baseline(pacing, comparison):
 		return ["实机判定：保持当前数值，进入下一轮手感观察"]
@@ -461,6 +470,10 @@ func get_single_axis_tuning_candidates(run_state) -> Array:
 	var comparison := compare_run_to_baseline(run_state)
 	var biggest_delta_record: Dictionary = comparison.get("biggest_delta_record", {})
 	var lines: Array = []
+	var feel_candidate := _candidate_line_for_boss_opening_feel(run_state)
+
+	if not feel_candidate.is_empty():
+		lines.append(feel_candidate)
 
 	if not biggest_delta_record.is_empty():
 		lines.append(_candidate_line_for_biggest_delta(biggest_delta_record))
@@ -838,6 +851,26 @@ func _candidate_line_for_rewards(run_state, pacing: Dictionary) -> String:
 		return "单轴候选：奖励轴偏稀；若 Boss 前构筑不足，优先强化休息点"
 
 	return "单轴候选：奖励轴暂稳，先不改奖励池"
+
+
+func _candidate_line_for_boss_opening_feel(run_state) -> String:
+	if run_state == null or not run_state.has_method("get_boss_opening_feel_label"):
+		return ""
+
+	match run_state.boss_opening_feel:
+		RunStateScript.BOSS_OPENING_FEEL_PRESSURE:
+			return "单轴候选：Boss 手感轴，前 5 手仍压迫；只复核 Boss 上限、岩阵开局或静息调气体感"
+		RunStateScript.BOSS_OPENING_FEEL_UNCLEAR:
+			return "单轴候选：Boss 体感轴，记录不明确；先补一轮可复盘样本"
+		_:
+			return ""
+
+
+func _boss_opening_feel_evidence_suffix(run_state) -> String:
+	if run_state == null or not run_state.has_method("get_boss_opening_feel_label") or run_state.boss_opening_feel.is_empty():
+		return ""
+
+	return "；Boss 前 5 手：%s" % run_state.get_boss_opening_feel_label()
 
 
 func _signed_int_text(value: int) -> String:
