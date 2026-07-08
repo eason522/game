@@ -3,6 +3,8 @@ extends Control
 const BOARD_SIZE := 11
 const CELL_SIZE := Vector2(44, 44)
 const BOARD_GRID_GAP := 3
+const HEADER_STATUS_SIZE := Vector2(490, 52)
+const HEADER_FEEDBACK_SIZE := Vector2(490, 72)
 const BASE_ENERGY_MAX := 6
 const ROCK_BOSS_ROCK_INTERVAL := 3
 const RUN_MAP_SCENE_PATH := "res://scenes/roguelike/RunMapScene.tscn"
@@ -259,27 +261,40 @@ func _build_layout() -> void:
 	title_box.add_child(subtitle)
 
 	var status_box := VBoxContainer.new()
-	status_box.custom_minimum_size = Vector2(490, 76)
+	status_box.custom_minimum_size = Vector2(HEADER_STATUS_SIZE.x, HEADER_STATUS_SIZE.y + HEADER_FEEDBACK_SIZE.y + 6)
+	status_box.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	status_box.add_theme_constant_override("separation", 6)
 	header.add_child(status_box)
 
+	var status_slot := Control.new()
+	status_slot.custom_minimum_size = HEADER_STATUS_SIZE
+	status_box.add_child(status_slot)
+
 	status_label = Label.new()
-	status_label.custom_minimum_size = Vector2(490, 52)
+	status_label.set_anchors_preset(Control.PRESET_FULL_RECT)
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	status_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	status_label.clip_text = true
 	status_label.add_theme_font_size_override("font_size", 17)
 	status_label.add_theme_color_override("font_color", Color("#cde8df"))
 	status_label.add_theme_stylebox_override("normal", status_panel_style)
-	status_box.add_child(status_label)
+	status_slot.add_child(status_label)
+
+	var feedback_slot := Control.new()
+	feedback_slot.custom_minimum_size = HEADER_FEEDBACK_SIZE
+	status_box.add_child(feedback_slot)
 
 	feedback_label = Label.new()
-	feedback_label.custom_minimum_size = Vector2(490, 48)
-	feedback_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	feedback_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	feedback_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	feedback_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	feedback_label.clip_text = true
+	feedback_label.max_lines_visible = 3
 	feedback_label.add_theme_font_size_override("font_size", 13)
 	feedback_label.add_theme_color_override("font_color", Color("#f1dfb7"))
 	feedback_label.add_theme_stylebox_override("normal", panel_style)
-	status_box.add_child(feedback_label)
+	feedback_slot.add_child(feedback_label)
 
 	result_banner_label = Label.new()
 	result_banner_label.visible = false

@@ -49,6 +49,7 @@ func _run() -> void:
 	if scene.board_grid == null:
 		failures.append("battle feedback: expected board grid to exist")
 	else:
+		var initial_board_y: float = scene.board_grid.global_position.y
 		var board_bottom: float = scene.board_grid.global_position.y + scene.board_grid.size.y
 		var viewport_height: float = scene.get_viewport_rect().size.y
 
@@ -62,6 +63,27 @@ func _run() -> void:
 
 			if first_cell.custom_minimum_size.x > 44.0 or first_cell.custom_minimum_size.y > 44.0:
 				failures.append("battle feedback: expected compact board cells for default viewport fit")
+
+		scene._set_status("测试长状态：堡垒棋士落子于 E5，意图：防守并延长自己的连线。轮到你了。")
+		scene._show_feedback("测试反馈：堡垒棋士落子 E5。", [], "")
+		scene._show_feedback("测试反馈：己方落子 F6。", [], "")
+		scene._show_feedback("测试反馈：己方触发灵脉：F6 回复 1 点能量。", [], "")
+		await process_frame
+
+		var shifted_board_y: float = scene.board_grid.global_position.y
+		var shifted_board_bottom: float = scene.board_grid.global_position.y + scene.board_grid.size.y
+
+		if abs(shifted_board_y - initial_board_y) > 0.5:
+			failures.append("battle feedback: expected long header feedback to keep board y position stable")
+
+		if shifted_board_bottom > viewport_height - 16.0:
+			failures.append("battle feedback: expected long header feedback to keep full board visible")
+
+		if scene.status_label == null or not scene.status_label.clip_text:
+			failures.append("battle feedback: expected status label to clip long text instead of resizing")
+
+		if scene.feedback_label == null or not scene.feedback_label.clip_text or scene.feedback_label.max_lines_visible != 3:
+			failures.append("battle feedback: expected feedback label to keep a clipped three-line log")
 
 	if scene.tutorial_hint_label == null:
 		failures.append("battle feedback: expected tutorial hint label to exist")
