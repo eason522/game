@@ -381,6 +381,12 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: fresh closeout should wait for a full live sample")
 		return
 
+	var fresh_followup := simulator.get_boss_pressure_followup_lines(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
+
+	if not _lines_contain(fresh_followup, "Boss 复核") or not _lines_contain(fresh_followup, "样本未齐"):
+		failures.append("run playtest simulator: fresh boss followup should wait for a full sample")
+		return
+
 	var full_review := simulator.get_live_playtest_review_lines(slow_report.get("state"))
 
 	if not _lines_contain(full_review, "完整 Run 已齐") or not _lines_contain(full_review, "Boss 压力仍偏慢"):
@@ -413,6 +419,12 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: closeout should require boss opening feel before conclusion")
 		return
 
+	var baseline_followup := simulator.get_boss_pressure_followup_lines(report.get("state"))
+
+	if not _lines_contain(baseline_followup, "先补体感按钮"):
+		failures.append("run playtest simulator: boss followup should request feel recording before tuning")
+		return
+
 	var baseline_state = report.get("state")
 
 	if not baseline_state.record_boss_opening_feel(RunStateScript.BOSS_OPENING_FEEL_STABLE):
@@ -435,6 +447,12 @@ func _assert_full_run_baseline_playtest() -> void:
 
 	if not _lines_contain(recorded_closeout, "完整 Run 可收口") or not _lines_contain(recorded_closeout, "保持当前数值"):
 		failures.append("run playtest simulator: stable closeout should keep current tuning")
+		return
+
+	var recorded_followup := simulator.get_boss_pressure_followup_lines(baseline_state)
+
+	if not _lines_contain(recorded_followup, "体感更稳且目标内") or not _lines_contain(recorded_followup, "可复现"):
+		failures.append("run playtest simulator: stable boss followup should ask only for reproducibility")
 		return
 
 	var pressure_state = simulator.run_baseline().get("state")
@@ -463,6 +481,12 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: pressured closeout should prioritize boss feel")
 		return
 
+	var pressure_followup := simulator.get_boss_pressure_followup_lines(pressure_state)
+
+	if not _lines_contain(pressure_followup, "开局岩阵压迫") or not _lines_contain(pressure_followup, "反制点"):
+		failures.append("run playtest simulator: pressured boss followup should focus the next observation")
+		return
+
 	var unclear_state = simulator.run_baseline().get("state")
 	unclear_state.record_boss_opening_feel(RunStateScript.BOSS_OPENING_FEEL_UNCLEAR)
 	var unclear_verdict := simulator.get_live_playtest_verdict_lines(unclear_state)
@@ -475,6 +499,12 @@ func _assert_full_run_baseline_playtest() -> void:
 
 	if not _lines_contain(unclear_closeout, "体感需再测") or not _lines_contain(unclear_closeout, "可复盘样本"):
 		failures.append("run playtest simulator: unclear closeout should keep the sample open")
+		return
+
+	var unclear_followup := simulator.get_boss_pressure_followup_lines(unclear_state)
+
+	if not _lines_contain(unclear_followup, "第 1/3/5 手"):
+		failures.append("run playtest simulator: unclear boss followup should ask for reviewable turn notes")
 		return
 
 	var slow_boss_validation := simulator.get_boss_pressure_validation_lines(slow_report.get("state"))

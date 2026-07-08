@@ -412,6 +412,53 @@ func get_live_run_closeout_lines(run_state) -> Array:
 			return ["实机收口：体感记录异常，先复核 Boss 前 5 手结论"]
 
 
+func get_boss_pressure_followup_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary") or not run_state.has_method("get_battle_pacing_records"):
+		return ["Boss 复核：暂无 Run 数据，先推进到 Boss 结算"]
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var total_battles: int = pacing.get("total_battle_nodes", 0)
+
+	if recorded_battles < total_battles:
+		return ["Boss 复核：样本未齐 %d/%d，进 Boss 前保留静息调气、开局能量、奖励数和星砂记录" % [recorded_battles, total_battles]]
+
+	var boss_record := _boss_pacing_record(run_state.get_battle_pacing_records())
+
+	if boss_record.is_empty():
+		return ["Boss 复核：完整样本缺少 Boss 记录，先复核路线结算回传"]
+
+	var rest_text := "静息调气已生效" if _has_reward_source(run_state, RewardGeneratorScript.REST_FOCUS_SOURCE_ID) else "静息调气未验证"
+	var feel_label: String = run_state.get_boss_opening_feel_label() if run_state.has_method("get_boss_opening_feel_label") else "未记录"
+	var lines: Array = [
+		"Boss 复核：%s %d 手，%s，前 5 手：%s" % [
+			boss_record.get("title", "Boss"),
+			boss_record.get("actual_turn_count", 0),
+			rest_text,
+			feel_label,
+		],
+	]
+
+	if run_state.boss_opening_feel.is_empty():
+		lines.append("Boss 复核：先补体感按钮，再判断是否复核 Boss 上限")
+		return lines
+
+	match run_state.boss_opening_feel:
+		RunStateScript.BOSS_OPENING_FEEL_STABLE:
+			if boss_record.get("actual_pacing_result", "") == "target":
+				lines.append("Boss 复核：体感更稳且目标内，下一轮只观察是否可复现")
+			else:
+				lines.append("Boss 复核：体感更稳但手数有偏差，下一轮只看最大偏差节点")
+		RunStateScript.BOSS_OPENING_FEEL_PRESSURE:
+			lines.append("Boss 复核：下一轮只看开局岩阵压迫、可用能量和 5 手内反制点")
+		RunStateScript.BOSS_OPENING_FEEL_UNCLEAR:
+			lines.append("Boss 复核：下一轮补一场可复盘样本，记录第 1/3/5 手局面")
+		_:
+			lines.append("Boss 复核：体感记录异常，先复核按钮写入")
+
+	return lines
+
+
 func get_boss_pressure_validation_lines(run_state) -> Array:
 	if run_state == null or not run_state.has_method("get_run_pacing_summary") or not run_state.has_method("get_battle_pacing_records"):
 		return ["Boss 校验：暂无 Run 数据，先完成一轮实机记录"]
