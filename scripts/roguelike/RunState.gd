@@ -15,6 +15,9 @@ const STARTING_COINS := 1
 const BOSS_OPENING_FEEL_STABLE := "stable"
 const BOSS_OPENING_FEEL_PRESSURE := "pressure"
 const BOSS_OPENING_FEEL_UNCLEAR := "unclear"
+const BOSS_OPENING_PRESSURE_STABLE := "stable"
+const BOSS_OPENING_PRESSURE_REVIEW := "review"
+const BOSS_OPENING_PRESSURE_HIGH := "high"
 
 var nodes: Array = []
 var rewards: Array = []
@@ -436,24 +439,14 @@ func get_boss_opening_pressure_lines() -> Array:
 	var rock_count: int = latest.get("rock_count", 0)
 	var playable_loss: int = max(0, first.get("playable_count", 0) - latest.get("playable_count", 0))
 	var player_energy: int = latest.get("player_energy", 0)
-	var pressure_score := 0
-
-	if rock_count >= 8:
-		pressure_score += 1
-
-	if playable_loss >= 8:
-		pressure_score += 1
-
-	if player_energy <= 2:
-		pressure_score += 1
-
+	var pressure_level := get_boss_opening_pressure_level()
 	var verdict := "暂稳"
 	var focus := "保留当前 Boss 上限，继续观察体感是否可复现"
 
-	if pressure_score >= 2:
+	if pressure_level == BOSS_OPENING_PRESSURE_HIGH:
 		verdict = "压力偏高"
 		focus = "下一轮优先看开局岩阵、可用能量和 5 手内反制点"
-	elif pressure_score == 1:
+	elif pressure_level == BOSS_OPENING_PRESSURE_REVIEW:
 		verdict = "需复看"
 		focus = "先补体感记录，再决定是否复核 Boss 上限"
 
@@ -466,6 +459,35 @@ func get_boss_opening_pressure_lines() -> Array:
 		],
 		"Boss 快照判读：%s" % focus,
 	]
+
+
+func get_boss_opening_pressure_level() -> String:
+	var snapshots: Array = boss_opening_observation.get("snapshots", [])
+
+	if snapshots.is_empty():
+		return ""
+
+	var first: Dictionary = snapshots[0]
+	var latest: Dictionary = snapshots[snapshots.size() - 1]
+	var playable_loss: int = max(0, first.get("playable_count", 0) - latest.get("playable_count", 0))
+	var pressure_score := 0
+
+	if latest.get("rock_count", 0) >= 8:
+		pressure_score += 1
+
+	if playable_loss >= 8:
+		pressure_score += 1
+
+	if latest.get("player_energy", 0) <= 2:
+		pressure_score += 1
+
+	if pressure_score >= 2:
+		return BOSS_OPENING_PRESSURE_HIGH
+
+	if pressure_score == 1:
+		return BOSS_OPENING_PRESSURE_REVIEW
+
+	return BOSS_OPENING_PRESSURE_STABLE
 
 
 func get_boss_opening_feel_label() -> String:

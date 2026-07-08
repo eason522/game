@@ -287,7 +287,7 @@ func get_live_playtest_decision_lines(run_state) -> Array:
 		"实机结论：优先候选：%s" % first_candidate,
 		"实机结论：证据：%s%s" % [
 			String(comparison.get("attention", "校准关注：实测接近基准")).trim_prefix("校准关注："),
-			_boss_opening_feel_evidence_suffix(run_state),
+			_boss_opening_evidence_suffix(run_state),
 		],
 	]
 
@@ -318,6 +318,14 @@ func get_live_playtest_verdict_lines(run_state) -> Array:
 
 	if run_state.boss_opening_feel == RunStateScript.BOSS_OPENING_FEEL_UNCLEAR:
 		return ["实机判定：Boss 前 5 手体感不明确，保持当前数值并补一轮可复盘样本"]
+
+	var pressure_level := _boss_opening_pressure_level(run_state)
+
+	if pressure_level == RunStateScript.BOSS_OPENING_PRESSURE_HIGH:
+		return ["实机判定：Boss 快照压力偏高，先只复核 Boss 开局资源或岩阵压迫，不动普通战斗"]
+
+	if pressure_level == RunStateScript.BOSS_OPENING_PRESSURE_REVIEW and run_state.boss_opening_feel.is_empty():
+		return ["实机判定：Boss 快照需复看，先补前 5 手体感记录，再决定是否调 Boss"]
 
 	if _is_live_sample_close_to_baseline(pacing, comparison):
 		return ["实机判定：保持当前数值，进入下一轮手感观察"]
@@ -389,6 +397,11 @@ func get_live_run_closeout_lines(run_state) -> Array:
 	if run_state.run_failed:
 		return ["实机收口：Run 已失败，先复盘失败节点与 Boss 前资源，不落新数值"]
 
+	var pressure_level := _boss_opening_pressure_level(run_state)
+
+	if pressure_level == RunStateScript.BOSS_OPENING_PRESSURE_HIGH and run_state.boss_opening_feel.is_empty():
+		return ["实机收口：完整 Run 已齐且 Boss 快照压力偏高；先补体感并复核开局资源"]
+
 	if run_state.boss_opening_feel.is_empty():
 		return ["实机收口：完整 Run 已齐，但 Boss 前 5 手体感未记录；先补体感再定结论"]
 
@@ -400,6 +413,12 @@ func get_live_run_closeout_lines(run_state) -> Array:
 
 	match run_state.boss_opening_feel:
 		RunStateScript.BOSS_OPENING_FEEL_STABLE:
+			if pressure_level == RunStateScript.BOSS_OPENING_PRESSURE_HIGH:
+				return ["实机收口：Boss 体感更稳但快照压力偏高，先补一轮可复现样本，不动普通战斗"]
+
+			if pressure_level == RunStateScript.BOSS_OPENING_PRESSURE_REVIEW:
+				return ["实机收口：Boss 体感更稳但快照需复看，下一轮只观察 Boss 开局"]
+
 			if _is_live_sample_close_to_baseline(pacing, compare_run_to_baseline(run_state)):
 				return ["实机收口：完整 Run 可收口，静息调气体感更稳，保持当前数值"]
 
@@ -565,9 +584,13 @@ func get_single_axis_tuning_candidates(run_state) -> Array:
 	var biggest_delta_record: Dictionary = comparison.get("biggest_delta_record", {})
 	var lines: Array = []
 	var feel_candidate := _candidate_line_for_boss_opening_feel(run_state)
+	var pressure_candidate := _candidate_line_for_boss_opening_pressure(run_state)
 
 	if not feel_candidate.is_empty():
 		lines.append(feel_candidate)
+
+	if not pressure_candidate.is_empty():
+		lines.append(pressure_candidate)
 
 	if not biggest_delta_record.is_empty():
 		lines.append(_candidate_line_for_biggest_delta(biggest_delta_record))
@@ -960,11 +983,48 @@ func _candidate_line_for_boss_opening_feel(run_state) -> String:
 			return ""
 
 
-func _boss_opening_feel_evidence_suffix(run_state) -> String:
-	if run_state == null or not run_state.has_method("get_boss_opening_feel_label") or run_state.boss_opening_feel.is_empty():
+func _candidate_line_for_boss_opening_pressure(run_state) -> String:
+	var pressure_level := _boss_opening_pressure_level(run_state)
+
+	match pressure_level:
+		RunStateScript.BOSS_OPENING_PRESSURE_HIGH:
+			return "单轴候选：Boss 快照轴，前 5 手压力偏高；只复核开局岩阵、可用能量和反制点"
+		RunStateScript.BOSS_OPENING_PRESSURE_REVIEW:
+			return "单轴候选：Boss 快照轴，前 5 手需复看；先补体感记录再决定是否动 Boss 上限"
+		_:
+			return ""
+
+
+func _boss_opening_pressure_level(run_state) -> String:
+	if run_state == null or not run_state.has_method("get_boss_opening_pressure_level"):
 		return ""
 
-	return "；Boss 前 5 手：%s" % run_state.get_boss_opening_feel_label()
+	return run_state.get_boss_opening_pressure_level()
+
+
+func _boss_opening_evidence_suffix(run_state) -> String:
+	if run_state == null:
+		return ""
+
+	var parts: Array = []
+
+	if run_state.has_method("get_boss_opening_feel_label") and not run_state.boss_opening_feel.is_empty():
+		parts.append("Boss 前 5 手：%s" % run_state.get_boss_opening_feel_label())
+
+	var pressure_level := _boss_opening_pressure_level(run_state)
+
+	match pressure_level:
+		RunStateScript.BOSS_OPENING_PRESSURE_HIGH:
+			parts.append("快照压力偏高")
+		RunStateScript.BOSS_OPENING_PRESSURE_REVIEW:
+			parts.append("快照需复看")
+		RunStateScript.BOSS_OPENING_PRESSURE_STABLE:
+			parts.append("快照暂稳")
+
+	if parts.is_empty():
+		return ""
+
+	return "；%s" % "；".join(parts)
 
 
 func _signed_int_text(value: int) -> String:
