@@ -38,6 +38,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - run map now includes an editor acceptance line that combines the full-run sample, Boss snapshot pressure, rest-focus status, and first-five-turn feel into a final live-playtest gate
 - run map now includes an editor next-action guide that points to the immediate live-playtest action: enter a node, claim loot, resolve a route choice, record Boss feel, or stop after acceptance
 - run map now includes an editor evidence checklist that summarizes sample coverage, target ratio, total turns, Boss snapshot pressure, rest-focus status, first-five-turn feel, and whether the run can be archived as demo acceptance evidence
+- run map now includes an editor acceptance note that condenses the current run into a recordable result: incomplete sample, Boss-only review, missing Boss feel, or demo acceptance
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement
@@ -61,7 +62,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - display smoke tests for reward build summaries, effect descriptions, stack-limit text, and exclusive-group text
 - settlement feedback smoke tests for victory, reward-claim, route-choice, and save roundtrips
 - battle feedback smoke tests for action logs, cell flashes, and result banners
-- run map feedback smoke tests for typed settlement labels, tone triggers, live playtest checklist/verdict/review/Boss validation display, Boss snapshot pressure assessment, rest-focus feel audit, editor acceptance gates, editor next-action/evidence guidance, priority verdicts, Boss feel recording, and tuning candidate display
+- run map feedback smoke tests for typed settlement labels, tone triggers, live playtest checklist/verdict/review/Boss validation display, Boss snapshot pressure assessment, rest-focus feel audit, editor acceptance gates, editor next-action/evidence/note guidance, priority verdicts, Boss feel recording, and tuning candidate display
 
 ## Run Locally
 
