@@ -30,6 +30,13 @@ func _run() -> void:
 
 	if scene.tone_player == null:
 		failures.append("battle feedback: expected tone player to exist")
+	elif scene.tone_player.last_tone_kind != "turn_player":
+		failures.append("battle feedback: expected initial player turn to trigger a turn tone")
+
+	if scene.turn_rhythm_label == null:
+		failures.append("battle feedback: expected turn rhythm label to exist")
+	elif not scene.turn_rhythm_label.text.contains("己方行动"):
+		failures.append("battle feedback: expected initial rhythm label to show player action")
 
 	scene._show_feedback("测试反馈：术法作用于 A1。", [Vector2i(0, 0)], "skill")
 	await process_frame
@@ -42,6 +49,15 @@ func _run() -> void:
 
 	if scene.tone_player == null or scene.tone_player.last_tone_kind != "skill":
 		failures.append("battle feedback: expected skill feedback to trigger a skill tone")
+
+	scene._begin_turn(BoardState.ENEMY)
+	await process_frame
+
+	if scene.turn_rhythm_label == null or not scene.turn_rhythm_label.text.contains("敌方思考"):
+		failures.append("battle feedback: expected enemy turn rhythm label")
+
+	if scene.tone_player == null or scene.tone_player.last_tone_kind != "turn_enemy":
+		failures.append("battle feedback: expected enemy turn to trigger a turn tone")
 
 	scene._show_result_banner(true, "A1-E1")
 	await process_frame

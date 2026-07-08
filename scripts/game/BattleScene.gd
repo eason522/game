@@ -22,6 +22,7 @@ var status_label: Label
 var feedback_label: Label
 var result_banner_label: Label
 var turn_label: Label
+var turn_rhythm_label: Label
 var move_count_label: Label
 var energy_label: Label
 var enemy_profile_label: Label
@@ -70,6 +71,7 @@ var feedback_log: Array = []
 var feedback_flashes: Dictionary = {}
 var feedback_flash_token := 0
 var result_banner_tween: Tween
+var turn_rhythm_tween: Tween
 
 var empty_style: StyleBoxFlat
 var spirit_style: StyleBoxFlat
@@ -294,6 +296,15 @@ func _build_layout() -> void:
 	turn_label.add_theme_font_size_override("font_size", 20)
 	turn_label.add_theme_color_override("font_color", Color("#f1dfb7"))
 	board_header.add_child(turn_label)
+
+	turn_rhythm_label = Label.new()
+	turn_rhythm_label.custom_minimum_size = Vector2(160, 30)
+	turn_rhythm_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	turn_rhythm_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	turn_rhythm_label.add_theme_font_size_override("font_size", 14)
+	turn_rhythm_label.add_theme_color_override("font_color", Color("#cde8df"))
+	turn_rhythm_label.add_theme_stylebox_override("normal", panel_style)
+	board_header.add_child(turn_rhythm_label)
 
 	move_count_label = Label.new()
 	move_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -643,6 +654,7 @@ func _cycle_enemy_profile() -> void:
 func _begin_turn(owner: int) -> void:
 	board.decay_temporary_pieces(owner)
 	_gain_energy(owner, 1)
+	_show_turn_rhythm(owner)
 
 
 func _apply_terrain_reward(pos: Vector2i, owner: int) -> void:
@@ -930,6 +942,10 @@ func _hide_result_banner() -> void:
 		result_banner_label.modulate = Color(1, 1, 1, 1)
 		result_banner_label.scale = Vector2.ONE
 
+	if turn_rhythm_label != null:
+		turn_rhythm_label.modulate = Color(1, 1, 1, 1)
+		turn_rhythm_label.scale = Vector2.ONE
+
 
 func _show_result_banner(player_won: bool, detail: String) -> void:
 	if result_banner_label == null:
@@ -952,6 +968,7 @@ func _show_result_banner(player_won: bool, detail: String) -> void:
 	result_banner_tween.tween_property(result_banner_label, "scale", Vector2(1.02, 1.02), 0.12)
 	result_banner_tween.tween_property(result_banner_label, "scale", Vector2.ONE, 0.12)
 	_play_feedback_tone("victory" if player_won else "defeat")
+	_set_turn_rhythm("战斗结束", false)
 
 
 func _show_feedback(text: String, target_cells: Array = [], kind: String = "skill") -> void:
@@ -968,6 +985,38 @@ func _show_feedback(text: String, target_cells: Array = [], kind: String = "skil
 
 	if not target_cells.is_empty() and not kind.is_empty():
 		_flash_cells(target_cells, kind)
+
+
+func _show_turn_rhythm(owner: int) -> void:
+	if owner == BoardState.PLAYER:
+		_set_turn_rhythm("己方行动", true)
+		_play_feedback_tone("turn_player")
+	else:
+		_set_turn_rhythm("敌方思考", true)
+		_play_feedback_tone("turn_enemy")
+
+
+func _set_turn_rhythm(text: String, should_pulse: bool) -> void:
+	if turn_rhythm_label == null:
+		return
+
+	turn_rhythm_label.text = text
+
+	if turn_rhythm_tween != null:
+		turn_rhythm_tween.kill()
+		turn_rhythm_tween = null
+
+	if not should_pulse:
+		turn_rhythm_label.modulate = Color(1, 1, 1, 1)
+		turn_rhythm_label.scale = Vector2.ONE
+		return
+
+	turn_rhythm_label.modulate = Color(1, 1, 1, 0.7)
+	turn_rhythm_label.scale = Vector2(0.98, 0.98)
+	turn_rhythm_tween = create_tween()
+	turn_rhythm_tween.tween_property(turn_rhythm_label, "modulate", Color(1, 1, 1, 1), 0.16)
+	turn_rhythm_tween.parallel().tween_property(turn_rhythm_label, "scale", Vector2(1.04, 1.04), 0.16)
+	turn_rhythm_tween.tween_property(turn_rhythm_label, "scale", Vector2.ONE, 0.10)
 
 
 func _flash_cells(target_cells: Array, kind: String) -> void:
@@ -1166,13 +1215,15 @@ func _refresh_skill_buttons() -> void:
 
 
 func _refresh_info_labels() -> void:
-	if turn_label == null or move_count_label == null or energy_label == null or enemy_profile_label == null or enemy_intent_hint_label == null:
+	if turn_label == null or turn_rhythm_label == null or move_count_label == null or energy_label == null or enemy_profile_label == null or enemy_intent_hint_label == null:
 		return
 
 	var turn_text := "战斗结束"
 
 	if not game_over:
 		turn_text = "己方回合" if current_turn == BoardState.PLAYER else "敌方回合"
+	elif turn_rhythm_label.text != "战斗结束":
+		_set_turn_rhythm("战斗结束", false)
 
 	turn_label.text = turn_text
 	move_count_label.text = "落子数：%d" % move_count

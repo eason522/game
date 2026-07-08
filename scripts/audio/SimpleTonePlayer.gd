@@ -102,6 +102,10 @@ func _tones_for_kind(kind: String) -> Array:
 			return [_tone(160.0, 0.07, 0.12)]
 		"energy":
 			return [_tone(880.0, 0.05, 0.11)]
+		"turn_player":
+			return [_tone(540.0, 0.035, 0.07)]
+		"turn_enemy":
+			return [_tone(320.0, 0.04, 0.065)]
 		"victory", "complete":
 			return [_tone(620.0, 0.055, 0.12), _tone(820.0, 0.055, 0.12), _tone(1040.0, 0.07, 0.11)]
 		"defeat":
