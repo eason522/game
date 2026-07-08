@@ -206,6 +206,55 @@ func get_live_playtest_checklist(run_state) -> Array:
 	return lines
 
 
+func get_live_playtest_snapshot_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
+		return ["实机快照：暂无 Run 数据，先从路线图开始一轮 Run"]
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var current_node: Dictionary = run_state.get_current_node() if run_state.has_method("get_current_node") else {}
+	var current_title: String = current_node.get("title", "无当前节点")
+	var current_type: String = _snapshot_node_type_label(current_node.get("type", ""))
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var total_battles: int = pacing.get("total_battle_nodes", 0)
+	var on_target_count: int = pacing.get("on_target_count", 0)
+	var lines: Array = [
+		"实机快照：当前 %s（%s），实测 %d/%d 场，目标内 %d/%d" % [
+			current_title,
+			current_type,
+			recorded_battles,
+			total_battles,
+			on_target_count,
+			recorded_battles,
+		],
+	]
+
+	if recorded_battles <= 0:
+		var baseline_report := run_baseline()
+		var baseline_pacing: Dictionary = baseline_report.get("pacing", {})
+		lines.append("实机快照：基准 %d/%d 场目标内，总 %d 手；先记录首场实测手数" % [
+			baseline_pacing.get("on_target_count", 0),
+			baseline_pacing.get("recorded_battle_nodes", 0),
+			baseline_pacing.get("actual_turn_total", 0),
+		])
+	elif recorded_battles < total_battles:
+		var comparison := compare_run_to_baseline(run_state)
+		lines.append("实机快照：%s" % String(comparison.get("attention", "校准关注：继续补齐完整 Run 样本")).trim_prefix("校准关注："))
+	else:
+		var comparison := compare_run_to_baseline(run_state)
+		var biggest_delta_record: Dictionary = comparison.get("biggest_delta_record", {})
+
+		if biggest_delta_record.is_empty():
+			lines.append("实机快照：完整样本已齐，暂未发现明显最大偏差")
+		else:
+			lines.append("实机快照：完整样本已齐，最大偏差 %s %s 手" % [
+				biggest_delta_record.get("title", "战斗"),
+				_signed_int_text(biggest_delta_record.get("baseline_delta", 0)),
+			])
+
+	lines.append(_live_playtest_next_step_line(run_state, recorded_battles, total_battles))
+	return lines
+
+
 func get_single_axis_tuning_candidates(run_state) -> Array:
 	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
 		return ["单轴候选：暂无 Run 数据，先完成一次实机记录"]
@@ -304,6 +353,44 @@ func _comparison_attention_line(pacing: Dictionary, biggest_delta_record: Dictio
 			return "校准关注：Boss 较基准偏快，优先观察岩阵压制是否不足"
 
 	return "校准关注：实测接近基准，先保持数值并观察手感"
+
+
+func _live_playtest_next_step_line(run_state, recorded_battles: int, total_battles: int) -> String:
+	if run_state == null:
+		return "实机快照：下一步从路线图开始"
+
+	if run_state.run_completed:
+		return "实机快照：下一步对照单轴候选，只决定是否小步调一项"
+
+	if run_state.run_failed:
+		return "实机快照：下一步重开 Run，优先记录失败前最大压力节点"
+
+	if run_state.has_pending_reward():
+		return "实机快照：下一步先领取奖励，确认构筑摘要变化"
+
+	if run_state.has_pending_node_choice():
+		return "实机快照：下一步先处理路线选择，确认星砂/奖励变化"
+
+	if recorded_battles < total_battles:
+		return "实机快照：下一步继续推进到 Boss，补齐完整 Run 样本"
+
+	return "实机快照：下一步复核最大偏差与 Boss 准备摘要"
+
+
+func _snapshot_node_type_label(node_type: String) -> String:
+	match node_type:
+		RunStateScript.NODE_BATTLE:
+			return "战斗"
+		RunStateScript.NODE_EVENT:
+			return "事件"
+		RunStateScript.NODE_SHOP:
+			return "商店"
+		RunStateScript.NODE_REST:
+			return "休息"
+		RunStateScript.NODE_BOSS:
+			return "Boss"
+		_:
+			return "路线"
 
 
 func _sample_matrix_line(label: String, report: Dictionary) -> String:

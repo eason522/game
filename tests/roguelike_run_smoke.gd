@@ -327,6 +327,18 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: checklist should encourage one tuning axis at a time")
 		return
 
+	var fresh_snapshot := simulator.get_live_playtest_snapshot_lines(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
+
+	if not _lines_contain(fresh_snapshot, "实机快照") or not _lines_contain(fresh_snapshot, "先记录首场实测手数"):
+		failures.append("run playtest simulator: fresh snapshot should guide first live record")
+		return
+
+	var full_snapshot := simulator.get_live_playtest_snapshot_lines(slow_report.get("state"))
+
+	if not _lines_contain(full_snapshot, "完整样本已齐") or not _lines_contain(full_snapshot, "最大偏差"):
+		failures.append("run playtest simulator: completed snapshot should summarize largest delta")
+		return
+
 	var fresh_candidates := simulator.get_single_axis_tuning_candidates(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
 
 	if not _lines_contain(fresh_candidates, "等待首场实测"):

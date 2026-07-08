@@ -37,6 +37,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("尚未拿到静息调气"):
 		failures.append("run map feedback: expected boss prep summary to mention missing rest focus")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("实机快照"):
+		failures.append("run map feedback: expected build panel to show live playtest snapshot")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("先记录首场实测手数"):
+		failures.append("run map feedback: expected live snapshot to guide first record")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 
@@ -136,6 +142,9 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("实测 1 场，均值 14 手"):
 		failures.append("run map feedback: expected build panel to show actual pacing summary")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("当前 试锋之局"):
+		failures.append("run map feedback: expected live snapshot to name the current node")
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("实测对照：已测 1/4"):
 		failures.append("run map feedback: expected playtest comparison to show recorded battle count")
