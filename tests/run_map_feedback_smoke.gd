@@ -59,6 +59,12 @@ func _run() -> void:
 	if scene.node_buttons.size() <= 1 or not scene.node_buttons[1].tooltip_text.contains("目标节奏：10-16 手"):
 		failures.append("run map feedback: expected battle tooltip to show target turn pacing")
 
+	if scene.last_pulsed_node_index != 1 or scene.last_pulsed_node_status != RunStateScript.STATUS_AVAILABLE:
+		failures.append("run map feedback: expected available route node to receive an entry pulse")
+
+	if scene.route_node_pulse_seconds < 0.29 or scene.route_node_pulse_seconds > 0.31:
+		failures.append("run map feedback: expected route node pulse timing to be tuned")
+
 	scene.run_state.nodes[1]["actual_turn_count"] = 14
 	scene.run_state.nodes[1]["actual_pacing_result"] = "target"
 	scene._refresh()
@@ -106,6 +112,9 @@ func _run() -> void:
 
 	if scene.reward_label == null or not scene.reward_label.text.contains("刚获得"):
 		failures.append("run map feedback: expected reward panel to keep the claimed reward visible")
+
+	if scene.last_pulsed_node_status != RunStateScript.STATUS_AVAILABLE or scene.last_pulsed_node_index != 2:
+		failures.append("run map feedback: expected next route node to pulse after reward claim")
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)

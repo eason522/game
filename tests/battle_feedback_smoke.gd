@@ -50,6 +50,9 @@ func _run() -> void:
 	if scene.turn_rhythm_pulse_seconds < 0.24 or scene.turn_rhythm_pulse_seconds > 0.3:
 		failures.append("battle feedback: expected tuned turn rhythm pulse duration")
 
+	if scene.feedback_flash_seconds < 0.6 or scene.feedback_flash_seconds > 0.65:
+		failures.append("battle feedback: expected cell flash timing to be tuned for readability")
+
 	scene._show_feedback("测试反馈：术法作用于 A1。", [Vector2i(0, 0)], "skill")
 	await process_frame
 
@@ -85,6 +88,9 @@ func _run() -> void:
 		failures.append("battle feedback: expected victory banner to trigger a victory tone")
 	elif scene.tone_player.last_tone_count != 3:
 		failures.append("battle feedback: expected victory tone to use three notes")
+
+	if scene.result_banner_animation_seconds < 0.44 or scene.result_banner_animation_seconds > 0.48:
+		failures.append("battle feedback: expected result banner animation timing to be tuned")
 
 	scene.move_count = 17
 	scene._record_battle_result(true)

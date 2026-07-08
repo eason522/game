@@ -12,6 +12,9 @@ const RunSaveScript := preload("res://scripts/roguelike/RunSave.gd")
 const RewardGeneratorScript := preload("res://scripts/roguelike/RewardGenerator.gd")
 const RunPlaytestSimulatorScript := preload("res://scripts/roguelike/RunPlaytestSimulator.gd")
 const SimpleTonePlayerScript := preload("res://scripts/audio/SimpleTonePlayer.gd")
+const ROUTE_NODE_PULSE_IN_SECONDS := 0.14
+const ROUTE_NODE_PULSE_OUT_SECONDS := 0.16
+const ROUTE_NODE_PULSE_SCALE := Vector2(1.012, 1.012)
 
 var map_generator := MapGeneratorScript.new()
 var reward_generator := RewardGeneratorScript.new()
@@ -28,6 +31,11 @@ var node_buttons: Array = []
 var reward_buttons: Array = []
 var last_rendered_feedback := ""
 var last_claimed_reward_summary := ""
+var last_rendered_node_statuses: Dictionary = {}
+var node_button_tweens: Dictionary = {}
+var last_pulsed_node_index := -1
+var last_pulsed_node_status := ""
+var route_node_pulse_seconds := ROUTE_NODE_PULSE_IN_SECONDS + ROUTE_NODE_PULSE_OUT_SECONDS
 var settlement_tween: Tween
 var reward_panel_tween: Tween
 var panel_style: StyleBoxFlat
@@ -277,6 +285,7 @@ func _create_node_buttons() -> void:
 	for node in run_state.nodes:
 		var button := Button.new()
 		button.custom_minimum_size = Vector2(0, 76)
+		button.pivot_offset = Vector2(320, 38)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.focus_mode = Control.FOCUS_NONE
 		button.pressed.connect(_enter_node.bind(node.get("index", -1)))
@@ -388,6 +397,7 @@ func _refresh() -> void:
 		button.tooltip_text = _node_tooltip(node)
 		button.disabled = not run_state.can_enter_node(index)
 		_apply_node_button_style(button, node)
+		_pulse_node_button_if_changed(index, node, button)
 
 	if status_label == null:
 		return
@@ -503,6 +513,39 @@ func _pulse_reward_panel() -> void:
 	reward_panel_tween.tween_property(reward_label, "modulate", Color(1, 1, 1, 1), 0.18)
 	reward_panel_tween.parallel().tween_property(reward_label, "scale", Vector2(1.015, 1.015), 0.18)
 	reward_panel_tween.tween_property(reward_label, "scale", Vector2.ONE, 0.12)
+
+
+func _pulse_node_button_if_changed(index: int, node: Dictionary, button: Button) -> void:
+	var status: String = node.get("status", RunStateScript.STATUS_LOCKED)
+	var state_key := "%s:%s" % [status, str(node.get("actual_turn_count", 0))]
+	var previous_key: String = last_rendered_node_statuses.get(index, "")
+	last_rendered_node_statuses[index] = state_key
+
+	if previous_key == state_key:
+		return
+
+	if status != RunStateScript.STATUS_AVAILABLE and status != RunStateScript.STATUS_COMPLETED and status != RunStateScript.STATUS_FAILED:
+		return
+
+	_pulse_node_button(index, button, status)
+
+
+func _pulse_node_button(index: int, button: Button, status: String) -> void:
+	if node_button_tweens.has(index):
+		var previous_tween: Tween = node_button_tweens[index]
+
+		if previous_tween != null:
+			previous_tween.kill()
+
+	last_pulsed_node_index = index
+	last_pulsed_node_status = status
+	button.modulate = Color(1, 1, 1, 0.86)
+	button.scale = Vector2.ONE
+	var tween := create_tween()
+	node_button_tweens[index] = tween
+	tween.tween_property(button, "modulate", Color(1, 1, 1, 1), ROUTE_NODE_PULSE_IN_SECONDS)
+	tween.parallel().tween_property(button, "scale", ROUTE_NODE_PULSE_SCALE, ROUTE_NODE_PULSE_IN_SECONDS)
+	tween.tween_property(button, "scale", Vector2.ONE, ROUTE_NODE_PULSE_OUT_SECONDS)
 
 
 func _refresh_build_summary() -> void:

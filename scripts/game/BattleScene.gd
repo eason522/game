@@ -14,6 +14,11 @@ const ENEMY_THINK_DELAY_SECONDS := 0.42
 const TURN_RHYTHM_FADE_SECONDS := 0.14
 const TURN_RHYTHM_SETTLE_SECONDS := 0.12
 const TURN_RHYTHM_PULSE_SCALE := Vector2(1.035, 1.035)
+const RESULT_BANNER_FADE_SECONDS := 0.18
+const RESULT_BANNER_POP_SECONDS := 0.12
+const RESULT_BANNER_SETTLE_SECONDS := 0.16
+const RESULT_BANNER_POP_SCALE := Vector2(1.018, 1.018)
+const FEEDBACK_FLASH_SECONDS := 0.62
 const SkillExecutorScript := preload("res://scripts/skills/SkillExecutor.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
 const SimpleTonePlayerScript := preload("res://scripts/audio/SimpleTonePlayer.gd")
@@ -79,6 +84,8 @@ var result_banner_tween: Tween
 var turn_rhythm_tween: Tween
 var enemy_think_delay_seconds := ENEMY_THINK_DELAY_SECONDS
 var turn_rhythm_pulse_seconds := TURN_RHYTHM_FADE_SECONDS + TURN_RHYTHM_SETTLE_SECONDS
+var result_banner_animation_seconds := RESULT_BANNER_FADE_SECONDS + RESULT_BANNER_POP_SECONDS + RESULT_BANNER_SETTLE_SECONDS
+var feedback_flash_seconds := FEEDBACK_FLASH_SECONDS
 
 var empty_style: StyleBoxFlat
 var spirit_style: StyleBoxFlat
@@ -972,9 +979,9 @@ func _show_result_banner(player_won: bool, detail: String) -> void:
 	result_banner_label.modulate = Color(1, 1, 1, 0.0)
 	result_banner_label.scale = Vector2.ONE
 	result_banner_tween = create_tween()
-	result_banner_tween.tween_property(result_banner_label, "modulate", Color(1, 1, 1, 1), 0.18)
-	result_banner_tween.tween_property(result_banner_label, "scale", Vector2(1.02, 1.02), 0.12)
-	result_banner_tween.tween_property(result_banner_label, "scale", Vector2.ONE, 0.12)
+	result_banner_tween.tween_property(result_banner_label, "modulate", Color(1, 1, 1, 1), RESULT_BANNER_FADE_SECONDS)
+	result_banner_tween.tween_property(result_banner_label, "scale", RESULT_BANNER_POP_SCALE, RESULT_BANNER_POP_SECONDS)
+	result_banner_tween.tween_property(result_banner_label, "scale", Vector2.ONE, RESULT_BANNER_SETTLE_SECONDS)
 	_play_feedback_tone("victory" if player_won else "defeat")
 	_set_turn_rhythm("战斗结束", false)
 
@@ -1037,7 +1044,7 @@ func _flash_cells(target_cells: Array, kind: String) -> void:
 
 	_refresh_board()
 
-	await get_tree().create_timer(0.55).timeout
+	await get_tree().create_timer(feedback_flash_seconds).timeout
 
 	if token != feedback_flash_token:
 		return
