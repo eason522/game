@@ -652,6 +652,7 @@ func _refresh_build_summary() -> void:
 	var playtest_decision_lines := playtest_simulator.get_live_playtest_decision_lines(run_state)
 	var playtest_verdict_lines := playtest_simulator.get_live_playtest_verdict_lines(run_state)
 	var playtest_review_lines := playtest_simulator.get_live_playtest_review_lines(run_state)
+	var boss_validation_lines := playtest_simulator.get_boss_pressure_validation_lines(run_state)
 	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s\n%s\n%s\n%s\n%s\n%s\n调参建议：%s\n基准试玩：%s\n实测对照：%s\n样本矩阵：%s\n矩阵落点：%s\n试玩检查：%s\n调参候选：%s" % [
 		" / ".join(build_lines),
 		" / ".join(pacing_lines),
@@ -668,6 +669,7 @@ func _refresh_build_summary() -> void:
 		_live_playtest_checklist_text(),
 		_single_axis_tuning_text(),
 	]
+	build_summary_label.text += "\n%s" % " / ".join(boss_validation_lines)
 
 
 func _baseline_playtest_summary_text() -> String:

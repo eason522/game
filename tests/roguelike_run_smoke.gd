@@ -385,6 +385,24 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: completed review should connect rest focus and tuning axis")
 		return
 
+	var fresh_boss_validation := simulator.get_boss_pressure_validation_lines(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
+
+	if not _lines_contain(fresh_boss_validation, "Boss 校验") or not _lines_contain(fresh_boss_validation, "样本未齐"):
+		failures.append("run playtest simulator: fresh boss validation should wait for a full sample")
+		return
+
+	var baseline_boss_validation := simulator.get_boss_pressure_validation_lines(report.get("state"))
+
+	if not _lines_contain(baseline_boss_validation, "Boss 落在目标内") or not _lines_contain(baseline_boss_validation, "静息调气已生效"):
+		failures.append("run playtest simulator: baseline boss validation should keep the boss cap")
+		return
+
+	var slow_boss_validation := simulator.get_boss_pressure_validation_lines(slow_report.get("state"))
+
+	if not _lines_contain(slow_boss_validation, "Boss 偏慢") or not _lines_contain(slow_boss_validation, "Boss 上限"):
+		failures.append("run playtest simulator: slow boss validation should isolate boss pressure")
+		return
+
 	var fresh_candidates := simulator.get_single_axis_tuning_candidates(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
 
 	if not _lines_contain(fresh_candidates, "等待首场实测"):

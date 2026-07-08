@@ -61,6 +61,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("暂只记录体感"):
 		failures.append("run map feedback: expected live review to avoid conclusions before a full sample")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Boss 校验"):
+		failures.append("run map feedback: expected build panel to show boss validation")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("先打到 Boss 结算"):
+		failures.append("run map feedback: expected boss validation to wait for boss settlement")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 

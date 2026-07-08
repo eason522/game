@@ -366,6 +366,50 @@ func get_live_playtest_review_lines(run_state) -> Array:
 	]
 
 
+func get_boss_pressure_validation_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary") or not run_state.has_method("get_battle_pacing_records"):
+		return ["Boss 校验：暂无 Run 数据，先完成一轮实机记录"]
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var total_battles: int = pacing.get("total_battle_nodes", 0)
+
+	if recorded_battles < total_battles:
+		return ["Boss 校验：样本未齐 %d/%d，先打到 Boss 结算再判断压力" % [recorded_battles, total_battles]]
+
+	var boss_record := _boss_pacing_record(run_state.get_battle_pacing_records())
+
+	if boss_record.is_empty():
+		return ["Boss 校验：完整样本缺少 Boss 记录，先复核路线结算回传"]
+
+	var baseline_boss := _boss_pacing_record(run_baseline().get("battle_records", []))
+	var baseline_turns: int = baseline_boss.get("actual_turn_count", 0)
+	var baseline_delta: int = boss_record.get("actual_turn_count", 0) - baseline_turns
+	var rest_text := "静息调气已生效" if _has_reward_source(run_state, RewardGeneratorScript.REST_FOCUS_SOURCE_ID) else "静息调气未验证"
+	var lines: Array = [
+		"Boss 校验：%s %d 手，目标 %d-%d，较基准 %s，%s" % [
+			boss_record.get("title", "Boss"),
+			boss_record.get("actual_turn_count", 0),
+			boss_record.get("target_turn_min", 0),
+			boss_record.get("target_turn_max", 0),
+			_signed_int_text(baseline_delta),
+			rest_text,
+		],
+	]
+
+	match boss_record.get("actual_pacing_result", ""):
+		"over":
+			lines.append("Boss 校验：Boss 偏慢，本轮只复核 Boss 上限或休息点体感")
+		"under":
+			lines.append("Boss 校验：Boss 偏快，先观察岩阵压制是否不足")
+		"target":
+			lines.append("Boss 校验：Boss 落在目标内，暂不动 Boss 上限")
+		_:
+			lines.append("Boss 校验：Boss 节奏待判断，先补一次可复盘记录")
+
+	return lines
+
+
 func get_single_axis_tuning_candidates(run_state) -> Array:
 	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
 		return ["单轴候选：暂无 Run 数据，先完成一次实机记录"]
@@ -439,6 +483,14 @@ func _biggest_baseline_delta_record(records: Array, baseline_records_by_index: D
 		biggest["baseline_delta"] = delta
 
 	return biggest
+
+
+func _boss_pacing_record(records: Array) -> Dictionary:
+	for record in records:
+		if record.get("type", "") == RunStateScript.NODE_BOSS:
+			return record
+
+	return {}
 
 
 func _comparison_attention_line(pacing: Dictionary, biggest_delta_record: Dictionary, recorded_battles: int, total_battles: int) -> String:
