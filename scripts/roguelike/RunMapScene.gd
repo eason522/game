@@ -9,6 +9,7 @@ const MapGeneratorScript := preload("res://scripts/roguelike/MapGenerator.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
 const RunSaveScript := preload("res://scripts/roguelike/RunSave.gd")
 const RewardGeneratorScript := preload("res://scripts/roguelike/RewardGenerator.gd")
+const SimpleTonePlayerScript := preload("res://scripts/audio/SimpleTonePlayer.gd")
 
 var map_generator := MapGeneratorScript.new()
 var reward_generator := RewardGeneratorScript.new()
@@ -18,6 +19,7 @@ var status_label: Label
 var settlement_label: Label
 var reward_label: Label
 var build_summary_label: Label
+var tone_player
 var node_list: VBoxContainer
 var node_buttons: Array = []
 var reward_buttons: Array = []
@@ -43,6 +45,7 @@ func _ready() -> void:
 	_load_or_create_run_state()
 	_apply_pending_battle_result()
 	_build_layout()
+	_create_audio_feedback()
 	_refresh()
 
 
@@ -275,6 +278,12 @@ func _create_node_buttons() -> void:
 		node_buttons.append(button)
 
 
+func _create_audio_feedback() -> void:
+	tone_player = SimpleTonePlayerScript.new()
+	tone_player.name = "RunMapTonePlayer"
+	add_child(tone_player)
+
+
 func _apply_button_theme(button: Button) -> void:
 	button.add_theme_stylebox_override("normal", button_style)
 	button.add_theme_stylebox_override("hover", button_hover_style)
@@ -479,6 +488,7 @@ func _refresh_settlement_feedback() -> void:
 	if rendered != last_rendered_feedback:
 		last_rendered_feedback = rendered
 		_pulse_settlement_feedback()
+		_play_feedback_tone(run_state.last_feedback_kind)
 
 
 func _pulse_settlement_feedback() -> void:
@@ -535,6 +545,11 @@ func _settlement_text_color_for_kind(kind: String) -> Color:
 			return Color("#dbe6ff")
 		_:
 			return Color("#f1dfb7")
+
+
+func _play_feedback_tone(kind: String) -> void:
+	if tone_player != null:
+		tone_player.play_kind(kind)
 
 
 func _apply_node_button_style(button: Button, node: Dictionary) -> void:

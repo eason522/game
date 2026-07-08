@@ -11,6 +11,7 @@ const BATTLE_RESULT_META := "tymj_battle_result"
 const BATTLE_ENEMY_PROFILE_META := "tymj_battle_enemy_profile_id"
 const SkillExecutorScript := preload("res://scripts/skills/SkillExecutor.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
+const SimpleTonePlayerScript := preload("res://scripts/audio/SimpleTonePlayer.gd")
 
 var board := BoardState.new(BOARD_SIZE, BOARD_SIZE)
 var rule_checker := RuleChecker.new()
@@ -30,6 +31,7 @@ var skill_bar: GridContainer
 var reset_button: Button
 var return_to_map_button: Button
 var enemy_profile_button: Button
+var tone_player
 var cells: Array = []
 var skill_buttons: Dictionary = {}
 var enemy_profile_ids := [
@@ -99,6 +101,7 @@ func _ready() -> void:
 	_read_run_context()
 	_create_styles()
 	_build_layout()
+	_create_audio_feedback()
 	_start_new_game()
 
 
@@ -452,6 +455,12 @@ func _create_skill_buttons() -> void:
 		_apply_button_theme(button)
 		skill_bar.add_child(button)
 		skill_buttons[skill_id] = button
+
+
+func _create_audio_feedback() -> void:
+	tone_player = SimpleTonePlayerScript.new()
+	tone_player.name = "BattleTonePlayer"
+	add_child(tone_player)
 
 
 func _start_new_game() -> void:
@@ -942,6 +951,7 @@ func _show_result_banner(player_won: bool, detail: String) -> void:
 	result_banner_tween.tween_property(result_banner_label, "modulate", Color(1, 1, 1, 1), 0.18)
 	result_banner_tween.tween_property(result_banner_label, "scale", Vector2(1.02, 1.02), 0.12)
 	result_banner_tween.tween_property(result_banner_label, "scale", Vector2.ONE, 0.12)
+	_play_feedback_tone("victory" if player_won else "defeat")
 
 
 func _show_feedback(text: String, target_cells: Array = [], kind: String = "skill") -> void:
@@ -953,6 +963,8 @@ func _show_feedback(text: String, target_cells: Array = [], kind: String = "skil
 
 		if feedback_label != null:
 			feedback_label.text = "\n".join(feedback_log)
+
+		_play_feedback_tone(kind)
 
 	if not target_cells.is_empty() and not kind.is_empty():
 		_flash_cells(target_cells, kind)
@@ -991,6 +1003,11 @@ func _get_feedback_style(kind: String, fallback: StyleBoxFlat) -> StyleBoxFlat:
 			return feedback_skill_style
 		_:
 			return fallback
+
+
+func _play_feedback_tone(kind: String) -> void:
+	if tone_player != null:
+		tone_player.play_kind(kind)
 
 
 func _record_move(pos: Vector2i, owner: int) -> void:

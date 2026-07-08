@@ -18,6 +18,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - reward and route choices show build-effect summaries, stack limits, and exclusive-group notes
 - run map now keeps a recent settlement note for battle victories, reward claims, route choices, and run completion/failure
 - battle endings now show a clear victory/defeat banner, and run settlement notes are typed, color-coded, and preserved through saves
+- lightweight generated tones now reinforce battle actions, victory/defeat banners, reward claims, and route settlement feedback
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement
@@ -41,6 +42,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - display smoke tests for reward build summaries, effect descriptions, stack-limit text, and exclusive-group text
 - settlement feedback smoke tests for victory, reward-claim, route-choice, and save roundtrips
 - battle feedback smoke tests for action logs, cell flashes, and result banners
+- run map feedback smoke tests for typed settlement labels and tone triggers
 
 ## Run Locally
 
@@ -64,4 +66,5 @@ godot --headless --path . --script tests/skill_system_smoke.gd
 godot --headless --path . --script tests/ai_personality_smoke.gd
 godot --headless --path . --script tests/roguelike_run_smoke.gd
 godot --headless --path . --script tests/battle_feedback_smoke.gd
+godot --headless --path . --script tests/run_map_feedback_smoke.gd
 ```

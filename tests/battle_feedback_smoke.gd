@@ -28,6 +28,9 @@ func _run() -> void:
 	elif scene.result_banner_label.visible:
 		failures.append("battle feedback: result banner should start hidden")
 
+	if scene.tone_player == null:
+		failures.append("battle feedback: expected tone player to exist")
+
 	scene._show_feedback("测试反馈：术法作用于 A1。", [Vector2i(0, 0)], "skill")
 	await process_frame
 
@@ -37,6 +40,9 @@ func _run() -> void:
 	if not scene.feedback_flashes.has(Vector2i(0, 0)):
 		failures.append("battle feedback: expected target cell to be flashed")
 
+	if scene.tone_player == null or scene.tone_player.last_tone_kind != "skill":
+		failures.append("battle feedback: expected skill feedback to trigger a skill tone")
+
 	scene._show_result_banner(true, "A1-E1")
 	await process_frame
 
@@ -45,7 +51,11 @@ func _run() -> void:
 	elif not scene.result_banner_label.text.contains("胜利") or not scene.result_banner_label.text.contains("A1-E1"):
 		failures.append("battle feedback: expected result banner to describe the outcome")
 
+	if scene.tone_player == null or scene.tone_player.last_tone_kind != "victory":
+		failures.append("battle feedback: expected victory banner to trigger a victory tone")
+
 	scene.queue_free()
+	await process_frame
 
 	if failures.is_empty():
 		print("Battle feedback smoke tests passed.")
