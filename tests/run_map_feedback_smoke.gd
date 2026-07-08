@@ -103,6 +103,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("进入试锋之局"):
 		failures.append("run map feedback: expected fresh editor guide to point at the first battle")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("编辑器证据"):
+		failures.append("run map feedback: expected build panel to show editor evidence checklist")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("先完成首战并确认实测手数回传"):
+		failures.append("run map feedback: expected fresh editor evidence to request the first battle record")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 
@@ -431,6 +437,9 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("已补强但快照仍高压"):
 		failures.append("run map feedback: expected rest-focus audit to flag boosted but pressured boss snapshot")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("结论只允许 Boss-only 复核"):
+		failures.append("run map feedback: expected editor evidence to isolate pressure-heavy boss review")
+
 	scene.run_state.record_boss_opening_observation({
 		"enemy": "岩王",
 		"total_moves": 5,
@@ -495,6 +504,9 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("本轮可停手"):
 		failures.append("run map feedback: expected editor guide to stop after stable full-run acceptance")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("可归档 Demo 验收证据"):
+		failures.append("run map feedback: expected editor evidence to mark stable run evidence as archivable")
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)
