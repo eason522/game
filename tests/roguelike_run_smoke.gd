@@ -4,6 +4,7 @@ const MapGeneratorScript := preload("res://scripts/roguelike/MapGenerator.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
 const RunSaveScript := preload("res://scripts/roguelike/RunSave.gd")
 const RewardGeneratorScript := preload("res://scripts/roguelike/RewardGenerator.gd")
+const RunPlaytestSimulatorScript := preload("res://scripts/roguelike/RunPlaytestSimulator.gd")
 
 const TEST_SAVE_PATH := "user://tymj_run_save_smoke.json"
 
@@ -29,6 +30,7 @@ func _run() -> void:
 	_assert_run_pacing_summary()
 	_assert_battle_pacing_records_and_roundtrip()
 	_assert_run_tuning_lines()
+	_assert_full_run_baseline_playtest()
 	_assert_victories_unlock_boss()
 	_assert_defeat_locks_run()
 	_assert_reward_choice_blocks_progress_and_applies_modifier()
@@ -214,6 +216,49 @@ func _assert_run_tuning_lines() -> void:
 
 	if not _lines_contain(slow_lines, "不足普通商品"):
 		failures.append("run tuning: low starsand before shop should be called out")
+		return
+
+
+func _assert_full_run_baseline_playtest() -> void:
+	var simulator := RunPlaytestSimulatorScript.new()
+	var report := simulator.run_baseline()
+
+	if not report.get("completed", false):
+		failures.append("run playtest simulator: baseline should complete the full run")
+		return
+
+	if report.get("failed", false) or report.get("safety_exhausted", false):
+		failures.append("run playtest simulator: baseline should not fail or exhaust safety")
+		return
+
+	if report.get("visited_nodes", []) != [1, 2, 3, 4, 5, 6, 7]:
+		failures.append("run playtest simulator: expected every playable node to be visited")
+		return
+
+	var pacing: Dictionary = report.get("pacing", {})
+
+	if pacing.get("recorded_battle_nodes", 0) != 4 or pacing.get("on_target_count", 0) != 4:
+		failures.append("run playtest simulator: baseline should record four on-target battles")
+		return
+
+	if pacing.get("actual_turn_total", 0) < 60 or pacing.get("actual_turn_total", 0) > 88:
+		failures.append("run playtest simulator: baseline total turns should stay inside full-run target")
+		return
+
+	if report.get("battle_records", []).size() != 4:
+		failures.append("run playtest simulator: expected four battle pacing records")
+		return
+
+	if report.get("reward_count", 0) < 4:
+		failures.append("run playtest simulator: baseline should build rewards through battle, shop, and rest")
+		return
+
+	if report.get("coins", -1) < 0:
+		failures.append("run playtest simulator: baseline starsand should never become negative")
+		return
+
+	if not _lines_contain(report.get("tuning_lines", []), "目标内"):
+		failures.append("run playtest simulator: tuning lines should summarize on-target battle pacing")
 		return
 
 
