@@ -55,6 +55,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("先完成首场战斗"):
 		failures.append("run map feedback: expected fresh checklist to request first actual battle")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参候选"):
+		failures.append("run map feedback: expected build panel to show single-axis tuning candidates")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("等待首场实测"):
+		failures.append("run map feedback: expected fresh tuning candidate to wait for actual data")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("4/4 场目标内"):
 		failures.append("run map feedback: expected baseline playtest to summarize on-target battles")
 
@@ -136,6 +142,9 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("继续补齐完整 Run 实测 1/4"):
 		failures.append("run map feedback: expected checklist to reflect partial actual progress")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("样本未齐"):
+		failures.append("run map feedback: expected tuning candidate to wait for full run while partial")
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("校准关注"):
 		failures.append("run map feedback: expected playtest comparison to show calibration focus")

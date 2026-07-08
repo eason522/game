@@ -327,6 +327,22 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: checklist should encourage one tuning axis at a time")
 		return
 
+	var fresh_candidates := simulator.get_single_axis_tuning_candidates(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
+
+	if not _lines_contain(fresh_candidates, "等待首场实测"):
+		failures.append("run playtest simulator: fresh tuning candidates should wait for actual data")
+		return
+
+	var full_candidates := simulator.get_single_axis_tuning_candidates(slow_report.get("state"))
+
+	if not _lines_contain(full_candidates, "Boss 手数轴"):
+		failures.append("run playtest simulator: completed slow run should prioritize boss tuning candidate")
+		return
+
+	if not _lines_contain(full_candidates, "星砂轴") or not _lines_contain(full_candidates, "奖励轴"):
+		failures.append("run playtest simulator: tuning candidates should include economy and reward axes")
+		return
+
 
 func _assert_victories_unlock_boss() -> void:
 	var state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())

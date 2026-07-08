@@ -206,6 +206,34 @@ func get_live_playtest_checklist(run_state) -> Array:
 	return lines
 
 
+func get_single_axis_tuning_candidates(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
+		return ["单轴候选：暂无 Run 数据，先完成一次实机记录"]
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var total_battles: int = pacing.get("total_battle_nodes", 0)
+
+	if recorded_battles <= 0:
+		return ["单轴候选：等待首场实测，不先改数值"]
+
+	if recorded_battles < total_battles:
+		return ["单轴候选：样本未齐，先补到 Boss 再决定调普通战斗、星砂或奖励"]
+
+	var comparison := compare_run_to_baseline(run_state)
+	var biggest_delta_record: Dictionary = comparison.get("biggest_delta_record", {})
+	var lines: Array = []
+
+	if not biggest_delta_record.is_empty():
+		lines.append(_candidate_line_for_biggest_delta(biggest_delta_record))
+	else:
+		lines.append("单轴候选：无明显最大偏差，先保持本轮目标手数")
+
+	lines.append(_candidate_line_for_economy(run_state))
+	lines.append(_candidate_line_for_rewards(run_state, pacing))
+	return lines
+
+
 func _turn_sample_for_node(node: Dictionary, actual_turn_counts: Array, sample_index: int) -> int:
 	if sample_index >= 0 and sample_index < actual_turn_counts.size():
 		return max(1, int(actual_turn_counts[sample_index]))
@@ -350,6 +378,53 @@ func _sample_by_id(samples: Array, id: String) -> Dictionary:
 			return sample
 
 	return {}
+
+
+func _candidate_line_for_biggest_delta(record: Dictionary) -> String:
+	var delta: int = record.get("baseline_delta", 0)
+	var node_type: String = record.get("type", "")
+	var title: String = record.get("title", "战斗")
+
+	if node_type == RunStateScript.NODE_BOSS:
+		if delta > 0:
+			return "单轴候选：Boss 手数轴，%s 偏慢；优先复核 Boss 上限或休息点补强" % title
+
+		if delta < 0:
+			return "单轴候选：Boss 手数轴，%s 偏快；先观察岩阵压制是否不足" % title
+
+	if delta > 0:
+		return "单轴候选：普通战斗轴，%s 偏慢；下一轮只试普通节点目标 -2" % title
+
+	if delta < 0:
+		return "单轴候选：普通战斗轴，%s 偏快；下一轮只试普通节点目标 +2" % title
+
+	return "单轴候选：%s 接近基准，先不改目标手数" % title
+
+
+func _candidate_line_for_economy(run_state) -> String:
+	var common_price: int = RewardGeneratorScript.RARITY_PRICES.get(RewardGeneratorScript.RARITY_COMMON, 2)
+	var rare_price: int = RewardGeneratorScript.RARITY_PRICES.get(RewardGeneratorScript.RARITY_RARE, 5)
+
+	if run_state.coins < common_price:
+		return "单轴候选：星砂轴偏紧；若商店前仍不足，优先事件星砂 +1"
+
+	if run_state.coins >= rare_price:
+		return "单轴候选：星砂轴偏宽；若史诗过早稳定购买，优先史诗价格 +1"
+
+	return "单轴候选：星砂轴暂稳，本轮不动商店价格"
+
+
+func _candidate_line_for_rewards(run_state, pacing: Dictionary) -> String:
+	var reward_count: int = run_state.rewards.size()
+	var completed_battles: int = pacing.get("completed_battle_nodes", 0)
+
+	if reward_count >= completed_battles + 2:
+		return "单轴候选：奖励轴偏密；若体感成型过早，优先下调非战斗奖励"
+
+	if reward_count < completed_battles:
+		return "单轴候选：奖励轴偏稀；若 Boss 前构筑不足，优先强化休息点"
+
+	return "单轴候选：奖励轴暂稳，先不改奖励池"
 
 
 func _signed_int_text(value: int) -> String:

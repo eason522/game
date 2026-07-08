@@ -19,7 +19,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - run map now keeps a recent settlement note for battle victories, reward claims, route choices, and run completion/failure
 - battle endings now show a clear victory/defeat banner, and run settlement notes are typed, color-coded, and preserved through saves
 - lightweight generated tones now reinforce battle actions, victory/defeat banners, reward claims, and route settlement feedback
-- run map now shows a live full-run playtest checklist that ties actual battle records to baseline, matrix, and tuning-axis checks
+- run map now shows a live full-run playtest checklist and single-axis tuning candidates tied to actual battle records, baseline, and matrix checks
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement
@@ -43,7 +43,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - display smoke tests for reward build summaries, effect descriptions, stack-limit text, and exclusive-group text
 - settlement feedback smoke tests for victory, reward-claim, route-choice, and save roundtrips
 - battle feedback smoke tests for action logs, cell flashes, and result banners
-- run map feedback smoke tests for typed settlement labels, tone triggers, and live playtest checklist display
+- run map feedback smoke tests for typed settlement labels, tone triggers, live playtest checklist display, and tuning candidate display
 
 ## Run Locally
 
