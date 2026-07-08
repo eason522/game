@@ -38,6 +38,9 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("4/4 场目标内"):
 		failures.append("run map feedback: expected baseline playtest to summarize on-target battles")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("实测对照：等待首场实机记录"):
+		failures.append("run map feedback: expected playtest comparison to wait for actual records")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("剩余目标 60-88 手"):
 		failures.append("run map feedback: expected run pacing to summarize remaining turn target")
 
@@ -58,6 +61,12 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("实测 1 场，均值 14 手"):
 		failures.append("run map feedback: expected build panel to show actual pacing summary")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("实测对照：已测 1/4"):
+		failures.append("run map feedback: expected playtest comparison to show recorded battle count")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("目标内 1/1"):
+		failures.append("run map feedback: expected playtest comparison to show on-target actual count")
 
 	scene.run_state.last_feedback = "获得奖励：灵息深蓄。下一站：残谱石室。"
 	scene.run_state.last_feedback_kind = "reward_claimed"

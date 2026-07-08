@@ -481,11 +481,12 @@ func _refresh_build_summary() -> void:
 	var build_lines := reward_generator.get_build_summary_lines(run_state)
 	var pacing_lines := reward_generator.get_run_pacing_lines(run_state)
 	var tuning_lines := reward_generator.get_run_tuning_lines(run_state)
-	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s\n调参建议：%s\n基准试玩：%s" % [
+	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s\n调参建议：%s\n基准试玩：%s\n实测对照：%s" % [
 		" / ".join(build_lines),
 		" / ".join(pacing_lines),
 		" / ".join(tuning_lines),
 		_baseline_playtest_summary_text(),
+		_playtest_comparison_text(),
 	]
 
 
@@ -504,6 +505,39 @@ func _baseline_playtest_summary_text() -> String:
 		report.get("coins", 0),
 		report.get("reward_count", 0),
 	]
+
+
+func _playtest_comparison_text() -> String:
+	var current_pacing := run_state.get_run_pacing_summary()
+	var recorded_battles: int = current_pacing.get("recorded_battle_nodes", 0)
+
+	if recorded_battles <= 0:
+		return "等待首场实机记录"
+
+	var baseline_report := playtest_simulator.run_baseline()
+	var baseline_pacing: Dictionary = baseline_report.get("pacing", {})
+	var total_battles: int = current_pacing.get("total_battle_nodes", 0)
+	var current_average: int = current_pacing.get("actual_turn_average", 0)
+	var baseline_average: int = baseline_pacing.get("actual_turn_average", 0)
+	var average_delta := current_average - baseline_average
+
+	return "已测 %d/%d，均值 %d 手，较基准 %s，目标内 %d/%d，星砂 %d，奖励 %d" % [
+		recorded_battles,
+		total_battles,
+		current_average,
+		_signed_int_text(average_delta),
+		current_pacing.get("on_target_count", 0),
+		recorded_battles,
+		run_state.coins,
+		run_state.rewards.size(),
+	]
+
+
+func _signed_int_text(value: int) -> String:
+	if value > 0:
+		return "+%d" % value
+
+	return str(value)
 
 
 func _refresh_settlement_feedback() -> void:
