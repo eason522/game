@@ -425,6 +425,49 @@ func get_boss_opening_observation_lines() -> Array:
 	return lines
 
 
+func get_boss_opening_pressure_lines() -> Array:
+	var snapshots: Array = boss_opening_observation.get("snapshots", [])
+
+	if snapshots.is_empty():
+		return ["Boss 快照判读：尚未记录前 5 手快照，先完成一场岩王战"]
+
+	var first: Dictionary = snapshots[0]
+	var latest: Dictionary = snapshots[snapshots.size() - 1]
+	var rock_count: int = latest.get("rock_count", 0)
+	var playable_loss: int = max(0, first.get("playable_count", 0) - latest.get("playable_count", 0))
+	var player_energy: int = latest.get("player_energy", 0)
+	var pressure_score := 0
+
+	if rock_count >= 8:
+		pressure_score += 1
+
+	if playable_loss >= 8:
+		pressure_score += 1
+
+	if player_energy <= 2:
+		pressure_score += 1
+
+	var verdict := "暂稳"
+	var focus := "保留当前 Boss 上限，继续观察体感是否可复现"
+
+	if pressure_score >= 2:
+		verdict = "压力偏高"
+		focus = "下一轮优先看开局岩阵、可用能量和 5 手内反制点"
+	elif pressure_score == 1:
+		verdict = "需复看"
+		focus = "先补体感记录，再决定是否复核 Boss 上限"
+
+	return [
+		"Boss 快照判读：%s，岩石 %d，可落点减少 %d，己方能量 %d" % [
+			verdict,
+			rock_count,
+			playable_loss,
+			player_energy,
+		],
+		"Boss 快照判读：%s" % focus,
+	]
+
+
 func get_boss_opening_feel_label() -> String:
 	match boss_opening_feel:
 		BOSS_OPENING_FEEL_STABLE:

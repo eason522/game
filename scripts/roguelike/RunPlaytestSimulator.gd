@@ -430,6 +430,7 @@ func get_boss_pressure_followup_lines(run_state) -> Array:
 
 	var rest_text := "静息调气已生效" if _has_reward_source(run_state, RewardGeneratorScript.REST_FOCUS_SOURCE_ID) else "静息调气未验证"
 	var feel_label: String = run_state.get_boss_opening_feel_label() if run_state.has_method("get_boss_opening_feel_label") else "未记录"
+	var pressure_lines: Array = run_state.get_boss_opening_pressure_lines() if run_state.has_method("get_boss_opening_pressure_lines") else []
 	var lines: Array = [
 		"Boss 复核：%s %d 手，%s，前 5 手：%s" % [
 			boss_record.get("title", "Boss"),
@@ -438,6 +439,9 @@ func get_boss_pressure_followup_lines(run_state) -> Array:
 			feel_label,
 		],
 	]
+
+	if not pressure_lines.is_empty():
+		lines.append("Boss 复核：%s" % String(pressure_lines[0]).trim_prefix("Boss 快照判读："))
 
 	if run_state.boss_opening_feel.is_empty():
 		lines.append("Boss 复核：先补体感按钮，再判断是否复核 Boss 上限")
@@ -493,6 +497,12 @@ func get_boss_pressure_validation_lines(run_state) -> Array:
 
 	if not feel_line.is_empty():
 		lines.append(feel_line)
+
+	if run_state.has_method("get_boss_opening_pressure_lines"):
+		var pressure_lines: Array = run_state.get_boss_opening_pressure_lines()
+
+		if not pressure_lines.is_empty():
+			lines.append("Boss 校验：%s" % String(pressure_lines[0]).trim_prefix("Boss 快照判读："))
 
 	match boss_record.get("actual_pacing_result", ""):
 		"over":

@@ -32,6 +32,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - run map now shows a Boss pressure follow-up checklist that focuses the next live sample on rest-focus resources, opening rock pressure, available energy, and first-five-turn counterplay
 - Rock King battles now show first-five-turn observation hints inside the battle tutorial panel so live playtests can track opening rock pressure before recording route-side feel
 - Rock King battles now pass first-five-turn observation snapshots back to the run map, where the feel panel and build summary show key opening moves, energy, rock pressure, and counterplay focus
+- run map now interprets Rock King first-five-turn snapshots into a pressure readout, summarizing rock count, playable-space loss, player energy, and the next review focus
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement
@@ -55,7 +56,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - display smoke tests for reward build summaries, effect descriptions, stack-limit text, and exclusive-group text
 - settlement feedback smoke tests for victory, reward-claim, route-choice, and save roundtrips
 - battle feedback smoke tests for action logs, cell flashes, and result banners
-- run map feedback smoke tests for typed settlement labels, tone triggers, live playtest checklist/verdict/review/Boss validation display, Boss feel recording, and tuning candidate display
+- run map feedback smoke tests for typed settlement labels, tone triggers, live playtest checklist/verdict/review/Boss validation display, Boss snapshot pressure assessment, Boss feel recording, and tuning candidate display
 
 ## Run Locally
 

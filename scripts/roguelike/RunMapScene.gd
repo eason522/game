@@ -733,11 +733,13 @@ func _refresh_build_summary() -> void:
 	var boss_live_checklist_lines := playtest_simulator.get_boss_live_checklist_lines(run_state)
 	var boss_validation_lines := playtest_simulator.get_boss_pressure_validation_lines(run_state)
 	var boss_observation_lines := run_state.get_boss_opening_observation_lines()
-	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n调参建议：%s\n基准试玩：%s\n实测对照：%s\n样本矩阵：%s\n矩阵落点：%s\n试玩检查：%s\n调参候选：%s" % [
+	var boss_pressure_lines := run_state.get_boss_opening_pressure_lines()
+	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n调参建议：%s\n基准试玩：%s\n实测对照：%s\n样本矩阵：%s\n矩阵落点：%s\n试玩检查：%s\n调参候选：%s" % [
 		" / ".join(build_lines),
 		" / ".join(pacing_lines),
 		" / ".join(boss_prep_lines),
 		" / ".join(boss_observation_lines),
+		" / ".join(boss_pressure_lines),
 		" / ".join(playtest_snapshot_lines),
 		" / ".join(playtest_decision_lines),
 		" / ".join(playtest_verdict_lines),

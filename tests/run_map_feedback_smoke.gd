@@ -321,11 +321,17 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Boss 前 5 手快照") or not scene.build_summary_label.text.contains("反制点"):
 		failures.append("run map feedback: expected build panel to show boss opening observation snapshots")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Boss 快照判读") or not scene.build_summary_label.text.contains("暂稳"):
+		failures.append("run map feedback: expected build panel to show boss opening pressure assessment")
+
 	var restored_state := RunStateScript.new()
 	restored_state.load_from_dict(scene.run_state.to_dict())
 
 	if not " / ".join(restored_state.get_boss_opening_observation_lines()).contains("第 3 手"):
 		failures.append("run map feedback: expected boss opening snapshots to survive state serialization")
+
+	if not " / ".join(restored_state.get_boss_opening_pressure_lines()).contains("可落点减少"):
+		failures.append("run map feedback: expected boss opening pressure assessment to survive state serialization")
 
 	if scene.reward_buttons.size() < 3 or not scene.reward_buttons[0].visible or not scene.reward_buttons[0].text.contains("更稳"):
 		failures.append("run map feedback: expected boss feel buttons to be visible")
