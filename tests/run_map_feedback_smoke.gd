@@ -49,6 +49,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("不落数值"):
 		failures.append("run map feedback: expected live decision to block tuning before full sample")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("实机复盘"):
+		failures.append("run map feedback: expected build panel to show live playtest review")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("暂只记录体感"):
+		failures.append("run map feedback: expected live review to avoid conclusions before a full sample")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 

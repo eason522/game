@@ -289,6 +289,44 @@ func get_live_playtest_decision_lines(run_state) -> Array:
 	]
 
 
+func get_live_playtest_review_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
+		return ["实机复盘：暂无 Run 数据，先开始一轮完整试玩"]
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var total_battles: int = pacing.get("total_battle_nodes", 0)
+
+	if recorded_battles < total_battles:
+		return [
+			"实机复盘：样本未齐 %d/%d，暂只记录体感，不落结论" % [recorded_battles, total_battles],
+			"实机复盘：%s" % _rest_focus_review_text(run_state, false),
+		]
+
+	if run_state.run_failed:
+		return [
+			"实机复盘：Run 已失败，先记录失败节点与 Boss 前资源",
+			"实机复盘：%s" % _rest_focus_review_text(run_state, true),
+		]
+
+	var comparison := compare_run_to_baseline(run_state)
+	var candidates := get_single_axis_tuning_candidates(run_state)
+	var first_candidate := "无明确候选"
+
+	if not candidates.is_empty():
+		first_candidate = String(candidates[0]).trim_prefix("单轴候选：")
+
+	return [
+		"实机复盘：完整 Run 已齐，目标内 %d/%d，总 %d 手" % [
+			pacing.get("on_target_count", 0),
+			recorded_battles,
+			pacing.get("actual_turn_total", 0),
+		],
+		"实机复盘：%s" % _boss_pressure_review_text(comparison.get("biggest_delta_record", {})),
+		"实机复盘：%s；优先候选：%s" % [_rest_focus_review_text(run_state, true), first_candidate],
+	]
+
+
 func get_single_axis_tuning_candidates(run_state) -> Array:
 	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
 		return ["单轴候选：暂无 Run 数据，先完成一次实机记录"]
@@ -409,6 +447,49 @@ func _live_playtest_next_step_line(run_state, recorded_battles: int, total_battl
 		return "实机快照：下一步继续推进到 Boss，补齐完整 Run 样本"
 
 	return "实机快照：下一步复核最大偏差与 Boss 准备摘要"
+
+
+func _boss_pressure_review_text(biggest_delta_record: Dictionary) -> String:
+	if biggest_delta_record.is_empty():
+		return "Boss 压力未形成最大偏差，先保持当前 Boss 上限"
+
+	var title: String = biggest_delta_record.get("title", "战斗")
+	var delta: int = biggest_delta_record.get("baseline_delta", 0)
+	var node_type: String = biggest_delta_record.get("type", "")
+
+	if node_type == RunStateScript.NODE_BOSS:
+		if delta > 0:
+			return "Boss 压力仍偏慢，%s 较基准 %s 手" % [title, _signed_int_text(delta)]
+
+		if delta < 0:
+			return "Boss 压力偏快，%s 较基准 %s 手，先看岩阵压制" % [title, _signed_int_text(delta)]
+
+		return "Boss 压力接近基准，先保持岩王目标"
+
+	return "最大偏差在 %s（%s 手），Boss 压力先观察" % [title, _signed_int_text(delta)]
+
+
+func _rest_focus_review_text(run_state, full_sample_ready: bool) -> String:
+	var has_rest_focus := _has_reward_source(run_state, RewardGeneratorScript.REST_FOCUS_SOURCE_ID)
+
+	if has_rest_focus and full_sample_ready:
+		return "静息调气已验证，复核 Boss 前 5 手是否更稳"
+
+	if has_rest_focus:
+		return "静息调气已取得，需打到 Boss 后验证体感"
+
+	return "静息调气尚未验证，Boss 前补强结论需保留"
+
+
+func _has_reward_source(run_state, source_id: String) -> bool:
+	if run_state == null:
+		return false
+
+	for reward in run_state.rewards:
+		if reward.get("source_id", reward.get("id", "")) == source_id:
+			return true
+
+	return false
 
 
 func _snapshot_node_type_label(node_type: String) -> String:

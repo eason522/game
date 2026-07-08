@@ -351,6 +351,22 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: completed decision should expose the priority tuning axis")
 		return
 
+	var fresh_review := simulator.get_live_playtest_review_lines(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
+
+	if not _lines_contain(fresh_review, "实机复盘") or not _lines_contain(fresh_review, "暂只记录体感"):
+		failures.append("run playtest simulator: fresh review should avoid conclusions before a full sample")
+		return
+
+	var full_review := simulator.get_live_playtest_review_lines(slow_report.get("state"))
+
+	if not _lines_contain(full_review, "完整 Run 已齐") or not _lines_contain(full_review, "Boss 压力仍偏慢"):
+		failures.append("run playtest simulator: completed review should summarize boss pressure")
+		return
+
+	if not _lines_contain(full_review, "静息调气已验证") or not _lines_contain(full_review, "Boss 手数轴"):
+		failures.append("run playtest simulator: completed review should connect rest focus and tuning axis")
+		return
+
 	var fresh_candidates := simulator.get_single_axis_tuning_candidates(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
 
 	if not _lines_contain(fresh_candidates, "等待首场实测"):
