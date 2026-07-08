@@ -5,6 +5,8 @@ const CELL_SIZE := Vector2(44, 44)
 const BOARD_GRID_GAP := 3
 const HEADER_STATUS_SIZE := Vector2(490, 52)
 const HEADER_FEEDBACK_SIZE := Vector2(490, 72)
+const RESULT_BANNER_HEIGHT := 64.0
+const RESULT_BANNER_TOP_OFFSET := 98.0
 const BASE_ENERGY_MAX := 6
 const ROCK_BOSS_ROCK_INTERVAL := 3
 const RUN_MAP_SCENE_PATH := "res://scenes/roguelike/RunMapScene.tscn"
@@ -45,6 +47,7 @@ var enemy_profile_label: Label
 var enemy_intent_hint_label: Label
 var board_grid: GridContainer
 var skill_bar: GridContainer
+var controls_panel: VBoxContainer
 var reset_button: Button
 var return_to_map_button: Button
 var enemy_profile_button: Button
@@ -296,21 +299,27 @@ func _build_layout() -> void:
 	feedback_label.add_theme_stylebox_override("normal", panel_style)
 	feedback_slot.add_child(feedback_label)
 
-	result_banner_label = Label.new()
-	result_banner_label.visible = false
-	result_banner_label.custom_minimum_size = Vector2(0, 58)
-	result_banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	result_banner_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	result_banner_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	result_banner_label.add_theme_font_size_override("font_size", 24)
-	result_banner_label.add_theme_color_override("font_color", Color("#fff4d6"))
-	result_banner_label.add_theme_stylebox_override("normal", status_panel_style)
-	main.add_child(result_banner_label)
-
 	var content := HBoxContainer.new()
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_theme_constant_override("separation", 20)
 	main.add_child(content)
+
+	result_banner_label = Label.new()
+	result_banner_label.visible = false
+	result_banner_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	result_banner_label.offset_left = 30
+	result_banner_label.offset_top = RESULT_BANNER_TOP_OFFSET
+	result_banner_label.offset_right = -30
+	result_banner_label.offset_bottom = RESULT_BANNER_TOP_OFFSET + RESULT_BANNER_HEIGHT
+	result_banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_banner_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	result_banner_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	result_banner_label.clip_text = true
+	result_banner_label.add_theme_font_size_override("font_size", 22)
+	result_banner_label.add_theme_color_override("font_color", Color("#fff4d6"))
+	result_banner_label.add_theme_stylebox_override("normal", status_panel_style)
+	result_banner_label.z_index = 10
+	add_child(result_banner_label)
 
 	var board_panel := PanelContainer.new()
 	board_panel.add_theme_stylebox_override("panel", board_panel_style)
@@ -417,7 +426,7 @@ func _build_layout() -> void:
 	skill_bar.add_theme_constant_override("v_separation", 8)
 	skill_panel.add_child(skill_bar)
 
-	var controls_panel := _create_side_panel(sidebar, "设置")
+	controls_panel = _create_side_panel(sidebar, "设置")
 
 	enemy_profile_button = Button.new()
 	enemy_profile_button.custom_minimum_size = Vector2(0, 44)
@@ -1061,7 +1070,7 @@ func _show_result_banner(player_won: bool, detail: String) -> void:
 	var hint := "返回路线领取战利品" if player_won and launched_from_run else "重新整备后再战"
 	var banner_style := _make_panel_style(Color("#243f35") if player_won else Color("#472e31"), Color("#f0c65a") if player_won else Color("#d87568"))
 
-	result_banner_label.text = "%s  ·  %s\n%s" % [title, detail, hint]
+	result_banner_label.text = "%s  ·  %s  ·  %s" % [title, detail, hint]
 	result_banner_label.add_theme_stylebox_override("normal", banner_style)
 	result_banner_label.visible = true
 	result_banner_label.modulate = Color(1, 1, 1, 0.0)

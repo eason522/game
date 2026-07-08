@@ -46,10 +46,14 @@ func _run() -> void:
 	elif not scene.turn_rhythm_label.text.contains("己方行动"):
 		failures.append("battle feedback: expected initial rhythm label to show player action")
 
+	var initial_board_y := 0.0
+	var initial_board_bottom := 0.0
+
 	if scene.board_grid == null:
 		failures.append("battle feedback: expected board grid to exist")
 	else:
-		var initial_board_y: float = scene.board_grid.global_position.y
+		initial_board_y = scene.board_grid.global_position.y
+		initial_board_bottom = scene.board_grid.global_position.y + scene.board_grid.size.y
 		var board_bottom: float = scene.board_grid.global_position.y + scene.board_grid.size.y
 		var viewport_height: float = scene.get_viewport_rect().size.y
 
@@ -166,6 +170,30 @@ func _run() -> void:
 		failures.append("battle feedback: expected result banner to become visible")
 	elif not scene.result_banner_label.text.contains("胜利") or not scene.result_banner_label.text.contains("A1-E1"):
 		failures.append("battle feedback: expected result banner to describe the outcome")
+	else:
+		if scene.result_banner_label.size.y > 70.0:
+			failures.append("battle feedback: expected result banner overlay to stay compact")
+
+		if scene.result_banner_label.autowrap_mode != TextServer.AUTOWRAP_OFF or not scene.result_banner_label.clip_text:
+			failures.append("battle feedback: expected result banner to clip instead of resizing")
+
+	if scene.board_grid != null:
+		var banner_board_y: float = scene.board_grid.global_position.y
+		var banner_board_bottom: float = scene.board_grid.global_position.y + scene.board_grid.size.y
+
+		if abs(banner_board_y - initial_board_y) > 0.5:
+			failures.append("battle feedback: expected result banner overlay to keep board y position stable")
+
+		if abs(banner_board_bottom - initial_board_bottom) > 0.5:
+			failures.append("battle feedback: expected result banner overlay not to resize board area")
+
+	if scene.controls_panel == null:
+		failures.append("battle feedback: expected controls panel to exist")
+	else:
+		var controls_bottom: float = scene.controls_panel.global_position.y + scene.controls_panel.size.y
+
+		if controls_bottom > scene.get_viewport_rect().size.y:
+			failures.append("battle feedback: expected result banner overlay not to push controls below viewport")
 
 	if scene.tone_player == null or scene.tone_player.last_tone_kind != "victory":
 		failures.append("battle feedback: expected victory banner to trigger a victory tone")
