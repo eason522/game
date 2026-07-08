@@ -41,6 +41,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("矩阵关注"):
 		failures.append("run map feedback: expected sample matrix to show a focus line")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("矩阵落点"):
+		failures.append("run map feedback: expected sample matrix to show actionable tuning lines")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Boss 上限"):
+		failures.append("run map feedback: expected matrix action lines to mention boss cap review")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("4/4 场目标内"):
 		failures.append("run map feedback: expected baseline playtest to summarize on-target battles")
 

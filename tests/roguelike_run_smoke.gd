@@ -295,6 +295,18 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: sample matrix should include a focus line")
 		return
 
+	if not _lines_contain(matrix.get("action_lines", []), "矩阵落点"):
+		failures.append("run playtest simulator: sample matrix should include actionable tuning lines")
+		return
+
+	if not _lines_contain(matrix.get("action_lines", []), "普通战斗目标 -2"):
+		failures.append("run playtest simulator: slow sample should suggest a battle target adjustment")
+		return
+
+	if not _lines_contain(matrix.get("action_lines", []), "Boss 上限"):
+		failures.append("run playtest simulator: boss-pressure sample should suggest a boss cap review")
+		return
+
 
 func _assert_victories_unlock_boss() -> void:
 	var state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())

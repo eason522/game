@@ -150,11 +150,13 @@ func run_sample_matrix() -> Dictionary:
 		summary_lines.append(sample.get("summary", ""))
 
 	var focus_lines := _sample_matrix_focus_lines(samples)
+	var action_lines := _sample_matrix_action_lines(samples)
 	return {
 		"samples": samples,
 		"summary_lines": summary_lines,
 		"focus_lines": focus_lines,
-		"display_lines": summary_lines + focus_lines,
+		"action_lines": action_lines,
+		"display_lines": summary_lines + focus_lines + action_lines,
 	}
 
 
@@ -273,6 +275,35 @@ func _sample_matrix_focus_lines(samples: Array) -> Array:
 		lines.append("矩阵关注：样本均在总目标附近，可进入实机手感验证")
 
 	return lines
+
+
+func _sample_matrix_action_lines(samples: Array) -> Array:
+	var fast_sample := _sample_by_id(samples, "fast")
+	var slow_sample := _sample_by_id(samples, "slow")
+	var boss_pressure_sample := _sample_by_id(samples, "boss_pressure")
+	var lines: Array = []
+
+	if not fast_sample.is_empty() and fast_sample.get("total_turns", 0) < 60:
+		lines.append("矩阵落点：偏快样本低于 60 手，早期奖励与星砂先不再提速")
+
+	if not slow_sample.is_empty() and slow_sample.get("total_turns", 0) > 88:
+		lines.append("矩阵落点：偏慢样本高于 88 手，若实机接近则普通战斗目标 -2 或后段奖励 +1")
+
+	if not boss_pressure_sample.is_empty() and boss_pressure_sample.get("on_target_battles", 0) < boss_pressure_sample.get("recorded_battles", 0):
+		lines.append("矩阵落点：Boss 压力样本有越界，优先复核 Boss 上限 30 手与休息点补强")
+
+	if lines.is_empty():
+		lines.append("矩阵落点：样本暂稳，下一轮只按实机最大偏差做小步调整")
+
+	return lines
+
+
+func _sample_by_id(samples: Array, id: String) -> Dictionary:
+	for sample in samples:
+		if sample.get("id", "") == id:
+			return sample
+
+	return {}
 
 
 func _signed_int_text(value: int) -> String:
