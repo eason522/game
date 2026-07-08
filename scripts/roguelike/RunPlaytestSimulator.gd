@@ -160,6 +160,52 @@ func run_sample_matrix() -> Dictionary:
 	}
 
 
+func get_live_playtest_checklist(run_state) -> Array:
+	var baseline_report := run_baseline()
+	var baseline_pacing: Dictionary = baseline_report.get("pacing", {})
+	var comparison := compare_run_to_baseline(run_state)
+	var matrix := run_sample_matrix()
+	var current_pacing: Dictionary = {}
+
+	if run_state != null and run_state.has_method("get_run_pacing_summary"):
+		current_pacing = run_state.get_run_pacing_summary()
+
+	var recorded_battles: int = current_pacing.get("recorded_battle_nodes", comparison.get("recorded_battles", 0))
+	var total_battles: int = current_pacing.get("total_battle_nodes", comparison.get("total_battles", 0))
+	var lines: Array = []
+
+	if total_battles <= 0:
+		total_battles = baseline_pacing.get("recorded_battle_nodes", 4)
+
+	if recorded_battles <= 0:
+		lines.append("试玩检查：先完成首场战斗，记录实际手数后再看偏差")
+	elif recorded_battles < total_battles:
+		lines.append("试玩检查：继续补齐完整 Run 实测 %d/%d 场，至少打到 Boss 结算" % [recorded_battles, total_battles])
+	else:
+		lines.append("试玩检查：完整 Run 实测已齐，按最大偏差节点做小步调参")
+
+	lines.append("试玩检查：基准 %d/%d 场目标内，总 %d 手，星砂 %d，奖励 %d" % [
+		baseline_pacing.get("on_target_count", 0),
+		baseline_pacing.get("recorded_battle_nodes", 0),
+		baseline_pacing.get("actual_turn_total", 0),
+		baseline_report.get("coins", 0),
+		baseline_report.get("reward_count", 0),
+	])
+
+	var attention: String = comparison.get("attention", "")
+
+	if not attention.is_empty():
+		lines.append("试玩检查：%s" % attention.trim_prefix("校准关注："))
+
+	var action_lines: Array = matrix.get("action_lines", [])
+
+	if not action_lines.is_empty():
+		lines.append("试玩检查：%s" % String(action_lines[0]).trim_prefix("矩阵落点："))
+
+	lines.append("试玩检查：每轮只调整普通战斗目标、星砂价格或 Boss 手数中的一项")
+	return lines
+
+
 func _turn_sample_for_node(node: Dictionary, actual_turn_counts: Array, sample_index: int) -> int:
 	if sample_index >= 0 and sample_index < actual_turn_counts.size():
 		return max(1, int(actual_turn_counts[sample_index]))

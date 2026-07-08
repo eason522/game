@@ -307,6 +307,26 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: boss-pressure sample should suggest a boss cap review")
 		return
 
+	var fresh_checklist := simulator.get_live_playtest_checklist(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
+
+	if not _lines_contain(fresh_checklist, "试玩检查"):
+		failures.append("run playtest simulator: live checklist should expose playtest checks")
+		return
+
+	if not _lines_contain(fresh_checklist, "先完成首场战斗"):
+		failures.append("run playtest simulator: fresh checklist should ask for the first actual battle")
+		return
+
+	var full_checklist := simulator.get_live_playtest_checklist(slow_report.get("state"))
+
+	if not _lines_contain(full_checklist, "完整 Run 实测已齐"):
+		failures.append("run playtest simulator: complete checklist should switch to tuning mode")
+		return
+
+	if not _lines_contain(full_checklist, "每轮只调整"):
+		failures.append("run playtest simulator: checklist should encourage one tuning axis at a time")
+		return
+
 
 func _assert_victories_unlock_boss() -> void:
 	var state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())

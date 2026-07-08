@@ -49,6 +49,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Boss 上限"):
 		failures.append("run map feedback: expected matrix action lines to mention boss cap review")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("试玩检查"):
+		failures.append("run map feedback: expected build panel to show live playtest checklist")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("先完成首场战斗"):
+		failures.append("run map feedback: expected fresh checklist to request first actual battle")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("4/4 场目标内"):
 		failures.append("run map feedback: expected baseline playtest to summarize on-target battles")
 
@@ -127,6 +133,9 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("最大偏差：试锋之局"):
 		failures.append("run map feedback: expected playtest comparison to show largest baseline delta")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("继续补齐完整 Run 实测 1/4"):
+		failures.append("run map feedback: expected checklist to reflect partial actual progress")
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("校准关注"):
 		failures.append("run map feedback: expected playtest comparison to show calibration focus")
