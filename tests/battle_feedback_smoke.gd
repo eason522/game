@@ -36,11 +36,19 @@ func _run() -> void:
 		failures.append("battle feedback: expected tone player to exist")
 	elif scene.tone_player.last_tone_kind != "turn_player":
 		failures.append("battle feedback: expected initial player turn to trigger a turn tone")
+	elif scene.tone_player.last_tone_duration > 0.03 or scene.tone_player.last_tone_volume > 0.06:
+		failures.append("battle feedback: expected tuned player turn tone to stay short and quiet")
 
 	if scene.turn_rhythm_label == null:
 		failures.append("battle feedback: expected turn rhythm label to exist")
 	elif not scene.turn_rhythm_label.text.contains("己方行动"):
 		failures.append("battle feedback: expected initial rhythm label to show player action")
+
+	if scene.enemy_think_delay_seconds < 0.4:
+		failures.append("battle feedback: expected enemy think delay to leave a readable beat")
+
+	if scene.turn_rhythm_pulse_seconds < 0.24 or scene.turn_rhythm_pulse_seconds > 0.3:
+		failures.append("battle feedback: expected tuned turn rhythm pulse duration")
 
 	scene._show_feedback("测试反馈：术法作用于 A1。", [Vector2i(0, 0)], "skill")
 	await process_frame
@@ -62,6 +70,8 @@ func _run() -> void:
 
 	if scene.tone_player == null or scene.tone_player.last_tone_kind != "turn_enemy":
 		failures.append("battle feedback: expected enemy turn to trigger a turn tone")
+	elif scene.tone_player.last_tone_duration > 0.035:
+		failures.append("battle feedback: expected enemy turn tone to stay brief")
 
 	scene._show_result_banner(true, "A1-E1")
 	await process_frame
@@ -73,6 +83,8 @@ func _run() -> void:
 
 	if scene.tone_player == null or scene.tone_player.last_tone_kind != "victory":
 		failures.append("battle feedback: expected victory banner to trigger a victory tone")
+	elif scene.tone_player.last_tone_count != 3:
+		failures.append("battle feedback: expected victory tone to use three notes")
 
 	scene.move_count = 17
 	scene._record_battle_result(true)

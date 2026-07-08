@@ -27,7 +27,9 @@ var node_list: VBoxContainer
 var node_buttons: Array = []
 var reward_buttons: Array = []
 var last_rendered_feedback := ""
+var last_claimed_reward_summary := ""
 var settlement_tween: Tween
+var reward_panel_tween: Tween
 var panel_style: StyleBoxFlat
 var button_style: StyleBoxFlat
 var button_hover_style: StyleBoxFlat
@@ -354,6 +356,7 @@ func _claim_reward_at(index: int) -> void:
 	var reward: Dictionary = run_state.pending_rewards[index]
 
 	if run_state.claim_reward(reward.get("id", "")):
+		_mark_claimed_reward_feedback(reward)
 		_persist_run_state()
 		_refresh()
 
@@ -467,11 +470,39 @@ func _refresh_reward_panel() -> void:
 
 		return
 
-	reward_label.text = "当前构筑\n星砂：%d\n已获奖励：%s" % [run_state.coins, "无" if reward_titles.is_empty() else "、".join(reward_titles)]
+	var claimed_text := "" if last_claimed_reward_summary.is_empty() else "\n刚获得：%s" % last_claimed_reward_summary
+	reward_label.text = "当前构筑%s\n星砂：%d\n已获奖励：%s" % [
+		claimed_text,
+		run_state.coins,
+		"无" if reward_titles.is_empty() else "、".join(reward_titles),
+	]
 
 	for button in reward_buttons:
 		button.visible = false
 		button.tooltip_text = ""
+
+
+func _mark_claimed_reward_feedback(reward: Dictionary) -> void:
+	last_claimed_reward_summary = "%s · %s" % [
+		reward.get("title", "未知奖励"),
+		reward_generator.get_reward_effect_summary(reward),
+	]
+	_pulse_reward_panel()
+
+
+func _pulse_reward_panel() -> void:
+	if reward_label == null:
+		return
+
+	if reward_panel_tween != null:
+		reward_panel_tween.kill()
+
+	reward_label.modulate = Color(1, 1, 1, 0.66)
+	reward_label.scale = Vector2(0.99, 0.99)
+	reward_panel_tween = create_tween()
+	reward_panel_tween.tween_property(reward_label, "modulate", Color(1, 1, 1, 1), 0.18)
+	reward_panel_tween.parallel().tween_property(reward_label, "scale", Vector2(1.015, 1.015), 0.18)
+	reward_panel_tween.tween_property(reward_label, "scale", Vector2.ONE, 0.12)
 
 
 func _refresh_build_summary() -> void:

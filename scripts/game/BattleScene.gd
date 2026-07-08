@@ -10,6 +10,10 @@ const BATTLE_NODE_INDEX_META := "tymj_battle_node_index"
 const BATTLE_RESULT_META := "tymj_battle_result"
 const BATTLE_MOVE_COUNT_META := "tymj_battle_move_count"
 const BATTLE_ENEMY_PROFILE_META := "tymj_battle_enemy_profile_id"
+const ENEMY_THINK_DELAY_SECONDS := 0.42
+const TURN_RHYTHM_FADE_SECONDS := 0.14
+const TURN_RHYTHM_SETTLE_SECONDS := 0.12
+const TURN_RHYTHM_PULSE_SCALE := Vector2(1.035, 1.035)
 const SkillExecutorScript := preload("res://scripts/skills/SkillExecutor.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
 const SimpleTonePlayerScript := preload("res://scripts/audio/SimpleTonePlayer.gd")
@@ -73,6 +77,8 @@ var feedback_flashes: Dictionary = {}
 var feedback_flash_token := 0
 var result_banner_tween: Tween
 var turn_rhythm_tween: Tween
+var enemy_think_delay_seconds := ENEMY_THINK_DELAY_SECONDS
+var turn_rhythm_pulse_seconds := TURN_RHYTHM_FADE_SECONDS + TURN_RHYTHM_SETTLE_SECONDS
 
 var empty_style: StyleBoxFlat
 var spirit_style: StyleBoxFlat
@@ -576,7 +582,7 @@ func _on_cell_pressed(pos: Vector2i) -> void:
 	_set_status("你落子于 %s。%s敌方正在思考。" % [_format_board_pos(pos), note_text])
 	_refresh_board()
 
-	await get_tree().create_timer(0.35).timeout
+	await get_tree().create_timer(enemy_think_delay_seconds).timeout
 	_play_enemy_turn()
 
 
@@ -1016,9 +1022,9 @@ func _set_turn_rhythm(text: String, should_pulse: bool) -> void:
 	turn_rhythm_label.modulate = Color(1, 1, 1, 0.7)
 	turn_rhythm_label.scale = Vector2(0.98, 0.98)
 	turn_rhythm_tween = create_tween()
-	turn_rhythm_tween.tween_property(turn_rhythm_label, "modulate", Color(1, 1, 1, 1), 0.16)
-	turn_rhythm_tween.parallel().tween_property(turn_rhythm_label, "scale", Vector2(1.04, 1.04), 0.16)
-	turn_rhythm_tween.tween_property(turn_rhythm_label, "scale", Vector2.ONE, 0.10)
+	turn_rhythm_tween.tween_property(turn_rhythm_label, "modulate", Color(1, 1, 1, 1), TURN_RHYTHM_FADE_SECONDS)
+	turn_rhythm_tween.parallel().tween_property(turn_rhythm_label, "scale", TURN_RHYTHM_PULSE_SCALE, TURN_RHYTHM_FADE_SECONDS)
+	turn_rhythm_tween.tween_property(turn_rhythm_label, "scale", Vector2.ONE, TURN_RHYTHM_SETTLE_SECONDS)
 
 
 func _flash_cells(target_cells: Array, kind: String) -> void:

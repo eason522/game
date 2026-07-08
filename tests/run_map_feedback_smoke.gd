@@ -86,9 +86,13 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("校准关注"):
 		failures.append("run map feedback: expected playtest comparison to show calibration focus")
 
-	scene.run_state.last_feedback = "获得奖励：灵息深蓄。下一站：残谱石室。"
-	scene.run_state.last_feedback_kind = "reward_claimed"
+	var reward_options: Array = scene.reward_generator.generate_options(scene.run_state, scene.run_state.get_current_node())
+	scene.run_state.resolve_current_node(true, reward_options, 14)
 	scene._refresh()
+
+	await process_frame
+
+	scene._claim_reward_at(0)
 
 	await process_frame
 
@@ -97,6 +101,11 @@ func _run() -> void:
 
 	if scene.tone_player == null or scene.tone_player.last_tone_kind != "reward_claimed":
 		failures.append("run map feedback: expected reward feedback to trigger a reward tone")
+	elif scene.tone_player.last_tone_count != 3:
+		failures.append("run map feedback: expected reward feedback to use a brighter three-note tone")
+
+	if scene.reward_label == null or not scene.reward_label.text.contains("刚获得"):
+		failures.append("run map feedback: expected reward panel to keep the claimed reward visible")
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)

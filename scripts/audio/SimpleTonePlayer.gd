@@ -2,11 +2,55 @@ class_name SimpleTonePlayer
 extends Node
 
 const MIX_RATE := 22050.0
+const MASTER_VOLUME_DB := -12.0
+const TONE_GAP_SECONDS := 0.01
+const TONE_LIBRARY := {
+	"player": [{"frequency": 560.0, "duration": 0.038, "volume": 0.095}],
+	"enemy": [{"frequency": 240.0, "duration": 0.042, "volume": 0.082}],
+	"skill": [{"frequency": 740.0, "duration": 0.052, "volume": 0.105}],
+	"rock": [{"frequency": 150.0, "duration": 0.068, "volume": 0.105}],
+	"energy": [{"frequency": 920.0, "duration": 0.046, "volume": 0.092}],
+	"turn_player": [{"frequency": 600.0, "duration": 0.028, "volume": 0.052}],
+	"turn_enemy": [{"frequency": 300.0, "duration": 0.034, "volume": 0.048}],
+	"victory": [
+		{"frequency": 620.0, "duration": 0.052, "volume": 0.105},
+		{"frequency": 840.0, "duration": 0.056, "volume": 0.105},
+		{"frequency": 1080.0, "duration": 0.072, "volume": 0.095},
+	],
+	"complete": [
+		{"frequency": 620.0, "duration": 0.052, "volume": 0.105},
+		{"frequency": 840.0, "duration": 0.056, "volume": 0.105},
+		{"frequency": 1080.0, "duration": 0.072, "volume": 0.095},
+	],
+	"defeat": [
+		{"frequency": 260.0, "duration": 0.082, "volume": 0.105},
+		{"frequency": 180.0, "duration": 0.11, "volume": 0.088},
+	],
+	"reward_claimed": [
+		{"frequency": 720.0, "duration": 0.042, "volume": 0.092},
+		{"frequency": 900.0, "duration": 0.052, "volume": 0.092},
+		{"frequency": 1160.0, "duration": 0.068, "volume": 0.084},
+	],
+	"choice_pending": [
+		{"frequency": 400.0, "duration": 0.038, "volume": 0.074},
+		{"frequency": 540.0, "duration": 0.042, "volume": 0.074},
+	],
+	"choice_claimed": [
+		{"frequency": 400.0, "duration": 0.038, "volume": 0.074},
+		{"frequency": 540.0, "duration": 0.042, "volume": 0.074},
+	],
+	"run_start": [{"frequency": 480.0, "duration": 0.04, "volume": 0.064}],
+	"progress": [{"frequency": 480.0, "duration": 0.04, "volume": 0.064}],
+	"default": [{"frequency": 440.0, "duration": 0.036, "volume": 0.064}],
+}
 
 var audio_player: AudioStreamPlayer
 var audio_stream: AudioStreamGenerator
 var last_tone_kind := ""
 var last_tone_frequency := 0.0
+var last_tone_duration := 0.0
+var last_tone_volume := 0.0
+var last_tone_count := 0
 var muted := false
 
 
@@ -34,6 +78,9 @@ func play_kind(kind: String) -> void:
 
 	last_tone_kind = kind
 	last_tone_frequency = float(tones[0].get("frequency", 0.0))
+	last_tone_duration = float(tones[0].get("duration", 0.0))
+	last_tone_volume = float(tones[0].get("volume", 0.0))
+	last_tone_count = tones.size()
 
 	if muted:
 		return
@@ -71,7 +118,7 @@ func _ensure_audio_player() -> void:
 	audio_player = AudioStreamPlayer.new()
 	audio_player.name = "SimpleToneAudioPlayer"
 	audio_player.stream = audio_stream
-	audio_player.volume_db = -10.0
+	audio_player.volume_db = MASTER_VOLUME_DB
 	add_child(audio_player)
 
 
@@ -84,40 +131,24 @@ func _push_tone(playback: AudioStreamGeneratorPlayback, frequency: float, durati
 		var sample: float = sin(TAU * frequency * float(frame) / MIX_RATE) * volume * envelope
 		playback.push_frame(Vector2(sample, sample))
 
-	var gap_count: int = int(MIX_RATE * 0.012)
+	var gap_count: int = int(MIX_RATE * TONE_GAP_SECONDS)
 
 	for frame in range(gap_count):
 		playback.push_frame(Vector2.ZERO)
 
 
 func _tones_for_kind(kind: String) -> Array:
-	match kind:
-		"player":
-			return [_tone(520.0, 0.045, 0.12)]
-		"enemy":
-			return [_tone(260.0, 0.045, 0.10)]
-		"skill":
-			return [_tone(720.0, 0.055, 0.12)]
-		"rock":
-			return [_tone(160.0, 0.07, 0.12)]
-		"energy":
-			return [_tone(880.0, 0.05, 0.11)]
-		"turn_player":
-			return [_tone(540.0, 0.035, 0.07)]
-		"turn_enemy":
-			return [_tone(320.0, 0.04, 0.065)]
-		"victory", "complete":
-			return [_tone(620.0, 0.055, 0.12), _tone(820.0, 0.055, 0.12), _tone(1040.0, 0.07, 0.11)]
-		"defeat":
-			return [_tone(280.0, 0.08, 0.12), _tone(190.0, 0.10, 0.10)]
-		"reward_claimed":
-			return [_tone(760.0, 0.05, 0.11), _tone(980.0, 0.065, 0.11)]
-		"choice_pending", "choice_claimed":
-			return [_tone(420.0, 0.045, 0.09), _tone(560.0, 0.045, 0.09)]
-		"run_start", "progress":
-			return [_tone(480.0, 0.045, 0.08)]
-		_:
-			return [_tone(440.0, 0.04, 0.08)]
+	var source: Array = TONE_LIBRARY.get(kind, TONE_LIBRARY["default"])
+	var tones: Array = []
+
+	for tone in source:
+		tones.append(_tone(
+			float(tone.get("frequency", 440.0)),
+			float(tone.get("duration", 0.04)),
+			float(tone.get("volume", 0.08))
+		))
+
+	return tones
 
 
 func _tone(frequency: float, duration: float, volume: float) -> Dictionary:
