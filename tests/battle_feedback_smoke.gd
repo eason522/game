@@ -46,6 +46,23 @@ func _run() -> void:
 	elif not scene.turn_rhythm_label.text.contains("己方行动"):
 		failures.append("battle feedback: expected initial rhythm label to show player action")
 
+	if scene.board_grid == null:
+		failures.append("battle feedback: expected board grid to exist")
+	else:
+		var board_bottom: float = scene.board_grid.global_position.y + scene.board_grid.size.y
+		var viewport_height: float = scene.get_viewport_rect().size.y
+
+		if board_bottom > viewport_height - 16.0:
+			failures.append("battle feedback: expected full board to fit vertically in the default viewport")
+
+		if scene.cells.is_empty() or scene.cells[0].is_empty():
+			failures.append("battle feedback: expected board cells to exist")
+		else:
+			var first_cell: Button = scene.cells[0][0]
+
+			if first_cell.custom_minimum_size.x > 44.0 or first_cell.custom_minimum_size.y > 44.0:
+				failures.append("battle feedback: expected compact board cells for default viewport fit")
+
 	if scene.tutorial_hint_label == null:
 		failures.append("battle feedback: expected tutorial hint label to exist")
 	elif not scene.tutorial_hint_label.text.contains("中心灵脉"):

@@ -1,7 +1,8 @@
 extends Control
 
 const BOARD_SIZE := 11
-const CELL_SIZE := Vector2(48, 48)
+const CELL_SIZE := Vector2(44, 44)
+const BOARD_GRID_GAP := 3
 const BASE_ENERGY_MAX := 6
 const ROCK_BOSS_ROCK_INTERVAL := 3
 const RUN_MAP_SCENE_PATH := "res://scenes/roguelike/RunMapScene.tscn"
@@ -303,15 +304,15 @@ func _build_layout() -> void:
 	content.add_child(board_panel)
 
 	var board_margin := MarginContainer.new()
-	board_margin.add_theme_constant_override("margin_left", 20)
-	board_margin.add_theme_constant_override("margin_top", 18)
-	board_margin.add_theme_constant_override("margin_right", 20)
-	board_margin.add_theme_constant_override("margin_bottom", 18)
+	board_margin.add_theme_constant_override("margin_left", 16)
+	board_margin.add_theme_constant_override("margin_top", 12)
+	board_margin.add_theme_constant_override("margin_right", 16)
+	board_margin.add_theme_constant_override("margin_bottom", 12)
 	board_panel.add_child(board_margin)
 
 	var board_box := VBoxContainer.new()
-	board_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	board_box.add_theme_constant_override("separation", 12)
+	board_box.alignment = BoxContainer.ALIGNMENT_BEGIN
+	board_box.add_theme_constant_override("separation", 10)
 	board_margin.add_child(board_box)
 
 	var board_header := HBoxContainer.new()
@@ -344,8 +345,8 @@ func _build_layout() -> void:
 	board_grid.columns = BOARD_SIZE
 	board_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	board_grid.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	board_grid.add_theme_constant_override("h_separation", 4)
-	board_grid.add_theme_constant_override("v_separation", 4)
+	board_grid.add_theme_constant_override("h_separation", BOARD_GRID_GAP)
+	board_grid.add_theme_constant_override("v_separation", BOARD_GRID_GAP)
 	board_box.add_child(board_grid)
 
 	var legend := Label.new()
@@ -355,11 +356,16 @@ func _build_layout() -> void:
 	legend.add_theme_color_override("font_color", Color("#b6a785"))
 	board_box.add_child(legend)
 
+	var sidebar_scroll := ScrollContainer.new()
+	sidebar_scroll.custom_minimum_size = Vector2(360, 0)
+	sidebar_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(sidebar_scroll)
+
 	var sidebar := VBoxContainer.new()
 	sidebar.custom_minimum_size = Vector2(360, 0)
-	sidebar.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sidebar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sidebar.add_theme_constant_override("separation", 12)
-	content.add_child(sidebar)
+	sidebar_scroll.add_child(sidebar)
 
 	var enemy_panel := _create_side_panel(sidebar, "敌方")
 
