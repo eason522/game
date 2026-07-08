@@ -21,6 +21,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - lightweight generated tones now reinforce battle actions, victory/defeat banners, reward claims, and route settlement feedback
 - run map now shows a live full-run playtest checklist and single-axis tuning candidates tied to actual battle records, baseline, and matrix checks
 - run map now includes a Boss prep summary and live playtest snapshot for quicker full-run tuning reads
+- run map now gates tuning decisions until a complete live run sample exists, then surfaces the priority single-axis candidate
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement

@@ -43,6 +43,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("先记录首场实测手数"):
 		failures.append("run map feedback: expected live snapshot to guide first record")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("实机结论"):
+		failures.append("run map feedback: expected build panel to show live playtest decision")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("不落数值"):
+		failures.append("run map feedback: expected live decision to block tuning before full sample")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 

@@ -255,6 +255,40 @@ func get_live_playtest_snapshot_lines(run_state) -> Array:
 	return lines
 
 
+func get_live_playtest_decision_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
+		return ["实机结论：暂无 Run 数据，不落数值"]
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var total_battles: int = pacing.get("total_battle_nodes", 0)
+
+	if recorded_battles < total_battles:
+		return ["实机结论：样本未齐 %d/%d，不落数值；先补完整 Run" % [recorded_battles, total_battles]]
+
+	if run_state.run_failed:
+		return ["实机结论：Run 已失败，先记录失败节点，不直接调数值"]
+
+	var comparison := compare_run_to_baseline(run_state)
+	var candidates := get_single_axis_tuning_candidates(run_state)
+	var first_candidate := "无明确候选"
+
+	if not candidates.is_empty():
+		first_candidate = String(candidates[0]).trim_prefix("单轴候选：")
+
+	var status_text := "已通关" if run_state.run_completed else "样本已齐"
+	return [
+		"实机结论：完整 Run %s，目标内 %d/%d，总 %d 手，进入单轴决策" % [
+			status_text,
+			pacing.get("on_target_count", 0),
+			recorded_battles,
+			pacing.get("actual_turn_total", 0),
+		],
+		"实机结论：优先候选：%s" % first_candidate,
+		"实机结论：证据：%s" % String(comparison.get("attention", "校准关注：实测接近基准")).trim_prefix("校准关注："),
+	]
+
+
 func get_single_axis_tuning_candidates(run_state) -> Array:
 	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
 		return ["单轴候选：暂无 Run 数据，先完成一次实机记录"]

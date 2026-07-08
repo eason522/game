@@ -339,6 +339,18 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: completed snapshot should summarize largest delta")
 		return
 
+	var fresh_decision := simulator.get_live_playtest_decision_lines(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
+
+	if not _lines_contain(fresh_decision, "实机结论") or not _lines_contain(fresh_decision, "不落数值"):
+		failures.append("run playtest simulator: fresh decision should avoid tuning before full sample")
+		return
+
+	var full_decision := simulator.get_live_playtest_decision_lines(slow_report.get("state"))
+
+	if not _lines_contain(full_decision, "进入单轴决策") or not _lines_contain(full_decision, "Boss 手数轴"):
+		failures.append("run playtest simulator: completed decision should expose the priority tuning axis")
+		return
+
 	var fresh_candidates := simulator.get_single_axis_tuning_candidates(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
 
 	if not _lines_contain(fresh_candidates, "等待首场实测"):
