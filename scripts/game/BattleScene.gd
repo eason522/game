@@ -35,6 +35,7 @@ var turn_label: Label
 var turn_rhythm_label: Label
 var move_count_label: Label
 var energy_label: Label
+var tutorial_hint_label: Label
 var enemy_profile_label: Label
 var enemy_intent_hint_label: Label
 var board_grid: GridContainer
@@ -367,6 +368,12 @@ func _build_layout() -> void:
 	energy_label.add_theme_font_size_override("font_size", 17)
 	energy_label.add_theme_color_override("font_color", Color("#87d1b7"))
 	resource_panel.add_child(energy_label)
+
+	tutorial_hint_label = Label.new()
+	tutorial_hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tutorial_hint_label.add_theme_font_size_override("font_size", 14)
+	tutorial_hint_label.add_theme_color_override("font_color", Color("#f1dfb7"))
+	resource_panel.add_child(tutorial_hint_label)
 
 	var skill_panel := _create_side_panel(sidebar, "术法")
 
@@ -1243,6 +1250,8 @@ func _refresh_info_labels() -> void:
 	turn_label.text = turn_text
 	move_count_label.text = "落子数：%d" % move_count
 	energy_label.text = "己方能量：%d/%d\n敌方能量：%d/%d" % [player_energy, energy_max, enemy_energy, BASE_ENERGY_MAX]
+	if tutorial_hint_label != null:
+		tutorial_hint_label.text = _battle_tutorial_hint()
 	enemy_profile_label.text = "%s\n%s" % [enemy_ai.get_profile_name(), enemy_ai.get_profile_intent()]
 	enemy_intent_hint_label.text = enemy_intent_hint
 
@@ -1257,6 +1266,25 @@ func _refresh_info_labels() -> void:
 	if return_to_map_button != null:
 		return_to_map_button.visible = launched_from_run
 		return_to_map_button.disabled = not launched_from_run or not game_over
+
+
+func _battle_tutorial_hint() -> String:
+	if game_over:
+		return "入门提示：战斗结束后返回路线，胜利会进入战利品三选一。"
+
+	if current_turn != BoardState.PLAYER:
+		return "入门提示：敌方思考时观察意图面板，下一手优先堵住四连或争夺灵脉。"
+
+	if move_count <= 0:
+		return "入门提示：先靠近中心灵脉（+）落子，灵脉会回能，能量可用于术法。"
+
+	if not selected_skill_id.is_empty():
+		return "入门提示：悬停棋盘空格可预览术法影响，再点击确认。"
+
+	if player_energy >= _get_skill_cost(SkillExecutorScript.SKILL_BREAK_ARRAY):
+		return "入门提示：能量足够时可先用术法制造威胁，再落子连线。"
+
+	return "入门提示：目标是连成五子；看到敌方四连时，优先封堵关键点。"
 
 
 func _format_enemy_intro() -> String:

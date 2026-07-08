@@ -44,6 +44,11 @@ func _run() -> void:
 	elif not scene.turn_rhythm_label.text.contains("己方行动"):
 		failures.append("battle feedback: expected initial rhythm label to show player action")
 
+	if scene.tutorial_hint_label == null:
+		failures.append("battle feedback: expected tutorial hint label to exist")
+	elif not scene.tutorial_hint_label.text.contains("中心灵脉"):
+		failures.append("battle feedback: expected opening tutorial hint to mention center spirit cells")
+
 	if scene.enemy_think_delay_seconds < 0.4:
 		failures.append("battle feedback: expected enemy think delay to leave a readable beat")
 
@@ -65,11 +70,16 @@ func _run() -> void:
 	if scene.tone_player == null or scene.tone_player.last_tone_kind != "skill":
 		failures.append("battle feedback: expected skill feedback to trigger a skill tone")
 
+	scene.current_turn = BoardState.ENEMY
 	scene._begin_turn(BoardState.ENEMY)
+	scene._refresh_board()
 	await process_frame
 
 	if scene.turn_rhythm_label == null or not scene.turn_rhythm_label.text.contains("敌方思考"):
 		failures.append("battle feedback: expected enemy turn rhythm label")
+
+	if scene.tutorial_hint_label == null or not scene.tutorial_hint_label.text.contains("敌方思考"):
+		failures.append("battle feedback: expected tutorial hint to react to enemy thinking")
 
 	if scene.tone_player == null or scene.tone_player.last_tone_kind != "turn_enemy":
 		failures.append("battle feedback: expected enemy turn to trigger a turn tone")

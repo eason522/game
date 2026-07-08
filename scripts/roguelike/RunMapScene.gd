@@ -23,6 +23,7 @@ var run_state := RunStateScript.new()
 var loaded_from_save := false
 var status_label: Label
 var settlement_label: Label
+var route_guide_label: Label
 var reward_label: Label
 var build_summary_label: Label
 var tone_player
@@ -227,13 +228,12 @@ func _build_layout() -> void:
 	settlement_label.add_theme_stylebox_override("normal", panel_style)
 	side.add_child(settlement_label)
 
-	var tip := Label.new()
-	tip.text = "战斗胜利后选择奖励；事件、商店、休息点会给出一次路线选择。失败后可重新开始 Run。"
-	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	tip.add_theme_font_size_override("font_size", 15)
-	tip.add_theme_color_override("font_color", Color("#91a7b6"))
-	tip.add_theme_stylebox_override("normal", panel_style)
-	side.add_child(tip)
+	route_guide_label = Label.new()
+	route_guide_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	route_guide_label.add_theme_font_size_override("font_size", 15)
+	route_guide_label.add_theme_color_override("font_color", Color("#91a7b6"))
+	route_guide_label.add_theme_stylebox_override("normal", panel_style)
+	side.add_child(route_guide_label)
 
 	_create_reward_panel(side)
 	_create_node_buttons()
@@ -419,6 +419,9 @@ func _refresh() -> void:
 		var save_prefix := "已恢复上次 Run\n" if loaded_from_save else ""
 		status_label.text = "%s当前节点：%s\n%s\n星砂：%d" % [save_prefix, current.get("title", "无"), current.get("description", ""), run_state.coins]
 
+	if route_guide_label != null:
+		route_guide_label.text = _route_guide_text()
+
 	_refresh_reward_panel()
 
 
@@ -596,6 +599,46 @@ func _sample_matrix_text() -> String:
 func _sample_matrix_action_text() -> String:
 	var matrix := playtest_simulator.run_sample_matrix()
 	return " / ".join(matrix.get("action_lines", []))
+
+
+func _route_guide_text() -> String:
+	if run_state.run_completed:
+		return "入门提示：本轮已通关，可重新开始 Run 验证不同构筑路线。"
+
+	if run_state.run_failed:
+		return "入门提示：失败后直接重新开始 Run，优先尝试更早拿能量或灵脉奖励。"
+
+	if run_state.has_pending_reward():
+		return "入门提示：任选一个战利品继续前进；能量、灵脉和返能奖励都会影响后续战斗。"
+
+	if run_state.has_pending_node_choice():
+		var choice_node: Dictionary = run_state.nodes[run_state.pending_choice_node_index]
+		var node_type: String = choice_node.get("type", "")
+
+		if node_type == RunStateScript.NODE_SHOP:
+			return "入门提示：商店先看星砂，再按普通/稀有/史诗价格挑一个能补强当前构筑的棋印。"
+
+		if node_type == RunStateScript.NODE_EVENT:
+			return "入门提示：事件可拿星砂或奖励；星砂紧张时优先为商店做准备。"
+
+		if node_type == RunStateScript.NODE_REST:
+			return "入门提示：休息点适合补稳定收益，进入 Boss 前优先选择能立刻生效的强化。"
+
+		return "入门提示：路线选择会阻塞前进，处理后才会解锁下一站。"
+
+	var current := run_state.get_current_node()
+	var node_type: String = current.get("type", "")
+
+	if current.get("index", -1) == 1:
+		return "入门提示：先进入试锋之局，完成首场战斗后会出现战利品三选一。"
+
+	if node_type == RunStateScript.NODE_BATTLE:
+		return "入门提示：普通战斗后领取奖励，再观察路线侧栏的目标手数和构筑建议。"
+
+	if node_type == RunStateScript.NODE_BOSS:
+		return "入门提示：Boss 战前确认奖励数量、星砂和目标手数，岩王会持续压缩棋盘。"
+
+	return "入门提示：选择当前可进入节点推进路线，非战斗节点会提供一次路线选择。"
 
 
 func _refresh_settlement_feedback() -> void:

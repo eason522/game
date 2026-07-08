@@ -59,6 +59,11 @@ func _run() -> void:
 	if scene.node_buttons.size() <= 1 or not scene.node_buttons[1].tooltip_text.contains("目标节奏：10-16 手"):
 		failures.append("run map feedback: expected battle tooltip to show target turn pacing")
 
+	if scene.route_guide_label == null:
+		failures.append("run map feedback: expected route guide label to exist")
+	elif not scene.route_guide_label.text.contains("试锋之局"):
+		failures.append("run map feedback: expected opening route guide to point at first battle")
+
 	if scene.last_pulsed_node_index != 1 or scene.last_pulsed_node_status != RunStateScript.STATUS_AVAILABLE:
 		failures.append("run map feedback: expected available route node to receive an entry pulse")
 
@@ -98,6 +103,9 @@ func _run() -> void:
 
 	await process_frame
 
+	if scene.route_guide_label == null or not scene.route_guide_label.text.contains("战利品"):
+		failures.append("run map feedback: expected pending reward guide to explain reward choice")
+
 	scene._claim_reward_at(0)
 
 	await process_frame
@@ -115,6 +123,19 @@ func _run() -> void:
 
 	if scene.last_pulsed_node_status != RunStateScript.STATUS_AVAILABLE or scene.last_pulsed_node_index != 2:
 		failures.append("run map feedback: expected next route node to pulse after reward claim")
+
+	scene.run_state.pending_node_choices.clear()
+	scene.run_state.pending_choice_node_index = -1
+	scene.run_state.current_index = 4
+	scene.run_state.nodes[4]["status"] = RunStateScript.STATUS_AVAILABLE
+	var shop_choices: Array = scene.reward_generator.generate_node_choices(scene.run_state, scene.run_state.nodes[4])
+	scene.run_state.open_node_choices(shop_choices)
+	scene._refresh()
+
+	await process_frame
+
+	if scene.route_guide_label == null or not scene.route_guide_label.text.contains("商店") or not scene.route_guide_label.text.contains("星砂"):
+		failures.append("run map feedback: expected shop guide to mention shop and starsand")
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)
