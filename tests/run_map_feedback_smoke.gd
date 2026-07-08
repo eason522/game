@@ -32,6 +32,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("基准试玩"):
+		failures.append("run map feedback: expected build panel to show baseline playtest summary")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("4/4 场目标内"):
+		failures.append("run map feedback: expected baseline playtest to summarize on-target battles")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("剩余目标 60-88 手"):
 		failures.append("run map feedback: expected run pacing to summarize remaining turn target")
 

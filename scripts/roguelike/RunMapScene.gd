@@ -10,10 +10,12 @@ const MapGeneratorScript := preload("res://scripts/roguelike/MapGenerator.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
 const RunSaveScript := preload("res://scripts/roguelike/RunSave.gd")
 const RewardGeneratorScript := preload("res://scripts/roguelike/RewardGenerator.gd")
+const RunPlaytestSimulatorScript := preload("res://scripts/roguelike/RunPlaytestSimulator.gd")
 const SimpleTonePlayerScript := preload("res://scripts/audio/SimpleTonePlayer.gd")
 
 var map_generator := MapGeneratorScript.new()
 var reward_generator := RewardGeneratorScript.new()
+var playtest_simulator := RunPlaytestSimulatorScript.new()
 var run_state := RunStateScript.new()
 var loaded_from_save := false
 var status_label: Label
@@ -479,10 +481,28 @@ func _refresh_build_summary() -> void:
 	var build_lines := reward_generator.get_build_summary_lines(run_state)
 	var pacing_lines := reward_generator.get_run_pacing_lines(run_state)
 	var tuning_lines := reward_generator.get_run_tuning_lines(run_state)
-	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s\n调参建议：%s" % [
+	build_summary_label.text = "构筑效果：%s\nRun 节奏：%s\n调参建议：%s\n基准试玩：%s" % [
 		" / ".join(build_lines),
 		" / ".join(pacing_lines),
 		" / ".join(tuning_lines),
+		_baseline_playtest_summary_text(),
+	]
+
+
+func _baseline_playtest_summary_text() -> String:
+	var report := playtest_simulator.run_baseline()
+	var pacing: Dictionary = report.get("pacing", {})
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var on_target_battles: int = pacing.get("on_target_count", 0)
+	var status_text := "可通关" if report.get("completed", false) and not report.get("safety_exhausted", false) else "需复查"
+
+	return "%s，%d/%d 场目标内，总 %d 手，星砂 %d，奖励 %d" % [
+		status_text,
+		on_target_battles,
+		recorded_battles,
+		pacing.get("actual_turn_total", 0),
+		report.get("coins", 0),
+		report.get("reward_count", 0),
 	]
 
 
