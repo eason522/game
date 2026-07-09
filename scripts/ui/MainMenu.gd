@@ -160,15 +160,16 @@ func _refresh_continue_state() -> void:
 		var snapshot_lines: Array = playtest_simulator.get_live_playtest_snapshot_lines(resume_state)
 		continue_button.text = _resume_button_text(resume_state)
 		status_label.text = "检测到可继续的 Run。\n%s" % _first_line(next_action_lines)
-		summary_label.text = "%s\n主菜单进度：%s\n主菜单速览：%s" % [
+		summary_label.text = "%s\n主菜单进度：%s\n主菜单速览：%s\n%s" % [
 			_base_summary_text(),
 			_first_line(snapshot_lines).trim_prefix("实机快照："),
 			" / ".join(closeout_lines),
+			_get_main_menu_check_line(resume_state, snapshot_lines, closeout_lines),
 		]
 	else:
 		continue_button.text = "继续 Run"
 		status_label.text = "暂无存档，从新的 Run 开始。"
-		summary_label.text = "%s\n主菜单进度：暂无 Run 数据\n主菜单速览：等待首战记录。" % _base_summary_text()
+		summary_label.text = "%s\n主菜单进度：暂无 Run 数据\n主菜单速览：等待首战记录。\n主菜单核对：继续按钮禁用；暂无 Run 数据；从新的 Run 开始首战。" % _base_summary_text()
 
 
 func _base_summary_text() -> String:
@@ -200,6 +201,13 @@ func _first_line(lines: Array) -> String:
 		return "编辑器指引：从路线图开始完整 Run"
 
 	return String(lines[0])
+
+
+func _get_main_menu_check_line(run_state, snapshot_lines: Array, closeout_lines: Array) -> String:
+	var action_text := _resume_button_text(run_state).trim_prefix("继续：")
+	var progress_text := _first_line(snapshot_lines).trim_prefix("实机快照：")
+	var closeout_text := _first_line(closeout_lines).trim_prefix("编辑器收口包：")
+	return "主菜单核对：%s；%s；%s" % [action_text, progress_text, closeout_text]
 
 
 func _resume_button_text(run_state) -> String:

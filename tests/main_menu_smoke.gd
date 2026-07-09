@@ -52,6 +52,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单速览") or not scene.summary_label.text.contains("等待首战记录"):
 		failures.append("main menu: expected no-save playtest overview")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单核对") or not scene.summary_label.text.contains("继续按钮禁用"):
+		failures.append("main menu: expected no-save launch check line")
+
 	var run_state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
 	RunSaveScript.save_state(run_state)
 	scene._refresh_continue_state()
@@ -73,6 +76,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("当前 试锋之局") or not scene.summary_label.text.contains("实测 0/4 场"):
 		failures.append("main menu: expected saved-run progress overview")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单核对") or not scene.summary_label.text.contains("进入试锋之局"):
+		failures.append("main menu: expected saved-run launch check line")
+
 	run_state.resolve_current_node(true, [{
 		"id": "smoke_reward",
 		"title": "测试奖励",
@@ -89,6 +95,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("实测 1/4 场"):
 		failures.append("main menu: expected progress overview to reflect recorded battle count")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单核对") or not scene.summary_label.text.contains("领取战利品"):
+		failures.append("main menu: expected launch check to reflect pending rewards")
 
 	run_state.pending_rewards.clear()
 	run_state.pending_reward_node_index = -1
