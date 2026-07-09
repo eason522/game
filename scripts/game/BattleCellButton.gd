@@ -12,6 +12,14 @@ const MARK_SEALED := "sealed"
 const MARK_SKILL_TARGET := "skill_target"
 const MARK_WARNING := "warning"
 const MATERIAL_TIER := "single_board_v3"
+const TOKEN_PLAYER := Vector2i(0, 0)
+const TOKEN_PLAYER_TEMP := Vector2i(1, 0)
+const TOKEN_ENEMY := Vector2i(2, 0)
+const TOKEN_ROCK := Vector2i(3, 0)
+const TOKEN_SPIRIT := Vector2i(0, 1)
+const TOKEN_SEALED := Vector2i(1, 1)
+const TOKEN_WARNING := Vector2i(2, 1)
+const TOKEN_SKILL_TARGET := Vector2i(3, 1)
 
 var terrain_kind := TERRAIN_NORMAL
 var piece_kind := PIECE_NONE
@@ -21,6 +29,12 @@ var is_last_move_cell := false
 var feedback_kind := ""
 var board_position := Vector2i.ZERO
 var material_tier := MATERIAL_TIER
+var token_sheet: Texture2D
+
+
+func set_token_sheet(texture: Texture2D) -> void:
+	token_sheet = texture
+	queue_redraw()
 
 
 func set_board_position(pos: Vector2i) -> void:
@@ -101,6 +115,9 @@ func _seeded_variation(index: int, span: float) -> float:
 
 
 func _draw_spirit(rect: Rect2) -> void:
+	if _draw_token(TOKEN_SPIRIT, rect, 1.02):
+		return
+
 	var center := rect.get_center()
 	draw_circle(center + Vector2(1, 2), rect.size.x * 0.37, Color(0.02, 0.12, 0.10, 0.24))
 	draw_circle(center, rect.size.x * 0.34, Color(0.08, 0.62, 0.50, 0.26))
@@ -122,6 +139,9 @@ func _draw_spirit(rect: Rect2) -> void:
 
 
 func _draw_rock(rect: Rect2) -> void:
+	if _draw_token(TOKEN_ROCK, rect, 0.94):
+		return
+
 	var center := rect.get_center()
 	var shadow := PackedVector2Array([
 		center + Vector2(-15, -7),
@@ -171,6 +191,9 @@ func _draw_rock(rect: Rect2) -> void:
 
 
 func _draw_player_piece(rect: Rect2, temporary: bool) -> void:
+	if _draw_token(TOKEN_PLAYER_TEMP if temporary else TOKEN_PLAYER, rect, 0.78):
+		return
+
 	var center := rect.get_center()
 	var radius := rect.size.x * 0.29
 	draw_circle(center + Vector2(3, 4), radius, Color(0.04, 0.03, 0.02, 0.42))
@@ -184,6 +207,9 @@ func _draw_player_piece(rect: Rect2, temporary: bool) -> void:
 
 
 func _draw_enemy_piece(rect: Rect2) -> void:
+	if _draw_token(TOKEN_ENEMY, rect, 0.78):
+		return
+
 	var center := rect.get_center()
 	var points := PackedVector2Array()
 	for index in range(8):
@@ -205,12 +231,18 @@ func _draw_enemy_piece(rect: Rect2) -> void:
 
 
 func _draw_seal(rect: Rect2) -> void:
+	if _draw_token(TOKEN_SEALED, rect, 0.88):
+		return
+
 	var center := rect.get_center()
 	draw_arc(center, 15, PI * 0.12, PI * 1.86, 40, Color("#f0c65a"), 2.0)
 	draw_line(center + Vector2(-9, 0), center + Vector2(9, 0), Color("#f0c65a"), 1.5)
 
 
 func _draw_skill_target(rect: Rect2) -> void:
+	if _draw_token(TOKEN_SKILL_TARGET, rect, 0.86):
+		return
+
 	var center := rect.get_center()
 	var target := PackedVector2Array([
 		center + Vector2(0, -14),
@@ -223,6 +255,9 @@ func _draw_skill_target(rect: Rect2) -> void:
 
 
 func _draw_warning(rect: Rect2) -> void:
+	if _draw_token(TOKEN_WARNING, rect, 0.82):
+		return
+
 	var center := rect.get_center()
 	draw_line(center + Vector2(0, -12), center + Vector2(0, 4), Color("#fff0bf"), 3.0)
 	draw_circle(center + Vector2(0, 12), 2.4, Color("#fff0bf"))
@@ -250,3 +285,16 @@ func _draw_feedback_glow(rect: Rect2) -> void:
 		"skill":
 			glow = Color("#d4c4ff")
 	draw_rect(Rect2(Vector2(3, 3), rect.size - Vector2(6, 6)), Color(glow.r, glow.g, glow.b, 0.68), false, 3.0)
+
+
+func _draw_token(token_index: Vector2i, rect: Rect2, scale_factor: float) -> bool:
+	if token_sheet == null:
+		return false
+
+	var sheet_size := token_sheet.get_size()
+	var region_size := Vector2(sheet_size.x / 4.0, sheet_size.y / 2.0)
+	var region := Rect2(Vector2(token_index.x * region_size.x, token_index.y * region_size.y), region_size)
+	var target_size := Vector2(rect.size.x * scale_factor, rect.size.y * scale_factor)
+	var target := Rect2(rect.get_center() - target_size * 0.5, target_size)
+	draw_texture_rect_region(token_sheet, target, region)
+	return true

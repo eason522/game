@@ -59,6 +59,9 @@ func _run() -> void:
 		if scene.board_texture_rect == null or scene.board_texture_rect.texture == null:
 			failures.append("battle feedback: expected generated board art texture to be loaded")
 
+		if scene.token_sheet_texture == null:
+			failures.append("battle feedback: expected generated token sprite sheet to be loaded")
+
 		initial_board_y = scene.board_grid.global_position.y
 		initial_board_bottom = scene.board_grid.global_position.y + scene.board_grid.size.y
 		var board_bottom: float = scene.board_grid.global_position.y + scene.board_grid.size.y
@@ -98,6 +101,9 @@ func _run() -> void:
 
 			if not first_cell.has_method("get_material_tier") or first_cell.get_material_tier() != "single_board_v3":
 				failures.append("battle feedback: expected continuous board material renderer v3")
+
+			if first_cell.get("token_sheet") == null:
+				failures.append("battle feedback: expected board cells to receive generated token sprites")
 
 			var rock_cell = scene.cells[3][3]
 

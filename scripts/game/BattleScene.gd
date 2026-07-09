@@ -8,6 +8,7 @@ const BOARD_ART_GRID_MARGIN_X := 44
 const BOARD_ART_GRID_MARGIN_TOP := 24
 const BOARD_ART_GRID_MARGIN_BOTTOM := 64
 const BOARD_TEXTURE_PATH := "res://assets/board/battle_board_frame_v1.png"
+const TOKEN_SHEET_PATH := "res://assets/tokens/battle_tokens_sheet_v1.png"
 const STATUS_SLOT_SIZE := Vector2(0, 52)
 const FEEDBACK_SLOT_SIZE := Vector2(0, 72)
 const RESULT_BANNER_HEIGHT := 64.0
@@ -56,6 +57,7 @@ var enemy_intent_hint_label: Label
 var board_grid: GridContainer
 var board_frame_panel: PanelContainer
 var board_texture_rect: TextureRect
+var token_sheet_texture: Texture2D
 var board_legend_label: Label
 var skill_bar: GridContainer
 var controls_panel: VBoxContainer
@@ -410,10 +412,7 @@ func _build_layout() -> void:
 	board_frame_panel.add_child(board_art_layer)
 
 	board_texture_rect = TextureRect.new()
-	var board_image := Image.new()
-	var board_image_error: int = board_image.load(BOARD_TEXTURE_PATH)
-	if board_image_error == OK:
-		board_texture_rect.texture = ImageTexture.create_from_image(board_image)
+	board_texture_rect.texture = _load_texture_resource(BOARD_TEXTURE_PATH)
 	board_texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	board_texture_rect.stretch_mode = TextureRect.STRETCH_SCALE
 	board_texture_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -622,6 +621,7 @@ func _apply_button_theme(button: Button) -> void:
 
 func _create_cells() -> void:
 	cells.clear()
+	token_sheet_texture = _load_texture_resource(TOKEN_SHEET_PATH)
 
 	for y in range(BOARD_SIZE):
 		var row: Array = []
@@ -639,12 +639,17 @@ func _create_cells() -> void:
 			button.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.28))
 			button.add_theme_constant_override("outline_size", 1)
 			button.set_board_position(pos)
+			button.set_token_sheet(token_sheet_texture)
 			button.pressed.connect(_on_cell_pressed.bind(pos))
 			button.mouse_entered.connect(_on_cell_hovered.bind(pos))
 			board_grid.add_child(button)
 			row.append(button)
 
 		cells.append(row)
+
+
+func _load_texture_resource(path: String) -> Texture2D:
+	return load(path) as Texture2D
 
 
 func _create_skill_buttons() -> void:
