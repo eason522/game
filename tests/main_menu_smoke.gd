@@ -70,6 +70,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档") or not scene.summary_label.text.contains("暂无 Run 数据"):
 		failures.append("main menu: expected no-save archive and excerpt line")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单收口") or not scene.summary_label.text.contains("暂无 Run 数据"):
+		failures.append("main menu: expected no-save closeout line")
+
 	var run_state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
 	RunSaveScript.save_state(run_state)
 	scene._refresh_continue_state()
@@ -109,6 +112,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档") or not scene.summary_label.text.contains("等待首战记录"):
 		failures.append("main menu: expected saved-run archive line to wait for the first battle")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单收口") or not scene.summary_label.text.contains("样本未齐 0/4"):
+		failures.append("main menu: expected saved-run closeout line to keep the sample open")
+
 	run_state.resolve_current_node(true, [{
 		"id": "smoke_reward",
 		"title": "测试奖励",
@@ -137,6 +143,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档") or not scene.summary_label.text.contains("样本 1/4 未齐"):
 		failures.append("main menu: expected archive line to keep partial saved runs open")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单收口") or not scene.summary_label.text.contains("继续完整 Run"):
+		failures.append("main menu: expected closeout line to point partial saved runs back into the full run")
 
 	run_state.pending_rewards.clear()
 	run_state.pending_reward_node_index = -1
@@ -200,6 +209,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("摘录：Demo 验收通过"):
 		failures.append("main menu: expected accepted run recap excerpt on the menu")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单收口") or not scene.summary_label.text.contains("保持当前数值"):
+		failures.append("main menu: expected accepted run closeout result on the menu")
 
 	scene.queue_free()
 	RunSaveScript.delete_save()

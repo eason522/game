@@ -160,7 +160,7 @@ func _refresh_continue_state() -> void:
 		var snapshot_lines: Array = playtest_simulator.get_live_playtest_snapshot_lines(resume_state)
 		continue_button.text = _resume_button_text(resume_state)
 		status_label.text = "检测到可继续的 Run。\n%s" % _first_line(next_action_lines)
-		summary_label.text = "%s\n主菜单进度：%s\n主菜单速览：%s\n%s\n%s\n%s\n%s\n%s\n%s" % [
+		summary_label.text = "%s\n主菜单进度：%s\n主菜单速览：%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s" % [
 			_base_summary_text(),
 			_first_line(snapshot_lines).trim_prefix("实机快照："),
 			" / ".join(closeout_lines),
@@ -170,17 +170,19 @@ func _refresh_continue_state() -> void:
 			_get_main_menu_boss_focus_line(resume_state),
 			_get_main_menu_evidence_line(resume_state),
 			_get_main_menu_archive_excerpt_line(resume_state),
+			_get_main_menu_closeout_line(resume_state),
 		]
 	else:
 		continue_button.text = "继续 Run"
 		status_label.text = "暂无存档，从新的 Run 开始。"
-		summary_label.text = "%s\n主菜单进度：暂无 Run 数据\n主菜单速览：等待首战记录。\n主菜单核对：继续按钮禁用；暂无 Run 数据；从新的 Run 开始首战。\n%s\n%s\n%s\n%s\n%s" % [
+		summary_label.text = "%s\n主菜单进度：暂无 Run 数据\n主菜单速览：等待首战记录。\n主菜单核对：继续按钮禁用；暂无 Run 数据；从新的 Run 开始首战。\n%s\n%s\n%s\n%s\n%s\n%s" % [
 			_base_summary_text(),
 			_get_main_menu_baseline_line(),
 			_get_main_menu_playtest_check_line(null),
 			_get_main_menu_boss_focus_line(null),
 			_get_main_menu_evidence_line(null),
 			_get_main_menu_archive_excerpt_line(null),
+			_get_main_menu_closeout_line(null),
 		]
 
 
@@ -260,6 +262,20 @@ func _get_main_menu_archive_excerpt_line(run_state) -> String:
 	return "主菜单归档：%s；摘录：%s" % [
 		_first_line(archive_lines).trim_prefix("编辑器归档："),
 		_first_line(recap_lines).trim_prefix("编辑器摘录："),
+	]
+
+
+func _get_main_menu_closeout_line(run_state) -> String:
+	var live_closeout_lines: Array = playtest_simulator.get_live_run_closeout_lines(run_state)
+	var editor_packet_lines: Array = playtest_simulator.get_editor_closeout_packet_lines(run_state)
+	var next_action := "下一步待路线图确认"
+
+	if editor_packet_lines.size() > 1:
+		next_action = String(editor_packet_lines[1]).trim_prefix("编辑器收口包：下一步：")
+
+	return "主菜单收口：%s；下一步：%s" % [
+		_first_line(live_closeout_lines).trim_prefix("实机收口："),
+		next_action,
 	]
 
 
