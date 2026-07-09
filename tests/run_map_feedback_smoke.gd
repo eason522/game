@@ -127,6 +127,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("首战后核对实测手数回传"):
 		failures.append("run map feedback: expected fresh editor recap to point at the first record")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("编辑器收口包"):
+		failures.append("run map feedback: expected build panel to show editor closeout packet")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("等待首战记录；当前不可收口"):
+		failures.append("run map feedback: expected fresh editor closeout packet to wait for the first record")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 
@@ -461,6 +467,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("完整 Run 已齐但 Boss 快照压力偏高"):
 		failures.append("run map feedback: expected editor note to mark pressure-heavy boss review")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Boss-only 复核；目标内"):
+		failures.append("run map feedback: expected editor closeout packet to isolate pressure-heavy boss review")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("下一步：下一轮只看开局岩阵、能量和反制点"):
+		failures.append("run map feedback: expected editor closeout packet to state the next boss-only review action")
+
 	scene.run_state.record_boss_opening_observation({
 		"enemy": "岩王",
 		"total_moves": 5,
@@ -537,6 +549,9 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 验收通过"):
 		failures.append("run map feedback: expected editor recap to summarize stable demo acceptance")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("保持当前数值并归档"):
+		failures.append("run map feedback: expected editor closeout packet to archive stable demo acceptance")
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)
