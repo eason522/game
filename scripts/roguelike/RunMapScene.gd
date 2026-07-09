@@ -739,6 +739,7 @@ func _refresh_build_summary() -> void:
 	var editor_archive_lines := playtest_simulator.get_editor_archive_record_lines(run_state)
 	var editor_recap_lines := playtest_simulator.get_editor_recap_excerpt_lines(run_state)
 	var editor_closeout_packet_lines := playtest_simulator.get_editor_closeout_packet_lines(run_state)
+	var demo_acceptance_packet_lines := playtest_simulator.get_demo_acceptance_packet_lines(run_state)
 	var boss_validation_lines := playtest_simulator.get_boss_pressure_validation_lines(run_state)
 	var boss_observation_lines := run_state.get_boss_opening_observation_lines()
 	var boss_pressure_lines := run_state.get_boss_opening_pressure_lines()
@@ -771,6 +772,7 @@ func _refresh_build_summary() -> void:
 		_live_playtest_checklist_text(),
 		_single_axis_tuning_text(),
 	]
+	build_summary_label.text += "\n%s" % " / ".join(demo_acceptance_packet_lines)
 	build_summary_label.text += "\n%s" % " / ".join(boss_validation_lines)
 
 

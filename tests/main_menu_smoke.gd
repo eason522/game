@@ -82,6 +82,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单收口") or not scene.summary_label.text.contains("暂无 Run 数据"):
 		failures.append("main menu: expected no-save closeout line")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单体验包") or not scene.summary_label.text.contains("未开始；样本 0/4"):
+		failures.append("main menu: expected no-save demo acceptance packet line")
+
 	var run_state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
 	RunSaveScript.save_state(run_state)
 	scene._refresh_continue_state()
@@ -133,6 +136,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单收口") or not scene.summary_label.text.contains("样本未齐 0/4"):
 		failures.append("main menu: expected saved-run closeout line to keep the sample open")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单体验包") or not scene.summary_label.text.contains("继续试玩；样本 0/4"):
+		failures.append("main menu: expected saved-run demo acceptance packet to keep the sample open")
+
 	run_state.resolve_current_node(true, [{
 		"id": "smoke_reward",
 		"title": "测试奖励",
@@ -170,6 +176,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单收口") or not scene.summary_label.text.contains("继续完整 Run"):
 		failures.append("main menu: expected closeout line to point partial saved runs back into the full run")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单体验包") or not scene.summary_label.text.contains("继续试玩；样本 1/4"):
+		failures.append("main menu: expected partial saved-run demo acceptance packet to request a full run")
 
 	run_state.pending_rewards.clear()
 	run_state.pending_reward_node_index = -1
@@ -285,6 +294,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单收口") or not scene.summary_label.text.contains("保持当前数值"):
 		failures.append("main menu: expected accepted run closeout result on the menu")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单体验包") or not scene.summary_label.text.contains("可交付 Demo 验收体验包"):
+		failures.append("main menu: expected accepted run demo acceptance packet on the menu")
 
 	scene.queue_free()
 	RunSaveScript.delete_save()

@@ -133,6 +133,9 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("等待首战记录；当前不可收口"):
 		failures.append("run map feedback: expected fresh editor closeout packet to wait for the first record")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 验收包") or not scene.build_summary_label.text.contains("继续试玩；样本 0/4"):
+		failures.append("run map feedback: expected fresh demo acceptance packet to keep the sample open")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 
@@ -464,6 +467,9 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("结论只允许 Boss-only 复核"):
 		failures.append("run map feedback: expected editor evidence to isolate pressure-heavy boss review")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Boss-only 复核；样本 4/4"):
+		failures.append("run map feedback: expected demo acceptance packet to isolate pressure-heavy boss review")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("完整 Run 已齐但 Boss 快照压力偏高"):
 		failures.append("run map feedback: expected editor note to mark pressure-heavy boss review")
 
@@ -552,6 +558,9 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("保持当前数值并归档"):
 		failures.append("run map feedback: expected editor closeout packet to archive stable demo acceptance")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("可交付 Demo 验收体验包") or not scene.build_summary_label.text.contains("归档：可归档 Demo 验收"):
+		failures.append("run map feedback: expected demo acceptance packet to close stable full-run evidence")
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)
