@@ -53,6 +53,9 @@ func _run() -> void:
 	if scene.board_grid == null:
 		failures.append("battle feedback: expected board grid to exist")
 	else:
+		if scene.board_frame_panel == null:
+			failures.append("battle feedback: expected polished board frame panel to exist")
+
 		initial_board_y = scene.board_grid.global_position.y
 		initial_board_bottom = scene.board_grid.global_position.y + scene.board_grid.size.y
 		var board_bottom: float = scene.board_grid.global_position.y + scene.board_grid.size.y
@@ -67,6 +70,9 @@ func _run() -> void:
 		if scene.board_legend_label == null:
 			failures.append("battle feedback: expected board legend label to exist")
 		else:
+			if not scene.board_legend_label.text.contains("己方玉子") or scene.board_legend_label.text.contains("X 己方"):
+				failures.append("battle feedback: expected polished board legend copy")
+
 			var legend_bottom: float = scene.board_legend_label.global_position.y + scene.board_legend_label.size.y
 
 			if legend_bottom > viewport_height - 8.0:
@@ -76,9 +82,13 @@ func _run() -> void:
 			failures.append("battle feedback: expected board cells to exist")
 		else:
 			var first_cell: Button = scene.cells[0][0]
+			var first_cell_style = first_cell.get_theme_stylebox("normal")
 
 			if first_cell.custom_minimum_size.x > 44.0 or first_cell.custom_minimum_size.y > 44.0:
 				failures.append("battle feedback: expected compact board cells for default viewport fit")
+
+			if first_cell_style == null or first_cell_style.shadow_size <= 0:
+				failures.append("battle feedback: expected board cells to use material-style shadow")
 
 		scene._set_status("测试长状态：堡垒棋士落子于 E5，意图：防守并延长自己的连线。轮到你了。")
 		scene._show_feedback("测试反馈：堡垒棋士落子 E5。", [], "")

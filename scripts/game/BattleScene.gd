@@ -48,6 +48,7 @@ var tutorial_hint_label: Label
 var enemy_profile_label: Label
 var enemy_intent_hint_label: Label
 var board_grid: GridContainer
+var board_frame_panel: PanelContainer
 var board_legend_label: Label
 var skill_bar: GridContainer
 var controls_panel: VBoxContainer
@@ -123,10 +124,13 @@ var last_enemy_style: StyleBoxFlat
 var win_style: StyleBoxFlat
 var panel_style: StyleBoxFlat
 var board_panel_style: StyleBoxFlat
+var board_frame_style: StyleBoxFlat
 var status_panel_style: StyleBoxFlat
+var sidebar_title_style: StyleBoxFlat
 var action_button_style: StyleBoxFlat
 var action_button_hover_style: StyleBoxFlat
 var action_button_pressed_style: StyleBoxFlat
+var skill_selected_button_style: StyleBoxFlat
 var disabled_button_style: StyleBoxFlat
 
 
@@ -176,38 +180,55 @@ func _load_run_build_modifiers(root: Window) -> void:
 
 
 func _create_styles() -> void:
-	empty_style = _make_cell_style(Color("#d9bc78"), Color("#6d5427"))
-	spirit_style = _make_cell_style(Color("#3fa58e"), Color("#bdebdc"), 3)
-	rock_style = _make_cell_style(Color("#4a4540"), Color("#27231f"))
-	skill_target_style = _make_cell_style(Color("#7e5ec5"), Color("#f0e7ff"), 4)
-	feedback_player_style = _make_cell_style(Color("#f8e8a7"), Color("#4fa6d8"), 5)
-	feedback_enemy_style = _make_cell_style(Color("#4c5d6f"), Color("#e27965"), 5)
-	feedback_skill_style = _make_cell_style(Color("#8066cf"), Color("#fff3ba"), 5)
-	feedback_rock_style = _make_cell_style(Color("#665347"), Color("#f2b35e"), 5)
-	feedback_energy_style = _make_cell_style(Color("#4eb39d"), Color("#d7fff1"), 5)
-	warning_style = _make_cell_style(Color("#c25345"), Color("#fff0bf"), 4)
-	sealed_style = _make_cell_style(Color("#5e6572"), Color("#f0c65a"), 4)
-	player_style = _make_cell_style(Color("#f3ead1"), Color("#2f4050"), 3)
-	temporary_player_style = _make_cell_style(Color("#dec98f"), Color("#7a8793"), 3)
-	enemy_style = _make_cell_style(Color("#2f3a46"), Color("#d4dbe1"), 3)
-	last_player_style = _make_cell_style(Color("#fff5d2"), Color("#2f88c9"), 4)
-	last_enemy_style = _make_cell_style(Color("#3e4a57"), Color("#d85f4f"), 4)
-	win_style = _make_cell_style(Color("#e5a544"), Color("#6a3b12"), 4)
-	panel_style = _make_panel_style(Color("#222832"), Color("#3a4655"))
-	board_panel_style = _make_panel_style(Color("#262019"), Color("#725936"))
-	status_panel_style = _make_panel_style(Color("#182129"), Color("#2e8c7e"))
-	action_button_style = _make_panel_style(Color("#314353"), Color("#668195"))
-	action_button_hover_style = _make_panel_style(Color("#3a5265"), Color("#86a8bd"))
-	action_button_pressed_style = _make_panel_style(Color("#273743"), Color("#f0c65a"))
-	disabled_button_style = _make_panel_style(Color("#252b33"), Color("#343b45"))
+	empty_style = _make_cell_style(Color("#d7b76a"), Color("#8c6430"), 2, 8, Color("#f4d992"))
+	spirit_style = _make_cell_style(Color("#35a788"), Color("#c8fff1"), 3, 8, Color("#70e0c3"))
+	rock_style = _make_cell_style(Color("#4c4037"), Color("#1e1712"), 2, 7, Color("#7a6757"))
+	skill_target_style = _make_cell_style(Color("#795fc5"), Color("#fff1b8"), 4, 8, Color("#d9c7ff"))
+	feedback_player_style = _make_cell_style(Color("#f5e7be"), Color("#58b7d9"), 5, 9, Color("#ffffff"))
+	feedback_enemy_style = _make_cell_style(Color("#303d50"), Color("#df7b6c"), 5, 9, Color("#70859e"))
+	feedback_skill_style = _make_cell_style(Color("#7159bd"), Color("#fff0a8"), 5, 9, Color("#cdbbff"))
+	feedback_rock_style = _make_cell_style(Color("#645144"), Color("#f2b35e"), 5, 9, Color("#a48262"))
+	feedback_energy_style = _make_cell_style(Color("#32a786"), Color("#d7fff1"), 5, 9, Color("#82ebcf"))
+	warning_style = _make_cell_style(Color("#b84d43"), Color("#fff0bf"), 4, 8, Color("#e97f68"))
+	sealed_style = _make_cell_style(Color("#596477"), Color("#f0c65a"), 4, 8, Color("#92a3ba"))
+	player_style = _make_cell_style(Color("#f2ead9"), Color("#45636f"), 3, 12, Color("#ffffff"))
+	temporary_player_style = _make_cell_style(Color("#d3c08a"), Color("#7a8793"), 3, 12, Color("#f0e2ad"))
+	enemy_style = _make_cell_style(Color("#273141"), Color("#d9e1e5"), 3, 12, Color("#657186"))
+	last_player_style = _make_cell_style(Color("#fff4d2"), Color("#35b5d4"), 4, 12, Color("#ffffff"))
+	last_enemy_style = _make_cell_style(Color("#38465a"), Color("#e36b59"), 4, 12, Color("#7988a2"))
+	win_style = _make_cell_style(Color("#e5a544"), Color("#fff0bd"), 4, 12, Color("#ffd987"))
+	panel_style = _make_panel_style(Color("#1b252b"), Color("#42535d"), 2, 8, 5)
+	board_panel_style = _make_panel_style(Color("#2a2016"), Color("#9b733a"), 2, 10, 8)
+	board_frame_style = _make_panel_style(Color("#17120d"), Color("#c7994c"), 2, 8, 4)
+	status_panel_style = _make_panel_style(Color("#122a2d"), Color("#44c5b2"), 2, 8, 6)
+	sidebar_title_style = _make_panel_style(Color("#29343c"), Color("#566774"), 1, 6, 0)
+	action_button_style = _make_panel_style(Color("#2a3d47"), Color("#5f8a95"), 2, 7, 2)
+	action_button_hover_style = _make_panel_style(Color("#335463"), Color("#8fd3c4"), 2, 7, 3)
+	action_button_pressed_style = _make_panel_style(Color("#24333b"), Color("#f0c65a"), 2, 7, 2)
+	skill_selected_button_style = _make_panel_style(Color("#53426e"), Color("#f0c65a"), 2, 7, 3)
+	disabled_button_style = _make_panel_style(Color("#242b31"), Color("#353f47"), 2, 7, 0)
 
 
-func _make_cell_style(fill: Color, border: Color, border_width: int = 2) -> StyleBoxFlat:
+func _make_cell_style(fill: Color, border: Color, border_width: int = 2, corner_radius: int = 6, highlight: Color = Color("#ffffff")) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fill
 	style.border_color = border
 	style.set_border_width_all(border_width)
-	style.set_corner_radius_all(6)
+	style.set_corner_radius_all(corner_radius)
+	style.shadow_color = Color(0, 0, 0, 0.32)
+	style.shadow_size = 3
+	style.shadow_offset = Vector2(1, 2)
+	style.set_expand_margin_all(1)
+	style.content_margin_left = 0
+	style.content_margin_right = 0
+	style.content_margin_top = 0
+	style.content_margin_bottom = 0
+	style.border_blend = true
+	style.anti_aliasing = true
+	style.anti_aliasing_size = 0.8
+	style.skew = Vector2(0.02, 0.0)
+	style.corner_detail = 8
+	style.bg_color = fill.lerp(highlight, 0.08)
 	style.content_margin_left = 0
 	style.content_margin_right = 0
 	style.content_margin_top = 0
@@ -215,40 +236,57 @@ func _make_cell_style(fill: Color, border: Color, border_width: int = 2) -> Styl
 	return style
 
 
-func _make_panel_style(fill: Color, border: Color) -> StyleBoxFlat:
+func _make_panel_style(fill: Color, border: Color, border_width: int = 2, corner_radius: int = 8, shadow_size: int = 0) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fill
 	style.border_color = border
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(8)
-	style.content_margin_left = 12
-	style.content_margin_right = 12
-	style.content_margin_top = 10
-	style.content_margin_bottom = 10
+	style.set_border_width_all(border_width)
+	style.set_corner_radius_all(corner_radius)
+	style.shadow_color = Color(0, 0, 0, 0.36)
+	style.shadow_size = shadow_size
+	style.shadow_offset = Vector2(0, 3)
+	style.content_margin_left = 10
+	style.content_margin_right = 10
+	style.content_margin_top = 8
+	style.content_margin_bottom = 8
+	style.anti_aliasing = true
+	style.anti_aliasing_size = 0.8
 	return style
 
 
 func _build_layout() -> void:
 	var background := ColorRect.new()
-	background.color = Color("#12161b")
+	background.color = Color("#10161a")
 	background.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(background)
 
+	var top_band := ColorRect.new()
+	top_band.color = Color("#1f2a2c")
+	top_band.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	top_band.offset_bottom = 96
+	add_child(top_band)
+
+	var lower_band := ColorRect.new()
+	lower_band.color = Color("#151211")
+	lower_band.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	lower_band.offset_top = -190
+	add_child(lower_band)
+
 	var root := MarginContainer.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	root.add_theme_constant_override("margin_left", 30)
-	root.add_theme_constant_override("margin_top", 14)
-	root.add_theme_constant_override("margin_right", 30)
+	root.add_theme_constant_override("margin_left", 28)
+	root.add_theme_constant_override("margin_top", 12)
+	root.add_theme_constant_override("margin_right", 28)
 	root.add_theme_constant_override("margin_bottom", 18)
 	add_child(root)
 
 	var main := VBoxContainer.new()
-	main.add_theme_constant_override("separation", 10)
+	main.add_theme_constant_override("separation", 8)
 	root.add_child(main)
 
 	var header := HBoxContainer.new()
 	header.alignment = BoxContainer.ALIGNMENT_CENTER
-	header.add_theme_constant_override("separation", 18)
+	header.add_theme_constant_override("separation", 16)
 	main.add_child(header)
 
 	var title_box := VBoxContainer.new()
@@ -257,15 +295,28 @@ func _build_layout() -> void:
 
 	var title := Label.new()
 	title.text = "天元迷局"
-	title.add_theme_font_size_override("font_size", 30)
-	title.add_theme_color_override("font_color", Color("#f1dfb7"))
+	title.add_theme_font_size_override("font_size", 32)
+	title.add_theme_color_override("font_color", Color("#f4dfad"))
+	title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.55))
+	title.add_theme_constant_override("shadow_offset_x", 1)
+	title.add_theme_constant_override("shadow_offset_y", 2)
 	title_box.add_child(title)
 
 	var subtitle := Label.new()
-	subtitle.text = "五子棋战斗原型"
+	subtitle.text = "岩之国 · 战斗试炼"
 	subtitle.add_theme_font_size_override("font_size", 13)
-	subtitle.add_theme_color_override("font_color", Color("#8da0af"))
+	subtitle.add_theme_color_override("font_color", Color("#9ec8bd"))
 	title_box.add_child(subtitle)
+
+	var stage_badge := Label.new()
+	stage_badge.text = "Demo 验收版"
+	stage_badge.custom_minimum_size = Vector2(128, 30)
+	stage_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stage_badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	stage_badge.add_theme_font_size_override("font_size", 14)
+	stage_badge.add_theme_color_override("font_color", Color("#f4dfad"))
+	stage_badge.add_theme_stylebox_override("normal", _make_panel_style(Color("#253331"), Color("#68b7a2"), 1, 17, 3))
+	header.add_child(stage_badge)
 
 	var content := HBoxContainer.new()
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -291,20 +342,21 @@ func _build_layout() -> void:
 
 	var board_panel := PanelContainer.new()
 	board_panel.add_theme_stylebox_override("panel", board_panel_style)
+	board_panel.custom_minimum_size = Vector2(690, 0)
 	board_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	board_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(board_panel)
 
 	var board_margin := MarginContainer.new()
-	board_margin.add_theme_constant_override("margin_left", 16)
+	board_margin.add_theme_constant_override("margin_left", 22)
 	board_margin.add_theme_constant_override("margin_top", 8)
-	board_margin.add_theme_constant_override("margin_right", 16)
-	board_margin.add_theme_constant_override("margin_bottom", 8)
+	board_margin.add_theme_constant_override("margin_right", 22)
+	board_margin.add_theme_constant_override("margin_bottom", 12)
 	board_panel.add_child(board_margin)
 
 	var board_box := VBoxContainer.new()
 	board_box.alignment = BoxContainer.ALIGNMENT_BEGIN
-	board_box.add_theme_constant_override("separation", 8)
+	board_box.add_theme_constant_override("separation", 9)
 	board_margin.add_child(board_box)
 
 	var board_header := HBoxContainer.new()
@@ -313,18 +365,20 @@ func _build_layout() -> void:
 	board_box.add_child(board_header)
 
 	turn_label = Label.new()
+	turn_label.custom_minimum_size = Vector2(120, 30)
 	turn_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	turn_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	turn_label.add_theme_font_size_override("font_size", 20)
-	turn_label.add_theme_color_override("font_color", Color("#f1dfb7"))
+	turn_label.add_theme_color_override("font_color", Color("#ffe2a0"))
 	board_header.add_child(turn_label)
 
 	turn_rhythm_label = Label.new()
-	turn_rhythm_label.custom_minimum_size = Vector2(160, 30)
+	turn_rhythm_label.custom_minimum_size = Vector2(170, 32)
 	turn_rhythm_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	turn_rhythm_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	turn_rhythm_label.add_theme_font_size_override("font_size", 14)
 	turn_rhythm_label.add_theme_color_override("font_color", Color("#cde8df"))
-	turn_rhythm_label.add_theme_stylebox_override("normal", panel_style)
+	turn_rhythm_label.add_theme_stylebox_override("normal", status_panel_style)
 	board_header.add_child(turn_rhythm_label)
 
 	move_count_label = Label.new()
@@ -333,19 +387,34 @@ func _build_layout() -> void:
 	move_count_label.add_theme_color_override("font_color", Color("#9fb0c1"))
 	board_header.add_child(move_count_label)
 
+	var board_center := CenterContainer.new()
+	board_center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	board_box.add_child(board_center)
+
+	board_frame_panel = PanelContainer.new()
+	board_frame_panel.add_theme_stylebox_override("panel", board_frame_style)
+	board_center.add_child(board_frame_panel)
+
+	var board_grid_margin := MarginContainer.new()
+	board_grid_margin.add_theme_constant_override("margin_left", 7)
+	board_grid_margin.add_theme_constant_override("margin_top", 7)
+	board_grid_margin.add_theme_constant_override("margin_right", 7)
+	board_grid_margin.add_theme_constant_override("margin_bottom", 7)
+	board_frame_panel.add_child(board_grid_margin)
+
 	board_grid = GridContainer.new()
 	board_grid.columns = BOARD_SIZE
 	board_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	board_grid.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	board_grid.add_theme_constant_override("h_separation", BOARD_GRID_GAP)
 	board_grid.add_theme_constant_override("v_separation", BOARD_GRID_GAP)
-	board_box.add_child(board_grid)
+	board_grid_margin.add_child(board_grid)
 
 	board_legend_label = Label.new()
-	board_legend_label.text = "X 己方  /  O 敌方  /  + 灵脉  /  # 岩石  /  ! 预警"
+	board_legend_label.text = "● 己方玉子  /  ◆ 敌方墨子  /  ✦ 灵脉  /  ◼ 岩石  /  ! 预警"
 	board_legend_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	board_legend_label.add_theme_font_size_override("font_size", 14)
-	board_legend_label.add_theme_color_override("font_color", Color("#b6a785"))
+	board_legend_label.add_theme_font_size_override("font_size", 13)
+	board_legend_label.add_theme_color_override("font_color", Color("#d2bd8b"))
 	board_box.add_child(board_legend_label)
 
 	var sidebar_scroll := ScrollContainer.new()
@@ -356,7 +425,7 @@ func _build_layout() -> void:
 	var sidebar := VBoxContainer.new()
 	sidebar.custom_minimum_size = Vector2(360, 0)
 	sidebar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	sidebar.add_theme_constant_override("separation", 12)
+	sidebar.add_theme_constant_override("separation", 8)
 	sidebar_scroll.add_child(sidebar)
 
 	_create_status_feedback_panel(sidebar)
@@ -492,20 +561,23 @@ func _create_side_panel(parent: Control, title_text: String) -> VBoxContainer:
 	parent.add_child(panel)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 14)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_right", 14)
-	margin.add_theme_constant_override("margin_bottom", 14)
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_bottom", 10)
 	panel.add_child(margin)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 8)
+	box.add_theme_constant_override("separation", 7)
 	margin.add_child(box)
 
 	var title := Label.new()
-	title.text = title_text
+	title.text = "  %s" % title_text
+	title.custom_minimum_size = Vector2(0, 24)
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 16)
-	title.add_theme_color_override("font_color", Color("#b8c5d0"))
+	title.add_theme_color_override("font_color", Color("#d4e2db"))
+	title.add_theme_stylebox_override("normal", sidebar_title_style)
 	box.add_child(title)
 
 	return box
@@ -534,11 +606,13 @@ func _create_cells() -> void:
 			var button := Button.new()
 			button.custom_minimum_size = CELL_SIZE
 			button.focus_mode = Control.FOCUS_NONE
-			button.add_theme_font_size_override("font_size", 24)
+			button.add_theme_font_size_override("font_size", 21)
 			button.add_theme_color_override("font_color", Color("#1c2229"))
 			button.add_theme_color_override("font_hover_color", Color("#1c2229"))
 			button.add_theme_color_override("font_pressed_color", Color("#1c2229"))
 			button.add_theme_color_override("font_disabled_color", Color("#10151a"))
+			button.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.28))
+			button.add_theme_constant_override("outline_size", 1)
 			button.pressed.connect(_on_cell_pressed.bind(pos))
 			button.mouse_entered.connect(_on_cell_hovered.bind(pos))
 			board_grid.add_child(button)
@@ -554,6 +628,7 @@ func _create_skill_buttons() -> void:
 		var button := Button.new()
 		button.custom_minimum_size = Vector2(148, 58)
 		button.focus_mode = Control.FOCUS_NONE
+		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		button.pressed.connect(_on_skill_pressed.bind(skill_id))
 		_apply_button_theme(button)
 		skill_bar.add_child(button)
@@ -1277,48 +1352,64 @@ func _refresh_board() -> void:
 			var button: Button = cells[y][x]
 			var owner := board.get_piece(pos)
 			var style := empty_style
+			var text_color := Color("#2a2014")
 			var terrain := board.get_terrain(pos)
 
 			button.text = ""
 			button.tooltip_text = ""
 
-			if winning_line.has(pos):
-				style = win_style
-			elif pos == last_move and last_move_owner == BoardState.PLAYER:
-				button.text = "X"
+			if pos == last_move and last_move_owner == BoardState.PLAYER:
+				button.text = "●"
+				text_color = Color("#253844")
 				style = last_player_style
 			elif pos == last_move and last_move_owner == BoardState.ENEMY:
-				button.text = "O"
+				button.text = "◆"
+				text_color = Color("#e7eef0")
 				style = last_enemy_style
 			elif owner == BoardState.PLAYER:
-				button.text = "x" if board.is_temporary_piece(pos) else "X"
+				button.text = "○" if board.is_temporary_piece(pos) else "●"
+				text_color = Color("#253844")
 				style = temporary_player_style if board.is_temporary_piece(pos) else player_style
 			elif owner == BoardState.ENEMY:
-				button.text = "O"
+				button.text = "◆"
+				text_color = Color("#e7eef0")
 				style = enemy_style
 			elif terrain == BoardState.TERRAIN_ROCK:
-				button.text = "#"
+				button.text = "◼"
+				text_color = Color("#1a1410")
 				style = rock_style
 			elif board.is_sealed(pos):
-				button.text = "x"
+				button.text = "◇"
+				text_color = Color("#e8d38a")
 				style = sealed_style
 			elif terrain == BoardState.TERRAIN_SPIRIT:
-				button.text = "+"
+				button.text = "✦"
+				text_color = Color("#07382f")
 				style = spirit_style
 
 			if owner == BoardState.EMPTY and not selected_skill_id.is_empty() and skill_executor.is_valid_target(board, selected_skill_id, pos):
 				if button.text.is_empty():
-					button.text = "*"
+					button.text = "◇"
+					text_color = Color("#f4e6ff")
 				style = skill_target_style
 				button.tooltip_text = _format_skill_preview(_preview_skill(selected_skill_id, pos))
 			elif owner == BoardState.EMPTY and pos == warning_target:
 				button.text = "!"
+				text_color = Color("#fff0bf")
 				style = warning_style
+
+			if winning_line.has(pos):
+				style = win_style
+				text_color = Color("#2a1707")
 
 			if feedback_flashes.has(pos) and not winning_line.has(pos):
 				style = _get_feedback_style(feedback_flashes[pos], style)
 
 			button.disabled = _is_cell_disabled(pos)
+			button.add_theme_color_override("font_color", text_color)
+			button.add_theme_color_override("font_hover_color", text_color)
+			button.add_theme_color_override("font_pressed_color", text_color)
+			button.add_theme_color_override("font_disabled_color", text_color)
 			button.add_theme_stylebox_override("normal", style)
 			button.add_theme_stylebox_override("hover", style)
 			button.add_theme_stylebox_override("pressed", style)
@@ -1401,6 +1492,12 @@ func _refresh_skill_buttons() -> void:
 		button.text = "%s%s\n%d 能量" % [prefix, name, cost]
 		button.tooltip_text = skill_executor.get_description(skill_id)
 		button.disabled = game_over or current_turn != BoardState.PLAYER or already_active or not _can_afford_skill(skill_id)
+		button.add_theme_stylebox_override("normal", skill_selected_button_style if selected_skill_id == skill_id else action_button_style)
+		button.add_theme_stylebox_override("hover", skill_selected_button_style if selected_skill_id == skill_id else action_button_hover_style)
+		button.add_theme_stylebox_override("pressed", action_button_pressed_style)
+		button.add_theme_stylebox_override("disabled", disabled_button_style)
+		button.add_theme_color_override("font_color", Color("#fff1c7") if selected_skill_id == skill_id else Color("#f3ead1"))
+		button.add_theme_color_override("font_disabled_color", Color("#77828c"))
 
 
 func _refresh_info_labels() -> void:
