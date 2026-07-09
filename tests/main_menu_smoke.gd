@@ -37,6 +37,8 @@ func _run() -> void:
 
 	if scene.continue_button == null or not scene.continue_button.disabled:
 		failures.append("main menu: expected continue button to be disabled without a save")
+	elif scene.continue_button.text != "继续 Run":
+		failures.append("main menu: expected disabled continue button to use the default label")
 
 	if scene.battle_button == null or scene.battle_button.text != "单局战斗":
 		failures.append("main menu: expected single-battle button")
@@ -53,6 +55,8 @@ func _run() -> void:
 
 	if scene.continue_button.disabled:
 		failures.append("main menu: expected continue button to enable when save exists")
+	elif not scene.continue_button.text.contains("进入试锋之局"):
+		failures.append("main menu: expected continue button to name the current battle")
 
 	if scene.status_label == null or not scene.status_label.text.contains("可继续"):
 		failures.append("main menu: expected continue status text")
@@ -62,6 +66,36 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("编辑器收口包") or not scene.summary_label.text.contains("等待首战记录"):
 		failures.append("main menu: expected save-aware editor closeout overview")
+
+	run_state.resolve_current_node(true, [{
+		"id": "smoke_reward",
+		"title": "测试奖励",
+		"effect": "starting_energy",
+		"amount": 1,
+		"rarity": "common",
+		"max_stack": 2,
+	}], 12)
+	RunSaveScript.save_state(run_state)
+	scene._refresh_continue_state()
+
+	if scene.continue_button == null or not scene.continue_button.text.contains("领取战利品"):
+		failures.append("main menu: expected continue button to point at pending rewards")
+
+	run_state.pending_rewards.clear()
+	run_state.pending_reward_node_index = -1
+	run_state.run_completed = true
+	RunSaveScript.save_state(run_state)
+	scene._refresh_continue_state()
+
+	if scene.continue_button == null or not scene.continue_button.text.contains("记录 Boss 体感"):
+		failures.append("main menu: expected completed run to point at boss feel recording")
+
+	run_state.record_boss_opening_feel(RunStateScript.BOSS_OPENING_FEEL_STABLE)
+	RunSaveScript.save_state(run_state)
+	scene._refresh_continue_state()
+
+	if scene.continue_button == null or not scene.continue_button.text.contains("查看验收结果"):
+		failures.append("main menu: expected accepted run to point at acceptance review")
 
 	scene.queue_free()
 	RunSaveScript.delete_save()

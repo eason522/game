@@ -157,9 +157,11 @@ func _refresh_continue_state() -> void:
 	if has_run:
 		var next_action_lines: Array = playtest_simulator.get_editor_next_action_lines(resume_state)
 		var closeout_lines: Array = playtest_simulator.get_editor_closeout_packet_lines(resume_state)
+		continue_button.text = _resume_button_text(resume_state)
 		status_label.text = "检测到可继续的 Run。\n%s" % _first_line(next_action_lines)
 		summary_label.text = "%s\n主菜单速览：%s" % [_base_summary_text(), " / ".join(closeout_lines)]
 	else:
+		continue_button.text = "继续 Run"
 		status_label.text = "暂无存档，从新的 Run 开始。"
 		summary_label.text = "%s\n主菜单速览：等待首战记录。" % _base_summary_text()
 
@@ -193,6 +195,37 @@ func _first_line(lines: Array) -> String:
 		return "编辑器指引：从路线图开始完整 Run"
 
 	return String(lines[0])
+
+
+func _resume_button_text(run_state) -> String:
+	if run_state == null:
+		return "继续 Run"
+
+	if run_state.run_failed:
+		return "继续：复盘失败"
+
+	if run_state.run_completed:
+		if run_state.boss_opening_feel.is_empty():
+			return "继续：记录 Boss 体感"
+
+		return "继续：查看验收结果"
+
+	if run_state.has_pending_reward():
+		return "继续：领取战利品"
+
+	if run_state.has_pending_node_choice():
+		return "继续：处理路线选择"
+
+	var current_node: Dictionary = run_state.get_current_node() if run_state.has_method("get_current_node") else {}
+	var title: String = current_node.get("title", "当前节点")
+
+	match current_node.get("type", ""):
+		RunStateScript.NODE_BATTLE, RunStateScript.NODE_BOSS:
+			return "继续：进入%s" % title
+		RunStateScript.NODE_EVENT, RunStateScript.NODE_SHOP, RunStateScript.NODE_REST:
+			return "继续：处理%s" % title
+		_:
+			return "继续 Run"
 
 
 func _start_new_run() -> void:
