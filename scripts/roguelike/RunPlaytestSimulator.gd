@@ -60,6 +60,39 @@ func run_baseline(actual_turn_counts: Array = []) -> Dictionary:
 	}
 
 
+func build_demo_acceptance_sample() -> Dictionary:
+	var report := run_baseline()
+	var state = report.get("state")
+
+	if state != null and state.has_method("record_boss_opening_observation"):
+		state.record_boss_opening_observation(_stable_boss_opening_observation())
+		state.record_boss_opening_feel(RunStateScript.BOSS_OPENING_FEEL_STABLE)
+		report["state"] = state
+		report["pacing"] = state.get_run_pacing_summary()
+		report["battle_records"] = state.get_battle_pacing_records()
+		report["reward_count"] = state.rewards.size()
+		report["coins"] = state.coins
+
+	return report
+
+
+func get_demo_acceptance_rehearsal_lines() -> Array:
+	var report := build_demo_acceptance_sample()
+	var state = report.get("state")
+	var pacing: Dictionary = report.get("pacing", {})
+	var packet_lines := get_demo_acceptance_packet_lines(state)
+	var packet_status := _trim_first_line(packet_lines, "Demo 验收包：")
+
+	return [
+		"Demo 演练：稳定样本 %d/%d 场目标内，总 %d 手，可作为编辑器实机验收参照" % [
+			pacing.get("on_target_count", 0),
+			pacing.get("recorded_battle_nodes", 0),
+			pacing.get("actual_turn_total", 0),
+		],
+		"Demo 演练：%s" % packet_status,
+	]
+
+
 func compare_run_to_baseline(run_state) -> Dictionary:
 	if run_state == null or not run_state.has_method("get_run_pacing_summary") or not run_state.has_method("get_battle_pacing_records"):
 		return {
@@ -1632,3 +1665,39 @@ func _first_claimable_choice(state, choices: Array, choice_type: String) -> Stri
 			return choice_id
 
 	return ""
+
+
+func _stable_boss_opening_observation() -> Dictionary:
+	return {
+		"enemy": "岩王",
+		"total_moves": 5,
+		"snapshots": [
+			{
+				"move_count": 1,
+				"actor": "己方",
+				"position": "F6",
+				"player_energy": 3,
+				"rock_count": 6,
+				"playable_count": 114,
+				"focus": "开局岩阵",
+			},
+			{
+				"move_count": 3,
+				"actor": "己方",
+				"position": "F7",
+				"player_energy": 4,
+				"rock_count": 6,
+				"playable_count": 113,
+				"focus": "能量与岩阵",
+			},
+			{
+				"move_count": 5,
+				"actor": "己方",
+				"position": "G7",
+				"player_energy": 4,
+				"rock_count": 6,
+				"playable_count": 112,
+				"focus": "反制点",
+			},
+		],
+	}

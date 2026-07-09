@@ -57,6 +57,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - main menu now surfaces the editor archive result and recap excerpt so accepted, partial, or Boss-only saved runs can be classified before entering the map
 - main menu now surfaces the live run closeout result and its next action so saved runs show whether to keep sampling, record Boss feel, run Boss-only review, or preserve current values before entering the map
 - main menu and the run map now show a Demo acceptance packet that combines current status, next action, evidence, Boss risk, and archive wording into one live-playtest closeout view
+- main menu and the run map now show a stable Demo acceptance rehearsal sample so editor playtests have a concrete accepted-run target before a real manual run
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement
@@ -82,12 +83,13 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - battle feedback smoke tests for action logs, cell flashes, and result banners
 - main menu smoke tests for default project entry, save-aware continue state, demo entry buttons, saved-run progress, saved-run closeout overview, state-aware continue action labels, the live-run launch check, the baseline playtest line, the live checklist action, the Boss focus line, the Boss snapshot line, the evidence line, the acceptance gate line, the acceptance note line, the archive/recap line, the closeout line, and the Demo acceptance packet
 - run map feedback smoke tests for typed settlement labels, tone triggers, live playtest checklist/verdict/review/Boss validation display, Boss snapshot pressure assessment, rest-focus feel audit, editor acceptance gates, editor next-action/evidence/note/archive/recap/closeout-packet guidance, Demo acceptance packet states, priority verdicts, Boss feel recording, and tuning candidate display
+- demo acceptance flow smoke tests for the stable rehearsal sample, save restore, main-menu review state, run-map acceptance packet, Boss feel preservation, and archive next action
 
 ## Run Locally
 
 1. Install Godot 4.x.
 2. Open this repository folder in Godot.
-3. Press Play to start at `scenes/ui/MainMenu.tscn`. The menu can continue a saved Run with a state-aware action label, preview saved-run progress plus its editor next action and closeout packet, show a one-line live-run launch check, automatic baseline playtest summary, first live checklist action, Boss focus line, Boss snapshot line, evidence line, acceptance gate line, acceptance note line, archive/recap line, closeout line, and Demo acceptance packet, start a new Run, or open `scenes/game/BattleScene.tscn` for a single battle.
+3. Press Play to start at `scenes/ui/MainMenu.tscn`. The menu can continue a saved Run with a state-aware action label, preview saved-run progress plus its editor next action and closeout packet, show a one-line live-run launch check, automatic baseline playtest summary, stable Demo acceptance rehearsal, first live checklist action, Boss focus line, Boss snapshot line, evidence line, acceptance gate line, acceptance note line, archive/recap line, closeout line, and Demo acceptance packet, start a new Run, or open `scenes/game/BattleScene.tscn` for a single battle.
 
 On this machine Godot 4.7 is installed through WinGet. `godot` and `godot4` command shims are available from `C:\Users\eason\bin`.
 
@@ -107,4 +109,5 @@ godot --headless --path . --script tests/roguelike_run_smoke.gd
 godot --headless --path . --script tests/battle_feedback_smoke.gd
 godot --headless --path . --script tests/main_menu_smoke.gd
 godot --headless --path . --script tests/run_map_feedback_smoke.gd
+godot --headless --path . --script tests/demo_acceptance_flow_smoke.gd
 ```

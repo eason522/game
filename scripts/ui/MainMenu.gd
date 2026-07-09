@@ -160,12 +160,13 @@ func _refresh_continue_state() -> void:
 		var snapshot_lines: Array = playtest_simulator.get_live_playtest_snapshot_lines(resume_state)
 		continue_button.text = _resume_button_text(resume_state)
 		status_label.text = "检测到可继续的 Run。\n%s" % _first_line(next_action_lines)
-		summary_label.text = "%s\n主菜单进度：%s\n主菜单速览：%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s" % [
+		summary_label.text = "%s\n主菜单进度：%s\n主菜单速览：%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s" % [
 			_base_summary_text(),
 			_first_line(snapshot_lines).trim_prefix("实机快照："),
 			" / ".join(closeout_lines),
 			_get_main_menu_check_line(resume_state, snapshot_lines, closeout_lines),
 			_get_main_menu_baseline_line(),
+			_get_main_menu_demo_rehearsal_line(),
 			_get_main_menu_playtest_check_line(resume_state),
 			_get_main_menu_boss_focus_line(resume_state),
 			_get_main_menu_boss_snapshot_line(resume_state),
@@ -179,9 +180,10 @@ func _refresh_continue_state() -> void:
 	else:
 		continue_button.text = "继续 Run"
 		status_label.text = "暂无存档，从新的 Run 开始。"
-		summary_label.text = "%s\n主菜单进度：暂无 Run 数据\n主菜单速览：等待首战记录。\n主菜单核对：继续按钮禁用；暂无 Run 数据；从新的 Run 开始首战。\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s" % [
+		summary_label.text = "%s\n主菜单进度：暂无 Run 数据\n主菜单速览：等待首战记录。\n主菜单核对：继续按钮禁用；暂无 Run 数据；从新的 Run 开始首战。\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s" % [
 			_base_summary_text(),
 			_get_main_menu_baseline_line(),
+			_get_main_menu_demo_rehearsal_line(),
 			_get_main_menu_playtest_check_line(null),
 			_get_main_menu_boss_focus_line(null),
 			_get_main_menu_boss_snapshot_line(null),
@@ -242,6 +244,16 @@ func _get_main_menu_baseline_line() -> String:
 		report.get("coins", 0),
 		report.get("reward_count", 0),
 	]
+
+
+func _get_main_menu_demo_rehearsal_line() -> String:
+	var lines: Array = playtest_simulator.get_demo_acceptance_rehearsal_lines()
+	var trimmed_lines: Array = []
+
+	for line in lines:
+		trimmed_lines.append(String(line).trim_prefix("Demo 演练："))
+
+	return "主菜单演练：%s" % " / ".join(trimmed_lines)
 
 
 func _get_main_menu_playtest_check_line(run_state) -> String:

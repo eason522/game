@@ -58,6 +58,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单基准") or not scene.summary_label.text.contains("4/4 场目标内"):
 		failures.append("main menu: expected no-save baseline playtest line")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单演练") or not scene.summary_label.text.contains("稳定样本 4/4 场目标内"):
+		failures.append("main menu: expected no-save demo acceptance rehearsal line")
+
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单检查") or not scene.summary_label.text.contains("先完成首场战斗"):
 		failures.append("main menu: expected no-save playtest checklist line")
 
@@ -111,6 +114,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单基准") or not scene.summary_label.text.contains("总"):
 		failures.append("main menu: expected saved-run baseline playtest line")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单演练") or not scene.summary_label.text.contains("可交付 Demo 验收体验包"):
+		failures.append("main menu: expected saved-run demo acceptance rehearsal reference")
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单检查") or not scene.summary_label.text.contains("先完成首场战斗"):
 		failures.append("main menu: expected saved-run playtest checklist line")
@@ -236,41 +242,7 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单 Boss 快照") or not scene.summary_label.text.contains("压力偏高"):
 		failures.append("main menu: expected high-pressure boss snapshot result on the menu")
 
-	var accepted_state = scene.playtest_simulator.run_baseline().get("state")
-	accepted_state.record_boss_opening_observation({
-		"enemy": "岩王",
-		"total_moves": 5,
-		"snapshots": [
-			{
-				"move_count": 1,
-				"actor": "己方",
-				"position": "F6",
-				"player_energy": 3,
-				"rock_count": 6,
-				"playable_count": 114,
-				"focus": "开局岩阵",
-			},
-			{
-				"move_count": 3,
-				"actor": "己方",
-				"position": "F7",
-				"player_energy": 4,
-				"rock_count": 6,
-				"playable_count": 113,
-				"focus": "能量与岩阵",
-			},
-			{
-				"move_count": 5,
-				"actor": "己方",
-				"position": "G7",
-				"player_energy": 4,
-				"rock_count": 6,
-				"playable_count": 112,
-				"focus": "反制点",
-			},
-		],
-	})
-	accepted_state.record_boss_opening_feel(RunStateScript.BOSS_OPENING_FEEL_STABLE)
+	var accepted_state = scene.playtest_simulator.build_demo_acceptance_sample().get("state")
 	RunSaveScript.save_state(accepted_state)
 	scene._refresh_continue_state()
 

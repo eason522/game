@@ -133,6 +133,9 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("等待首战记录；当前不可收口"):
 		failures.append("run map feedback: expected fresh editor closeout packet to wait for the first record")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 演练") or not scene.build_summary_label.text.contains("稳定样本 4/4 场目标内"):
+		failures.append("run map feedback: expected build panel to show demo acceptance rehearsal reference")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 验收包") or not scene.build_summary_label.text.contains("继续试玩；样本 0/4"):
 		failures.append("run map feedback: expected fresh demo acceptance packet to keep the sample open")
 
