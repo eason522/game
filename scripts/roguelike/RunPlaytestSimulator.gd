@@ -67,6 +67,7 @@ func build_demo_acceptance_sample() -> Dictionary:
 	if state != null and state.has_method("record_boss_opening_observation"):
 		state.record_boss_opening_observation(_stable_boss_opening_observation())
 		state.record_boss_opening_feel(RunStateScript.BOSS_OPENING_FEEL_STABLE)
+		state.record_demo_acceptance_archive(build_demo_acceptance_archive_record(state))
 		report["state"] = state
 		report["pacing"] = state.get_run_pacing_summary()
 		report["battle_records"] = state.get_battle_pacing_records()
@@ -74,6 +75,55 @@ func build_demo_acceptance_sample() -> Dictionary:
 		report["coins"] = state.coins
 
 	return report
+
+
+func build_demo_acceptance_archive_record(run_state) -> Dictionary:
+	if not _is_demo_acceptance_ready(run_state):
+		return {}
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var boss_record := _boss_pacing_record(run_state.get_battle_pacing_records())
+	var pressure_text := _boss_opening_pressure_acceptance_label(_boss_opening_pressure_level(run_state))
+	var feel_label: String = run_state.get_boss_opening_feel_label() if run_state.has_method("get_boss_opening_feel_label") else "未记录"
+	var rest_text := "静息调气已生效" if _has_reward_source(run_state, RewardGeneratorScript.REST_FOCUS_SOURCE_ID) else "静息调气未验证"
+	return {
+		"outcome": "Demo 验收通过",
+		"summary": "目标内 %d/%d，总 %d 手，%s" % [
+			pacing.get("on_target_count", 0),
+			recorded_battles,
+			pacing.get("actual_turn_total", 0),
+			rest_text,
+		],
+		"boss_summary": "Boss %d 手，快照%s，体感：%s" % [
+			boss_record.get("actual_turn_count", 0),
+			pressure_text,
+			feel_label,
+		],
+		"next_action": "保持当前数值并归档",
+		"note": _trim_first_line(get_editor_acceptance_note_lines(run_state), "编辑器纪要："),
+	}
+
+
+func get_demo_acceptance_archive_lines(run_state) -> Array:
+	if run_state == null:
+		return ["Demo 归档记录：暂无 Run 数据，等待完整试玩"]
+
+	if run_state.has_method("has_demo_acceptance_archive") and run_state.has_demo_acceptance_archive():
+		return run_state.get_demo_acceptance_archive_lines()
+
+	if _is_demo_acceptance_ready(run_state):
+		var record := build_demo_acceptance_archive_record(run_state)
+		return [
+			"Demo 归档记录：可保存 %s；%s" % [
+				record.get("outcome", "Demo 验收"),
+				record.get("summary", "证据待复核"),
+			],
+			"Demo 归档记录：下一步：%s" % record.get("next_action", "保持当前记录"),
+		]
+
+	var archive_text := _trim_first_line(get_editor_archive_record_lines(run_state), "编辑器归档：")
+	return ["Demo 归档记录：未归档；%s" % archive_text]
 
 
 func get_demo_acceptance_rehearsal_lines() -> Array:
@@ -1092,6 +1142,7 @@ func get_demo_acceptance_packet_lines(run_state) -> Array:
 	var evidence := _trim_first_line(get_editor_evidence_checklist_lines(run_state), "编辑器证据：")
 	var archive := _trim_first_line(get_editor_archive_record_lines(run_state), "编辑器归档：")
 	var note := _trim_first_line(get_editor_acceptance_note_lines(run_state), "编辑器纪要：")
+	var archive_record := _trim_first_line(get_demo_acceptance_archive_lines(run_state), "Demo 归档记录：")
 	var boss_text := "Boss 未结算"
 
 	if not boss_record.is_empty():
@@ -1112,7 +1163,7 @@ func get_demo_acceptance_packet_lines(run_state) -> Array:
 		],
 		"Demo 验收包：动作：%s" % next_action,
 		"Demo 验收包：证据：%s；%s" % [evidence, boss_text],
-		"Demo 验收包：归档：%s；纪要：%s" % [archive, note],
+		"Demo 验收包：归档：%s；纪要：%s；记录：%s" % [archive, note, archive_record],
 	]
 
 
@@ -1559,6 +1610,32 @@ func _boss_opening_pressure_level(run_state) -> String:
 		return ""
 
 	return run_state.get_boss_opening_pressure_level()
+
+
+func _is_demo_acceptance_ready(run_state) -> bool:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary") or not run_state.has_method("get_battle_pacing_records"):
+		return false
+
+	if run_state.run_failed or not run_state.run_completed:
+		return false
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var total_battles: int = pacing.get("total_battle_nodes", 0)
+
+	if total_battles <= 0 or recorded_battles < total_battles:
+		return false
+
+	if pacing.get("on_target_count", 0) != recorded_battles:
+		return false
+
+	if _boss_pacing_record(run_state.get_battle_pacing_records()).is_empty():
+		return false
+
+	if _boss_opening_pressure_level(run_state) != RunStateScript.BOSS_OPENING_PRESSURE_STABLE:
+		return false
+
+	return run_state.boss_opening_feel == RunStateScript.BOSS_OPENING_FEEL_STABLE
 
 
 func _trim_first_line(lines: Array, prefix: String) -> String:

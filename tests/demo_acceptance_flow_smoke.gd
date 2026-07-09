@@ -35,11 +35,24 @@ func _run() -> void:
 		if accepted_state.boss_opening_feel != RunStateScript.BOSS_OPENING_FEEL_STABLE:
 			failures.append("demo acceptance flow: expected accepted sample to record stable boss feel")
 
+		if not accepted_state.has_demo_acceptance_archive():
+			failures.append("demo acceptance flow: expected accepted sample to save a demo archive record")
+
 		if " / ".join(packet_lines).find("可交付 Demo 验收体验包") == -1:
 			failures.append("demo acceptance flow: expected simulator packet to mark the sample deliverable")
 
+		if " / ".join(packet_lines).find("已保存 Demo 验收通过") == -1:
+			failures.append("demo acceptance flow: expected simulator packet to show saved archive record")
+
 	if accepted_state != null:
 		RunSaveScript.save_state(accepted_state)
+		var saved_dict := RunSaveScript.load_dict()
+
+		if saved_dict.get("boss_opening_feel", "") != RunStateScript.BOSS_OPENING_FEEL_STABLE:
+			failures.append("demo acceptance flow: expected saved dict to keep stable boss feel")
+
+		if saved_dict.get("demo_acceptance_archive", {}).is_empty():
+			failures.append("demo acceptance flow: expected saved dict to keep demo archive record")
 
 	var menu = MainMenuScene.instantiate()
 	root.add_child(menu)
@@ -67,11 +80,17 @@ func _run() -> void:
 	if not run_map.run_state.run_completed:
 		failures.append("demo acceptance flow: expected restored run map state to remain completed")
 
+	if not run_map.run_state.has_demo_acceptance_archive():
+		failures.append("demo acceptance flow: expected restored run map state to keep the demo archive record")
+
 	if run_map.reward_label == null or not run_map.reward_label.text.contains("当前记录：静息调气后更稳"):
 		failures.append("demo acceptance flow: expected run map boss feel panel to preserve stable feel")
 
 	if run_map.build_summary_label == null or not run_map.build_summary_label.text.contains("Demo 演练") or not run_map.build_summary_label.text.contains("可交付 Demo 验收体验包"):
 		failures.append("demo acceptance flow: expected run map to show rehearsal and accepted packet")
+
+	if run_map.build_summary_label == null or not run_map.build_summary_label.text.contains("记录：已保存 Demo 验收通过"):
+		failures.append("demo acceptance flow: expected run map accepted packet to show saved demo archive")
 
 	if run_map.build_summary_label == null or not run_map.build_summary_label.text.contains("保持当前数值并归档"):
 		failures.append("demo acceptance flow: expected accepted packet to preserve archive next action")

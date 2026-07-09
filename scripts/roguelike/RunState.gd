@@ -33,6 +33,7 @@ var last_feedback := ""
 var last_feedback_kind := ""
 var boss_opening_feel := ""
 var boss_opening_observation := {}
+var demo_acceptance_archive := {}
 
 
 func _init(route_nodes: Array = []) -> void:
@@ -59,6 +60,7 @@ func setup(route_nodes: Array) -> void:
 	last_feedback_kind = "run_start"
 	boss_opening_feel = ""
 	boss_opening_observation.clear()
+	demo_acceptance_archive.clear()
 
 	if nodes.is_empty():
 		return
@@ -404,6 +406,36 @@ func record_boss_opening_observation(observation: Dictionary) -> bool:
 	return true
 
 
+func record_demo_acceptance_archive(record: Dictionary) -> bool:
+	if record.is_empty():
+		return false
+
+	demo_acceptance_archive = record.duplicate(true)
+	last_feedback = "Demo 验收归档：%s。" % demo_acceptance_archive.get("outcome", "已记录")
+	last_feedback_kind = "demo_archive"
+	return true
+
+
+func has_demo_acceptance_archive() -> bool:
+	return not demo_acceptance_archive.is_empty()
+
+
+func get_demo_acceptance_archive_lines() -> Array:
+	if demo_acceptance_archive.is_empty():
+		return ["Demo 归档记录：尚未保存验收归档"]
+
+	return [
+		"Demo 归档记录：已保存 %s；%s" % [
+			demo_acceptance_archive.get("outcome", "Demo 验收"),
+			demo_acceptance_archive.get("summary", "证据待复核"),
+		],
+		"Demo 归档记录：%s；下一步：%s" % [
+			demo_acceptance_archive.get("boss_summary", "Boss 证据待复核"),
+			demo_acceptance_archive.get("next_action", "保持当前记录"),
+		],
+	]
+
+
 func get_boss_opening_observation_lines() -> Array:
 	var snapshots: Array = boss_opening_observation.get("snapshots", [])
 
@@ -601,6 +633,7 @@ func to_dict() -> Dictionary:
 		"last_feedback_kind": last_feedback_kind,
 		"boss_opening_feel": boss_opening_feel,
 		"boss_opening_observation": boss_opening_observation.duplicate(true),
+		"demo_acceptance_archive": demo_acceptance_archive.duplicate(true),
 	}
 
 
@@ -619,6 +652,7 @@ func load_from_dict(data: Dictionary) -> void:
 	last_feedback_kind = data.get("last_feedback_kind", "")
 	boss_opening_feel = data.get("boss_opening_feel", "")
 	boss_opening_observation = data.get("boss_opening_observation", {}).duplicate(true)
+	demo_acceptance_archive = data.get("demo_acceptance_archive", {}).duplicate(true)
 
 
 func _current_progress_feedback() -> String:

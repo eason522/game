@@ -270,6 +270,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单体验包") or not scene.summary_label.text.contains("可交付 Demo 验收体验包"):
 		failures.append("main menu: expected accepted run demo acceptance packet on the menu")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("记录：已保存 Demo 验收通过"):
+		failures.append("main menu: expected accepted run demo archive record on the menu")
+
 	scene.queue_free()
 	RunSaveScript.delete_save()
 
