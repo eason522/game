@@ -56,6 +56,9 @@ func _run() -> void:
 		if scene.board_frame_panel == null:
 			failures.append("battle feedback: expected polished board frame panel to exist")
 
+		if scene.board_texture_rect == null or scene.board_texture_rect.texture == null:
+			failures.append("battle feedback: expected generated board art texture to be loaded")
+
 		initial_board_y = scene.board_grid.global_position.y
 		initial_board_bottom = scene.board_grid.global_position.y + scene.board_grid.size.y
 		var board_bottom: float = scene.board_grid.global_position.y + scene.board_grid.size.y

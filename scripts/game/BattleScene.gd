@@ -1,8 +1,13 @@
 extends Control
 
 const BOARD_SIZE := 11
-const CELL_SIZE := Vector2(46, 46)
+const CELL_SIZE := Vector2(44, 44)
 const BOARD_GRID_GAP := 0
+const BOARD_ART_SIZE := Vector2(572, 572)
+const BOARD_ART_GRID_MARGIN_X := 44
+const BOARD_ART_GRID_MARGIN_TOP := 24
+const BOARD_ART_GRID_MARGIN_BOTTOM := 64
+const BOARD_TEXTURE_PATH := "res://assets/board/battle_board_frame_v1.png"
 const STATUS_SLOT_SIZE := Vector2(0, 52)
 const FEEDBACK_SLOT_SIZE := Vector2(0, 72)
 const RESULT_BANNER_HEIGHT := 64.0
@@ -50,6 +55,7 @@ var enemy_profile_label: Label
 var enemy_intent_hint_label: Label
 var board_grid: GridContainer
 var board_frame_panel: PanelContainer
+var board_texture_rect: TextureRect
 var board_legend_label: Label
 var skill_bar: GridContainer
 var controls_panel: VBoxContainer
@@ -200,7 +206,7 @@ func _create_styles() -> void:
 	win_style = _make_cell_style()
 	panel_style = _make_panel_style(Color("#1b252b"), Color("#42535d"), 2, 8, 5)
 	board_panel_style = _make_panel_style(Color("#20140c"), Color("#b78338"), 2, 8, 10)
-	board_frame_style = _make_panel_style(Color("#c99f55"), Color("#d8ad61"), 2, 4, 8)
+	board_frame_style = _make_panel_style(Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0, 0, 0)
 	status_panel_style = _make_panel_style(Color("#122a2d"), Color("#44c5b2"), 2, 8, 6)
 	sidebar_title_style = _make_panel_style(Color("#29343c"), Color("#566774"), 1, 6, 0)
 	action_button_style = _make_panel_style(Color("#2a3d47"), Color("#5f8a95"), 2, 7, 2)
@@ -394,14 +400,32 @@ func _build_layout() -> void:
 
 	board_frame_panel = PanelContainer.new()
 	board_frame_panel.add_theme_stylebox_override("panel", board_frame_style)
+	board_frame_panel.custom_minimum_size = BOARD_ART_SIZE
 	board_center.add_child(board_frame_panel)
 
+	var board_art_layer := Control.new()
+	board_art_layer.custom_minimum_size = BOARD_ART_SIZE
+	board_art_layer.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	board_art_layer.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	board_frame_panel.add_child(board_art_layer)
+
+	board_texture_rect = TextureRect.new()
+	var board_image := Image.new()
+	var board_image_error: int = board_image.load(BOARD_TEXTURE_PATH)
+	if board_image_error == OK:
+		board_texture_rect.texture = ImageTexture.create_from_image(board_image)
+	board_texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	board_texture_rect.stretch_mode = TextureRect.STRETCH_SCALE
+	board_texture_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	board_art_layer.add_child(board_texture_rect)
+
 	var board_grid_margin := MarginContainer.new()
-	board_grid_margin.add_theme_constant_override("margin_left", 14)
-	board_grid_margin.add_theme_constant_override("margin_top", 14)
-	board_grid_margin.add_theme_constant_override("margin_right", 14)
-	board_grid_margin.add_theme_constant_override("margin_bottom", 14)
-	board_frame_panel.add_child(board_grid_margin)
+	board_grid_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	board_grid_margin.add_theme_constant_override("margin_left", BOARD_ART_GRID_MARGIN_X)
+	board_grid_margin.add_theme_constant_override("margin_top", BOARD_ART_GRID_MARGIN_TOP)
+	board_grid_margin.add_theme_constant_override("margin_right", BOARD_ART_GRID_MARGIN_X)
+	board_grid_margin.add_theme_constant_override("margin_bottom", BOARD_ART_GRID_MARGIN_BOTTOM)
+	board_art_layer.add_child(board_grid_margin)
 
 	board_grid = GridContainer.new()
 	board_grid.columns = BOARD_SIZE

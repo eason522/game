@@ -78,21 +78,13 @@ func _draw() -> void:
 
 
 func _draw_board_cell(rect: Rect2) -> void:
-	var tone: float = _seeded_variation(0, 0.045)
-	var base := Color("#c99f55").lightened(max(tone, 0.0)).darkened(max(-tone, 0.0))
-	var grain := Color("#805b2a")
-	draw_rect(rect, base, true)
-
 	if board_position.x == 0:
-		draw_line(Vector2(0, 0), Vector2(0, rect.size.y), Color("#4a2d14"), 1.6)
+		draw_line(Vector2(0, 0), Vector2(0, rect.size.y), Color(0.16, 0.09, 0.03, 0.58), 1.2)
 	if board_position.y == 0:
-		draw_line(Vector2(0, 0), Vector2(rect.size.x, 0), Color("#4a2d14"), 1.6)
+		draw_line(Vector2(0, 0), Vector2(rect.size.x, 0), Color(0.16, 0.09, 0.03, 0.58), 1.2)
 
-	draw_line(Vector2(rect.size.x - 1, 0), rect.size - Vector2(1, 0), Color(0.21, 0.12, 0.04, 0.45), 1.0)
-	draw_line(Vector2(0, rect.size.y - 1), rect.size - Vector2(0, 1), Color(0.21, 0.12, 0.04, 0.45), 1.0)
-	draw_line(Vector2(rect.size.x - 2, 0), rect.size - Vector2(2, 0), Color(1.0, 0.82, 0.44, 0.08), 0.7)
-	draw_line(Vector2(0, rect.size.y - 2), rect.size - Vector2(0, 2), Color(1.0, 0.82, 0.44, 0.06), 0.7)
-	_draw_cell_grain(rect.grow(-8), grain)
+	draw_line(Vector2(rect.size.x - 1, 0), rect.size - Vector2(1, 0), Color(0.16, 0.09, 0.03, 0.46), 1.0)
+	draw_line(Vector2(0, rect.size.y - 1), rect.size - Vector2(0, 1), Color(0.16, 0.09, 0.03, 0.46), 1.0)
 
 
 func _draw_cell_grain(face: Rect2, grain_color: Color) -> void:
