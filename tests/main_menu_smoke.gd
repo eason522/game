@@ -64,6 +64,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单 Boss 关注") or not scene.summary_label.text.contains("先推进到休息点"):
 		failures.append("main menu: expected no-save boss focus line")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单证据") or not scene.summary_label.text.contains("暂无 Run 数据"):
+		failures.append("main menu: expected no-save evidence line")
+
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档") or not scene.summary_label.text.contains("暂无 Run 数据"):
 		failures.append("main menu: expected no-save archive and excerpt line")
 
@@ -100,6 +103,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单 Boss 关注") or not scene.summary_label.text.contains("尚未验证静息调气"):
 		failures.append("main menu: expected saved-run boss focus line")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单证据") or not scene.summary_label.text.contains("样本 0/4"):
+		failures.append("main menu: expected saved-run evidence line to request the first battle")
+
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档") or not scene.summary_label.text.contains("等待首战记录"):
 		failures.append("main menu: expected saved-run archive line to wait for the first battle")
 
@@ -125,6 +131,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单检查") or not scene.summary_label.text.contains("继续补齐完整 Run 实测 1/4 场"):
 		failures.append("main menu: expected checklist to reflect partial live run progress")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单证据") or not scene.summary_label.text.contains("样本 1/4"):
+		failures.append("main menu: expected evidence line to reflect partial live run progress")
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档") or not scene.summary_label.text.contains("样本 1/4 未齐"):
 		failures.append("main menu: expected archive line to keep partial saved runs open")
@@ -185,6 +194,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档") or not scene.summary_label.text.contains("可归档 Demo 验收"):
 		failures.append("main menu: expected accepted run archive result on the menu")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单证据") or not scene.summary_label.text.contains("可归档 Demo 验收证据"):
+		failures.append("main menu: expected accepted run evidence result on the menu")
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("摘录：Demo 验收通过"):
 		failures.append("main menu: expected accepted run recap excerpt on the menu")
