@@ -46,7 +46,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - board cells now use a custom pseudo-3D renderer for faceted rocks, jade-piece highlights, dark enemy stones, spirit cores, warning marks, and feedback outlines instead of relying on text glyphs
 - the battle board now uses a continuous single-board material pass: zero per-cell gaps, no per-cell button shadows, subtle wood-grain variation, low-contrast grid lines, thicker jade/ink stones, and stronger rock/spirit tokens
 - the battle board now uses generated bitmap art at `assets/board/battle_board_frame_v1.png` for the carved wood frame and aged gold play surface, with Godot drawing only the exact grid and transparent click layer on top
-- board pieces and terrain now use generated sprite-sheet art at `assets/tokens/battle_tokens_sheet_v1.png`, covering player jade, temporary jade, enemy ink, rock, spirit, seal, warning, and skill-target tokens
+- board pieces and terrain now use normalized generated sprite-sheet art at `assets/tokens/battle_tokens_sheet_v1.png`, covering player jade, temporary jade, enemy ink, rock, spirit, seal, warning, and skill-target tokens with transparent 256px cells
 - demo now starts from a main menu with continue, new-run, and single-battle entry points
 - main menu now previews the saved Run's editor next action and closeout packet before continuing a live playtest
 - main menu continue button now names the immediate saved-run action, such as entering the current node, claiming loot, recording Boss feel, or reviewing acceptance

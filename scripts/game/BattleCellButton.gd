@@ -115,7 +115,7 @@ func _seeded_variation(index: int, span: float) -> float:
 
 
 func _draw_spirit(rect: Rect2) -> void:
-	if _draw_token(TOKEN_SPIRIT, rect, 1.02):
+	if _draw_token(TOKEN_SPIRIT, rect, 1.08):
 		return
 
 	var center := rect.get_center()
@@ -139,7 +139,7 @@ func _draw_spirit(rect: Rect2) -> void:
 
 
 func _draw_rock(rect: Rect2) -> void:
-	if _draw_token(TOKEN_ROCK, rect, 0.94):
+	if _draw_token(TOKEN_ROCK, rect, 1.0):
 		return
 
 	var center := rect.get_center()
@@ -191,7 +191,7 @@ func _draw_rock(rect: Rect2) -> void:
 
 
 func _draw_player_piece(rect: Rect2, temporary: bool) -> void:
-	if _draw_token(TOKEN_PLAYER_TEMP if temporary else TOKEN_PLAYER, rect, 0.78):
+	if _draw_token(TOKEN_PLAYER_TEMP if temporary else TOKEN_PLAYER, rect, 1.02):
 		return
 
 	var center := rect.get_center()
@@ -207,7 +207,7 @@ func _draw_player_piece(rect: Rect2, temporary: bool) -> void:
 
 
 func _draw_enemy_piece(rect: Rect2) -> void:
-	if _draw_token(TOKEN_ENEMY, rect, 0.78):
+	if _draw_token(TOKEN_ENEMY, rect, 1.02):
 		return
 
 	var center := rect.get_center()
@@ -231,7 +231,7 @@ func _draw_enemy_piece(rect: Rect2) -> void:
 
 
 func _draw_seal(rect: Rect2) -> void:
-	if _draw_token(TOKEN_SEALED, rect, 0.88):
+	if _draw_token(TOKEN_SEALED, rect, 0.98):
 		return
 
 	var center := rect.get_center()
@@ -240,7 +240,7 @@ func _draw_seal(rect: Rect2) -> void:
 
 
 func _draw_skill_target(rect: Rect2) -> void:
-	if _draw_token(TOKEN_SKILL_TARGET, rect, 0.86):
+	if _draw_token(TOKEN_SKILL_TARGET, rect, 0.96):
 		return
 
 	var center := rect.get_center()
@@ -255,7 +255,7 @@ func _draw_skill_target(rect: Rect2) -> void:
 
 
 func _draw_warning(rect: Rect2) -> void:
-	if _draw_token(TOKEN_WARNING, rect, 0.82):
+	if _draw_token(TOKEN_WARNING, rect, 0.98):
 		return
 
 	var center := rect.get_center()
