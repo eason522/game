@@ -387,6 +387,12 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: fresh editor archive should wait for the first battle")
 		return
 
+	var fresh_recap := simulator.get_editor_recap_excerpt_lines(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
+
+	if not _lines_contain(fresh_recap, "编辑器摘录") or not _lines_contain(fresh_recap, "未开始"):
+		failures.append("run playtest simulator: fresh editor recap should start from the first battle")
+		return
+
 	var fresh_followup := simulator.get_boss_pressure_followup_lines(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
 
 	if not _lines_contain(fresh_followup, "Boss 复核") or not _lines_contain(fresh_followup, "样本未齐"):
@@ -505,6 +511,12 @@ func _assert_full_run_baseline_playtest() -> void:
 
 	if not _lines_contain(recorded_archive, "可归档 Demo 验收") or not _lines_contain(recorded_archive, "保持当前数值"):
 		failures.append("run playtest simulator: stable editor archive should close demo acceptance")
+		return
+
+	var recorded_recap := simulator.get_editor_recap_excerpt_lines(baseline_state)
+
+	if not _lines_contain(recorded_recap, "Demo 验收通过") or not _lines_contain(recorded_recap, "体感：静息调气后更稳"):
+		failures.append("run playtest simulator: stable editor recap should be copyable demo acceptance")
 		return
 
 	var pressure_state = simulator.run_baseline().get("state")

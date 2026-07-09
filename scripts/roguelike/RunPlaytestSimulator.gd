@@ -892,6 +892,64 @@ func get_editor_archive_record_lines(run_state) -> Array:
 			return ["编辑器归档：体感记录异常，先复核按钮写入"]
 
 
+func get_editor_recap_excerpt_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary") or not run_state.has_method("get_battle_pacing_records"):
+		return ["编辑器摘录：未开始，从路线图进入首战"]
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var total_battles: int = pacing.get("total_battle_nodes", 0)
+
+	if recorded_battles <= 0:
+		return ["编辑器摘录：未开始，首战后核对实测手数回传"]
+
+	if recorded_battles < total_battles:
+		return ["编辑器摘录：样本 %d/%d，继续完整 Run，不写验收结论" % [recorded_battles, total_battles]]
+
+	if run_state.run_failed:
+		return ["编辑器摘录：Run 失败，记录失败节点、失败前资源和重开原因"]
+
+	var boss_record := _boss_pacing_record(run_state.get_battle_pacing_records())
+
+	if boss_record.is_empty():
+		return ["编辑器摘录：完整样本缺 Boss 记录，复核结算回传"]
+
+	var pressure_level := _boss_opening_pressure_level(run_state)
+	var pressure_text := _boss_opening_pressure_acceptance_label(pressure_level)
+	var rest_text := "静息调气已生效" if _has_reward_source(run_state, RewardGeneratorScript.REST_FOCUS_SOURCE_ID) else "静息调气未验证"
+	var feel_label: String = run_state.get_boss_opening_feel_label() if run_state.has_method("get_boss_opening_feel_label") else "未记录"
+	var outcome := "证据未闭合"
+
+	if pressure_level == RunStateScript.BOSS_OPENING_PRESSURE_HIGH:
+		outcome = "Boss-only 复核"
+	elif run_state.boss_opening_feel.is_empty():
+		outcome = "待补 Boss 体感"
+	else:
+		match run_state.boss_opening_feel:
+			RunStateScript.BOSS_OPENING_FEEL_STABLE:
+				if pressure_level == RunStateScript.BOSS_OPENING_PRESSURE_STABLE and pacing.get("on_target_count", 0) == recorded_battles:
+					outcome = "Demo 验收通过"
+				else:
+					outcome = "Boss 开局复看"
+			RunStateScript.BOSS_OPENING_FEEL_PRESSURE:
+				outcome = "Boss 手感轴复核"
+			RunStateScript.BOSS_OPENING_FEEL_UNCLEAR:
+				outcome = "待补可复盘样本"
+			_:
+				outcome = "体感记录异常"
+
+	return ["编辑器摘录：%s；目标内 %d/%d，总 %d 手；Boss %d 手，快照%s；%s；体感：%s" % [
+		outcome,
+		pacing.get("on_target_count", 0),
+		recorded_battles,
+		pacing.get("actual_turn_total", 0),
+		boss_record.get("actual_turn_count", 0),
+		pressure_text,
+		rest_text,
+		feel_label,
+	]]
+
+
 func get_single_axis_tuning_candidates(run_state) -> Array:
 	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
 		return ["单轴候选：暂无 Run 数据，先完成一次实机记录"]

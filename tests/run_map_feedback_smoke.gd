@@ -121,6 +121,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("等待首战记录，不创建验收归档"):
 		failures.append("run map feedback: expected fresh editor archive to wait for the first battle")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("编辑器摘录"):
+		failures.append("run map feedback: expected build panel to show editor recap excerpt")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("首战后核对实测手数回传"):
+		failures.append("run map feedback: expected fresh editor recap to point at the first record")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 
@@ -528,6 +534,9 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("可归档 Demo 验收"):
 		failures.append("run map feedback: expected editor archive to mark stable demo acceptance")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 验收通过"):
+		failures.append("run map feedback: expected editor recap to summarize stable demo acceptance")
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)
