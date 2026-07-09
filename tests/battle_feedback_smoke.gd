@@ -84,17 +84,17 @@ func _run() -> void:
 			var first_cell: Button = scene.cells[0][0]
 			var first_cell_style = first_cell.get_theme_stylebox("normal")
 
-			if first_cell.custom_minimum_size.x > 44.0 or first_cell.custom_minimum_size.y > 44.0:
+			if first_cell.custom_minimum_size.x > 46.0 or first_cell.custom_minimum_size.y > 46.0:
 				failures.append("battle feedback: expected compact board cells for default viewport fit")
 
-			if first_cell_style == null or first_cell_style.shadow_size <= 0:
-				failures.append("battle feedback: expected board cells to use material-style shadow")
+			if first_cell_style == null or first_cell_style.shadow_size > 0:
+				failures.append("battle feedback: expected board cells to avoid per-tile button shadows")
 
-			if scene.board_grid.get_theme_constant("h_separation") > 2 or scene.board_grid.get_theme_constant("v_separation") > 2:
-				failures.append("battle feedback: expected tightened board gaps for a single-board material feel")
+			if scene.board_grid.get_theme_constant("h_separation") != 0 or scene.board_grid.get_theme_constant("v_separation") != 0:
+				failures.append("battle feedback: expected zero board gaps for a single-board material feel")
 
-			if not first_cell.has_method("get_material_tier") or first_cell.get_material_tier() != "inset_board_v2":
-				failures.append("battle feedback: expected inset board material renderer v2")
+			if not first_cell.has_method("get_material_tier") or first_cell.get_material_tier() != "single_board_v3":
+				failures.append("battle feedback: expected continuous board material renderer v3")
 
 			var rock_cell = scene.cells[3][3]
 

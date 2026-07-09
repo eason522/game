@@ -1,8 +1,8 @@
 extends Control
 
 const BOARD_SIZE := 11
-const CELL_SIZE := Vector2(44, 44)
-const BOARD_GRID_GAP := 2
+const CELL_SIZE := Vector2(46, 46)
+const BOARD_GRID_GAP := 0
 const STATUS_SLOT_SIZE := Vector2(0, 52)
 const FEEDBACK_SLOT_SIZE := Vector2(0, 72)
 const RESULT_BANNER_HEIGHT := 64.0
@@ -181,26 +181,26 @@ func _load_run_build_modifiers(root: Window) -> void:
 
 
 func _create_styles() -> void:
-	empty_style = _make_cell_style(Color("#b98d45"), Color("#5b3b1b"), 1, 5, Color("#e2c478"))
-	spirit_style = _make_cell_style(Color("#2f9b80"), Color("#d7fff1"), 2, 5, Color("#70e0c3"))
-	rock_style = _make_cell_style(Color("#4a3b31"), Color("#1e1712"), 1, 5, Color("#7a6757"))
-	skill_target_style = _make_cell_style(Color("#7455b9"), Color("#fff1b8"), 3, 5, Color("#d9c7ff"))
-	feedback_player_style = _make_cell_style(Color("#d7b56b"), Color("#58b7d9"), 4, 5, Color("#ffffff"))
-	feedback_enemy_style = _make_cell_style(Color("#303d50"), Color("#df7b6c"), 4, 5, Color("#70859e"))
-	feedback_skill_style = _make_cell_style(Color("#7159bd"), Color("#fff0a8"), 4, 5, Color("#cdbbff"))
-	feedback_rock_style = _make_cell_style(Color("#5a4a3e"), Color("#f2b35e"), 4, 5, Color("#a48262"))
-	feedback_energy_style = _make_cell_style(Color("#32a786"), Color("#d7fff1"), 4, 5, Color("#82ebcf"))
-	warning_style = _make_cell_style(Color("#b84d43"), Color("#fff0bf"), 3, 5, Color("#e97f68"))
-	sealed_style = _make_cell_style(Color("#596477"), Color("#f0c65a"), 3, 5, Color("#92a3ba"))
-	player_style = _make_cell_style(Color("#d8bc79"), Color("#45636f"), 2, 5, Color("#ffffff"))
-	temporary_player_style = _make_cell_style(Color("#c4a865"), Color("#7a8793"), 2, 5, Color("#f0e2ad"))
-	enemy_style = _make_cell_style(Color("#273141"), Color("#d9e1e5"), 2, 5, Color("#657186"))
-	last_player_style = _make_cell_style(Color("#e0c47c"), Color("#35b5d4"), 3, 5, Color("#ffffff"))
-	last_enemy_style = _make_cell_style(Color("#38465a"), Color("#e36b59"), 3, 5, Color("#7988a2"))
-	win_style = _make_cell_style(Color("#c98e35"), Color("#fff0bd"), 3, 5, Color("#ffd987"))
+	empty_style = _make_cell_style()
+	spirit_style = _make_cell_style()
+	rock_style = _make_cell_style()
+	skill_target_style = _make_cell_style()
+	feedback_player_style = _make_cell_style()
+	feedback_enemy_style = _make_cell_style()
+	feedback_skill_style = _make_cell_style()
+	feedback_rock_style = _make_cell_style()
+	feedback_energy_style = _make_cell_style()
+	warning_style = _make_cell_style()
+	sealed_style = _make_cell_style()
+	player_style = _make_cell_style()
+	temporary_player_style = _make_cell_style()
+	enemy_style = _make_cell_style()
+	last_player_style = _make_cell_style()
+	last_enemy_style = _make_cell_style()
+	win_style = _make_cell_style()
 	panel_style = _make_panel_style(Color("#1b252b"), Color("#42535d"), 2, 8, 5)
-	board_panel_style = _make_panel_style(Color("#21170f"), Color("#a97936"), 2, 8, 10)
-	board_frame_style = _make_panel_style(Color("#130e0a"), Color("#d1a55b"), 2, 6, 6)
+	board_panel_style = _make_panel_style(Color("#20140c"), Color("#b78338"), 2, 8, 10)
+	board_frame_style = _make_panel_style(Color("#c99f55"), Color("#d8ad61"), 2, 4, 8)
 	status_panel_style = _make_panel_style(Color("#122a2d"), Color("#44c5b2"), 2, 8, 6)
 	sidebar_title_style = _make_panel_style(Color("#29343c"), Color("#566774"), 1, 6, 0)
 	action_button_style = _make_panel_style(Color("#2a3d47"), Color("#5f8a95"), 2, 7, 2)
@@ -210,26 +210,26 @@ func _create_styles() -> void:
 	disabled_button_style = _make_panel_style(Color("#242b31"), Color("#353f47"), 2, 7, 0)
 
 
-func _make_cell_style(fill: Color, border: Color, border_width: int = 2, corner_radius: int = 6, highlight: Color = Color("#ffffff")) -> StyleBoxFlat:
+func _make_cell_style(fill: Color = Color(0, 0, 0, 0), border: Color = Color(0, 0, 0, 0), border_width: int = 0, corner_radius: int = 0, highlight: Color = Color(0, 0, 0, 0)) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fill
 	style.border_color = border
 	style.set_border_width_all(border_width)
 	style.set_corner_radius_all(corner_radius)
-	style.shadow_color = Color(0, 0, 0, 0.32)
-	style.shadow_size = 1
-	style.shadow_offset = Vector2(0, 1)
+	style.shadow_color = Color(0, 0, 0, 0)
+	style.shadow_size = 0
+	style.shadow_offset = Vector2.ZERO
 	style.set_expand_margin_all(0)
 	style.content_margin_left = 0
 	style.content_margin_right = 0
 	style.content_margin_top = 0
 	style.content_margin_bottom = 0
-	style.border_blend = true
+	style.border_blend = false
 	style.anti_aliasing = true
 	style.anti_aliasing_size = 0.8
 	style.skew = Vector2.ZERO
-	style.corner_detail = 8
-	style.bg_color = fill.lerp(highlight, 0.04)
+	style.corner_detail = 1
+	style.bg_color = fill.lerp(highlight, 0.0)
 	style.content_margin_left = 0
 	style.content_margin_right = 0
 	style.content_margin_top = 0
@@ -397,10 +397,10 @@ func _build_layout() -> void:
 	board_center.add_child(board_frame_panel)
 
 	var board_grid_margin := MarginContainer.new()
-	board_grid_margin.add_theme_constant_override("margin_left", 10)
-	board_grid_margin.add_theme_constant_override("margin_top", 10)
-	board_grid_margin.add_theme_constant_override("margin_right", 10)
-	board_grid_margin.add_theme_constant_override("margin_bottom", 10)
+	board_grid_margin.add_theme_constant_override("margin_left", 14)
+	board_grid_margin.add_theme_constant_override("margin_top", 14)
+	board_grid_margin.add_theme_constant_override("margin_right", 14)
+	board_grid_margin.add_theme_constant_override("margin_bottom", 14)
 	board_frame_panel.add_child(board_grid_margin)
 
 	board_grid = GridContainer.new()

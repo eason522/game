@@ -11,7 +11,7 @@ const MARK_NONE := ""
 const MARK_SEALED := "sealed"
 const MARK_SKILL_TARGET := "skill_target"
 const MARK_WARNING := "warning"
-const MATERIAL_TIER := "inset_board_v2"
+const MATERIAL_TIER := "single_board_v3"
 
 var terrain_kind := TERRAIN_NORMAL
 var piece_kind := PIECE_NONE
@@ -44,7 +44,7 @@ func set_visual_state(terrain: String, piece: String, marker: String, winning: b
 
 func _draw() -> void:
 	var rect := Rect2(Vector2.ZERO, size)
-	_draw_cell_surface(rect)
+	_draw_board_cell(rect)
 
 	match terrain_kind:
 		TERRAIN_SPIRIT:
@@ -77,34 +77,22 @@ func _draw() -> void:
 		_draw_feedback_glow(rect)
 
 
-func _draw_cell_surface(rect: Rect2) -> void:
-	var outer := rect.grow(-2)
-	var lip := rect.grow(-4)
-	var face := Rect2(Vector2(7, 6), rect.size - Vector2(14, 13))
-	var face_color := Color("#d0ad5b")
-	var grain_color := Color("#a9813f")
-	var inner_shadow := Color("#4a2f16")
+func _draw_board_cell(rect: Rect2) -> void:
+	var tone: float = _seeded_variation(0, 0.045)
+	var base := Color("#c99f55").lightened(max(tone, 0.0)).darkened(max(-tone, 0.0))
+	var grain := Color("#805b2a")
+	draw_rect(rect, base, true)
 
-	if terrain_kind == TERRAIN_SPIRIT:
-		face_color = Color("#43b999")
-		grain_color = Color("#26866f")
-		inner_shadow = Color("#10443d")
-	elif terrain_kind == TERRAIN_ROCK:
-		face_color = Color("#534438")
-		grain_color = Color("#2b211b")
-		inner_shadow = Color("#1b1410")
+	if board_position.x == 0:
+		draw_line(Vector2(0, 0), Vector2(0, rect.size.y), Color("#4a2d14"), 1.6)
+	if board_position.y == 0:
+		draw_line(Vector2(0, 0), Vector2(rect.size.x, 0), Color("#4a2d14"), 1.6)
 
-	draw_rect(outer, Color("#3b2917"), true)
-	draw_rect(lip, Color("#b98d45"), true)
-	draw_rect(Rect2(lip.position + Vector2(0, lip.size.y - 5), Vector2(lip.size.x, 5)), Color("#6c461f"), true)
-	draw_rect(face, face_color, true)
-	draw_rect(Rect2(face.position, Vector2(face.size.x, 3)), Color(1, 0.92, 0.68, 0.20), true)
-	draw_rect(Rect2(face.position + Vector2(0, face.size.y - 4), Vector2(face.size.x, 4)), Color(inner_shadow.r, inner_shadow.g, inner_shadow.b, 0.30), true)
-	draw_line(face.position + Vector2(1, 1), face.position + Vector2(face.size.x - 2, 1), Color(1, 0.96, 0.72, 0.22), 1.0)
-	draw_line(face.position + Vector2(1, 1), face.position + Vector2(1, face.size.y - 2), Color(1, 0.92, 0.62, 0.16), 1.0)
-	draw_line(face.position + Vector2(0, face.size.y - 1), face.position + face.size - Vector2(1, 1), Color(0.13, 0.07, 0.03, 0.34), 1.2)
-	draw_line(face.position + Vector2(face.size.x - 1, 0), face.position + face.size - Vector2(1, 1), Color(0.13, 0.07, 0.03, 0.28), 1.2)
-	_draw_cell_grain(face, grain_color)
+	draw_line(Vector2(rect.size.x - 1, 0), rect.size - Vector2(1, 0), Color(0.21, 0.12, 0.04, 0.45), 1.0)
+	draw_line(Vector2(0, rect.size.y - 1), rect.size - Vector2(0, 1), Color(0.21, 0.12, 0.04, 0.45), 1.0)
+	draw_line(Vector2(rect.size.x - 2, 0), rect.size - Vector2(2, 0), Color(1.0, 0.82, 0.44, 0.08), 0.7)
+	draw_line(Vector2(0, rect.size.y - 2), rect.size - Vector2(0, 2), Color(1.0, 0.82, 0.44, 0.06), 0.7)
+	_draw_cell_grain(rect.grow(-8), grain)
 
 
 func _draw_cell_grain(face: Rect2, grain_color: Color) -> void:
@@ -122,21 +110,21 @@ func _seeded_variation(index: int, span: float) -> float:
 
 func _draw_spirit(rect: Rect2) -> void:
 	var center := rect.get_center()
-	draw_circle(center + Vector2(1, 2), rect.size.x * 0.31, Color(0.02, 0.12, 0.10, 0.28))
-	draw_circle(center, rect.size.x * 0.29, Color(0.14, 0.78, 0.63, 0.26))
-	draw_circle(center, rect.size.x * 0.20, Color(0.35, 0.98, 0.79, 0.36))
+	draw_circle(center + Vector2(1, 2), rect.size.x * 0.37, Color(0.02, 0.12, 0.10, 0.24))
+	draw_circle(center, rect.size.x * 0.34, Color(0.08, 0.62, 0.50, 0.26))
+	draw_circle(center, rect.size.x * 0.24, Color(0.42, 0.96, 0.78, 0.30))
 	var star := PackedVector2Array([
-		center + Vector2(0, -14),
-		center + Vector2(5, -5),
-		center + Vector2(14, 0),
-		center + Vector2(5, 5),
-		center + Vector2(0, 14),
-		center + Vector2(-5, 5),
-		center + Vector2(-14, 0),
-		center + Vector2(-5, -5),
+		center + Vector2(0, -16),
+		center + Vector2(6, -6),
+		center + Vector2(16, 0),
+		center + Vector2(6, 6),
+		center + Vector2(0, 16),
+		center + Vector2(-6, 6),
+		center + Vector2(-16, 0),
+		center + Vector2(-6, -6),
 	])
-	draw_colored_polygon(star, Color("#dfffee"))
-	draw_polyline(star, Color("#247767"), 2.0, true)
+	draw_colored_polygon(star, Color("#dbfff0"))
+	draw_polyline(star, Color("#146f62"), 2.0, true)
 	draw_circle(center, 4.0, Color("#f6fff7"))
 	draw_circle(center, 2.2, Color("#1f4e45"))
 
@@ -154,7 +142,7 @@ func _draw_rock(rect: Rect2) -> void:
 	var shadow_offset := PackedVector2Array()
 	for point in shadow:
 		shadow_offset.append(point + Vector2(4, 5))
-	draw_colored_polygon(shadow_offset, Color(0.03, 0.025, 0.02, 0.52))
+	draw_colored_polygon(shadow_offset, Color(0.03, 0.025, 0.02, 0.42))
 	draw_colored_polygon(shadow, Color("#46382f"))
 
 	draw_colored_polygon(PackedVector2Array([
@@ -249,11 +237,11 @@ func _draw_warning(rect: Rect2) -> void:
 
 
 func _draw_win_rim(rect: Rect2) -> void:
-	draw_rect(Rect2(Vector2(5, 5), rect.size - Vector2(10, 10)), Color("#fff0bd"), false, 3.0)
+	draw_rect(Rect2(Vector2(3, 3), rect.size - Vector2(6, 6)), Color("#fff0bd"), false, 3.0)
 
 
 func _draw_last_move_rim(rect: Rect2) -> void:
-	draw_rect(Rect2(Vector2(6, 6), rect.size - Vector2(12, 12)), Color("#8fd3c4"), false, 2.0)
+	draw_rect(Rect2(Vector2(4, 4), rect.size - Vector2(8, 8)), Color("#8fd3c4"), false, 2.0)
 
 
 func _draw_feedback_glow(rect: Rect2) -> void:
@@ -269,4 +257,4 @@ func _draw_feedback_glow(rect: Rect2) -> void:
 			glow = Color("#9affdf")
 		"skill":
 			glow = Color("#d4c4ff")
-	draw_rect(Rect2(Vector2(4, 4), rect.size - Vector2(8, 8)), Color(glow.r, glow.g, glow.b, 0.68), false, 3.0)
+	draw_rect(Rect2(Vector2(3, 3), rect.size - Vector2(6, 6)), Color(glow.r, glow.g, glow.b, 0.68), false, 3.0)
