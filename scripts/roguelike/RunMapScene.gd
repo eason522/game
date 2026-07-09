@@ -29,6 +29,8 @@ var settlement_label: Label
 var route_guide_label: Label
 var reward_label: Label
 var build_summary_label: Label
+var route_scroll: ScrollContainer
+var side_scroll: ScrollContainer
 var sound_toggle_button: Button
 var hints_toggle_button: Button
 var tone_player
@@ -218,19 +220,33 @@ func _build_layout() -> void:
 
 	var content := HBoxContainer.new()
 	content.add_theme_constant_override("separation", 24)
+	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content_margin.add_child(content)
 
+	route_scroll = ScrollContainer.new()
+	route_scroll.custom_minimum_size = Vector2(640, 0)
+	route_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	route_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	route_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	content.add_child(route_scroll)
+
 	node_list = VBoxContainer.new()
-	node_list.custom_minimum_size = Vector2(640, 0)
 	node_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	node_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	node_list.add_theme_constant_override("separation", 10)
-	content.add_child(node_list)
+	route_scroll.add_child(node_list)
+
+	side_scroll = ScrollContainer.new()
+	side_scroll.custom_minimum_size = Vector2(360, 0)
+	side_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	side_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	content.add_child(side_scroll)
 
 	var side := VBoxContainer.new()
 	side.custom_minimum_size = Vector2(360, 0)
+	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	side.add_theme_constant_override("separation", 12)
-	content.add_child(side)
+	side_scroll.add_child(side)
 
 	status_label = Label.new()
 	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

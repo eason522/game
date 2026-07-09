@@ -28,6 +28,17 @@ func _run() -> void:
 	elif scene.tone_player.last_tone_kind != "run_start":
 		failures.append("run map feedback: expected initial run feedback to trigger a run-start tone")
 
+	if scene.route_scroll == null or scene.node_list == null or scene.node_list.get_parent() != scene.route_scroll:
+		failures.append("run map feedback: expected route nodes to live inside a scroll container")
+
+	if scene.side_scroll == null or scene.build_summary_label == null or not scene.side_scroll.is_ancestor_of(scene.build_summary_label):
+		failures.append("run map feedback: expected right-side build summary to live inside a scroll container")
+
+	await process_frame
+
+	if scene.side_scroll != null and scene.side_scroll.get_v_scroll_bar().max_value <= scene.side_scroll.size.y:
+		failures.append("run map feedback: expected side scroll to expose overflowing build summary")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Run 节奏"):
 		failures.append("run map feedback: expected build panel to show run pacing")
 
