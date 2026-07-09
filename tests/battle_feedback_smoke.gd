@@ -90,6 +90,13 @@ func _run() -> void:
 			if first_cell_style == null or first_cell_style.shadow_size <= 0:
 				failures.append("battle feedback: expected board cells to use material-style shadow")
 
+			var rock_cell = scene.cells[3][3]
+
+			if not rock_cell.has_method("set_visual_state"):
+				failures.append("battle feedback: expected board cells to use the custom pseudo-3D cell renderer")
+			elif rock_cell.get("terrain_kind") != "rock":
+				failures.append("battle feedback: expected opening rock cell to use rock visual state")
+
 		scene._set_status("测试长状态：堡垒棋士落子于 E5，意图：防守并延长自己的连线。轮到你了。")
 		scene._show_feedback("测试反馈：堡垒棋士落子 E5。", [], "")
 		scene._show_feedback("测试反馈：己方落子 F6。", [], "")

@@ -28,6 +28,7 @@ const RESULT_BANNER_POP_SECONDS := 0.12
 const RESULT_BANNER_SETTLE_SECONDS := 0.16
 const RESULT_BANNER_POP_SCALE := Vector2(1.018, 1.018)
 const FEEDBACK_FLASH_SECONDS := 0.62
+const BattleCellButtonScript := preload("res://scripts/game/BattleCellButton.gd")
 const SkillExecutorScript := preload("res://scripts/skills/SkillExecutor.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
 const SimpleTonePlayerScript := preload("res://scripts/audio/SimpleTonePlayer.gd")
@@ -603,10 +604,10 @@ func _create_cells() -> void:
 
 		for x in range(BOARD_SIZE):
 			var pos := Vector2i(x, y)
-			var button := Button.new()
+			var button = BattleCellButtonScript.new()
 			button.custom_minimum_size = CELL_SIZE
 			button.focus_mode = Control.FOCUS_NONE
-			button.add_theme_font_size_override("font_size", 21)
+			button.add_theme_font_size_override("font_size", 1)
 			button.add_theme_color_override("font_color", Color("#1c2229"))
 			button.add_theme_color_override("font_hover_color", Color("#1c2229"))
 			button.add_theme_color_override("font_pressed_color", Color("#1c2229"))
@@ -1352,64 +1353,63 @@ func _refresh_board() -> void:
 			var button: Button = cells[y][x]
 			var owner := board.get_piece(pos)
 			var style := empty_style
-			var text_color := Color("#2a2014")
 			var terrain := board.get_terrain(pos)
+			var cell_terrain_kind := BattleCellButtonScript.TERRAIN_NORMAL
+			var cell_piece_kind := BattleCellButtonScript.PIECE_NONE
+			var cell_marker_kind := BattleCellButtonScript.MARK_NONE
+			var cell_feedback_kind := ""
 
 			button.text = ""
 			button.tooltip_text = ""
 
-			if pos == last_move and last_move_owner == BoardState.PLAYER:
-				button.text = "●"
-				text_color = Color("#253844")
-				style = last_player_style
-			elif pos == last_move and last_move_owner == BoardState.ENEMY:
-				button.text = "◆"
-				text_color = Color("#e7eef0")
-				style = last_enemy_style
-			elif owner == BoardState.PLAYER:
-				button.text = "○" if board.is_temporary_piece(pos) else "●"
-				text_color = Color("#253844")
-				style = temporary_player_style if board.is_temporary_piece(pos) else player_style
-			elif owner == BoardState.ENEMY:
-				button.text = "◆"
-				text_color = Color("#e7eef0")
-				style = enemy_style
-			elif terrain == BoardState.TERRAIN_ROCK:
-				button.text = "◼"
-				text_color = Color("#1a1410")
+			if terrain == BoardState.TERRAIN_ROCK:
+				cell_terrain_kind = BattleCellButtonScript.TERRAIN_ROCK
 				style = rock_style
-			elif board.is_sealed(pos):
-				button.text = "◇"
-				text_color = Color("#e8d38a")
-				style = sealed_style
 			elif terrain == BoardState.TERRAIN_SPIRIT:
-				button.text = "✦"
-				text_color = Color("#07382f")
+				cell_terrain_kind = BattleCellButtonScript.TERRAIN_SPIRIT
 				style = spirit_style
 
+			if pos == last_move and last_move_owner == BoardState.PLAYER:
+				cell_piece_kind = BattleCellButtonScript.PIECE_PLAYER
+				style = last_player_style
+			elif pos == last_move and last_move_owner == BoardState.ENEMY:
+				cell_piece_kind = BattleCellButtonScript.PIECE_ENEMY
+				style = last_enemy_style
+			elif owner == BoardState.PLAYER:
+				cell_piece_kind = BattleCellButtonScript.PIECE_PLAYER_TEMP if board.is_temporary_piece(pos) else BattleCellButtonScript.PIECE_PLAYER
+				style = temporary_player_style if board.is_temporary_piece(pos) else player_style
+			elif owner == BoardState.ENEMY:
+				cell_piece_kind = BattleCellButtonScript.PIECE_ENEMY
+				style = enemy_style
+			elif board.is_sealed(pos):
+				cell_marker_kind = BattleCellButtonScript.MARK_SEALED
+				style = sealed_style
+
 			if owner == BoardState.EMPTY and not selected_skill_id.is_empty() and skill_executor.is_valid_target(board, selected_skill_id, pos):
-				if button.text.is_empty():
-					button.text = "◇"
-					text_color = Color("#f4e6ff")
+				cell_marker_kind = BattleCellButtonScript.MARK_SKILL_TARGET
 				style = skill_target_style
 				button.tooltip_text = _format_skill_preview(_preview_skill(selected_skill_id, pos))
 			elif owner == BoardState.EMPTY and pos == warning_target:
-				button.text = "!"
-				text_color = Color("#fff0bf")
+				cell_marker_kind = BattleCellButtonScript.MARK_WARNING
 				style = warning_style
 
 			if winning_line.has(pos):
 				style = win_style
-				text_color = Color("#2a1707")
 
 			if feedback_flashes.has(pos) and not winning_line.has(pos):
+				cell_feedback_kind = feedback_flashes[pos]
 				style = _get_feedback_style(feedback_flashes[pos], style)
 
 			button.disabled = _is_cell_disabled(pos)
-			button.add_theme_color_override("font_color", text_color)
-			button.add_theme_color_override("font_hover_color", text_color)
-			button.add_theme_color_override("font_pressed_color", text_color)
-			button.add_theme_color_override("font_disabled_color", text_color)
+			if button.has_method("set_visual_state"):
+				button.set_visual_state(
+					cell_terrain_kind,
+					cell_piece_kind,
+					cell_marker_kind,
+					winning_line.has(pos),
+					pos == last_move,
+					cell_feedback_kind
+				)
 			button.add_theme_stylebox_override("normal", style)
 			button.add_theme_stylebox_override("hover", style)
 			button.add_theme_stylebox_override("pressed", style)
