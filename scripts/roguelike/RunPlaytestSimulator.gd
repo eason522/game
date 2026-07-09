@@ -105,6 +105,21 @@ func build_demo_acceptance_archive_record(run_state) -> Dictionary:
 	}
 
 
+func persist_demo_acceptance_archive_if_ready(run_state) -> bool:
+	if run_state == null or not run_state.has_method("record_demo_acceptance_archive"):
+		return false
+
+	if run_state.has_method("has_demo_acceptance_archive") and run_state.has_demo_acceptance_archive():
+		return false
+
+	var record := build_demo_acceptance_archive_record(run_state)
+
+	if record.is_empty():
+		return false
+
+	return run_state.record_demo_acceptance_archive(record)
+
+
 func get_demo_acceptance_archive_lines(run_state) -> Array:
 	if run_state == null:
 		return ["Demo 归档记录：暂无 Run 数据，等待完整试玩"]
@@ -124,6 +139,42 @@ func get_demo_acceptance_archive_lines(run_state) -> Array:
 
 	var archive_text := _trim_first_line(get_editor_archive_record_lines(run_state), "编辑器归档：")
 	return ["Demo 归档记录：未归档；%s" % archive_text]
+
+
+func get_demo_archive_review_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary") or not run_state.has_method("get_battle_pacing_records"):
+		return [
+			"Demo 归档复核：暂无 Run 数据，先按演练样本完成一轮",
+			"Demo 归档复核：复核项：样本、Boss 快照、体感、下一步动作",
+		]
+
+	var archive_lines: Array = get_demo_acceptance_archive_lines(run_state)
+	var closeout_lines: Array = get_editor_closeout_packet_lines(run_state)
+	var packet_lines: Array = get_demo_acceptance_packet_lines(run_state)
+	var first_archive := _trim_first_line(archive_lines, "Demo 归档记录：")
+	var next_action := "按编辑器指引继续"
+
+	if closeout_lines.size() > 1:
+		next_action = String(closeout_lines[1]).trim_prefix("编辑器收口包：下一步：")
+	else:
+		next_action = _trim_first_line(get_editor_next_action_lines(run_state), "编辑器指引：")
+
+	if run_state.has_method("has_demo_acceptance_archive") and run_state.has_demo_acceptance_archive():
+		return [
+			"Demo 归档复核：已保存；%s" % first_archive,
+			"Demo 归档复核：下一步：%s" % next_action,
+		]
+
+	if _is_demo_acceptance_ready(run_state):
+		return [
+			"Demo 归档复核：可保存但尚未写入；%s" % first_archive,
+			"Demo 归档复核：动作：回路线图保存归档记录",
+		]
+
+	return [
+		"Demo 归档复核：未闭合；%s" % _trim_first_line(packet_lines, "Demo 验收包："),
+		"Demo 归档复核：下一步：%s" % next_action,
+	]
 
 
 func get_demo_acceptance_rehearsal_lines() -> Array:

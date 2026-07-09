@@ -139,6 +139,9 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 验收包") or not scene.build_summary_label.text.contains("继续试玩；样本 0/4"):
 		failures.append("run map feedback: expected fresh demo acceptance packet to keep the sample open")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 归档复核") or not scene.build_summary_label.text.contains("未闭合"):
+		failures.append("run map feedback: expected fresh archive review to stay open")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 
@@ -564,6 +567,12 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("可交付 Demo 验收体验包") or not scene.build_summary_label.text.contains("归档：可归档 Demo 验收"):
 		failures.append("run map feedback: expected demo acceptance packet to close stable full-run evidence")
+
+	if not scene.run_state.has_demo_acceptance_archive():
+		failures.append("run map feedback: expected stable boss feel to save a demo archive record")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 归档复核") or not scene.build_summary_label.text.contains("已保存"):
+		failures.append("run map feedback: expected stable full-run evidence to show saved archive review")
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)

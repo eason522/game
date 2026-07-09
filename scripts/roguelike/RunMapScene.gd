@@ -636,6 +636,13 @@ func _record_boss_feel_at(index: int) -> void:
 	var option: Dictionary = options[index]
 
 	if run_state.record_boss_opening_feel(option.get("id", "")):
+		var boss_feedback := run_state.last_feedback
+		var boss_feedback_kind := run_state.last_feedback_kind
+
+		if playtest_simulator.persist_demo_acceptance_archive_if_ready(run_state):
+			run_state.last_feedback = "%s Demo 验收归档已保存。" % boss_feedback
+			run_state.last_feedback_kind = boss_feedback_kind
+
 		_persist_run_state()
 		_refresh()
 
@@ -741,6 +748,7 @@ func _refresh_build_summary() -> void:
 	var editor_closeout_packet_lines := playtest_simulator.get_editor_closeout_packet_lines(run_state)
 	var demo_acceptance_rehearsal_lines := playtest_simulator.get_demo_acceptance_rehearsal_lines()
 	var demo_acceptance_packet_lines := playtest_simulator.get_demo_acceptance_packet_lines(run_state)
+	var demo_archive_review_lines := playtest_simulator.get_demo_archive_review_lines(run_state)
 	var boss_validation_lines := playtest_simulator.get_boss_pressure_validation_lines(run_state)
 	var boss_observation_lines := run_state.get_boss_opening_observation_lines()
 	var boss_pressure_lines := run_state.get_boss_opening_pressure_lines()
@@ -775,6 +783,7 @@ func _refresh_build_summary() -> void:
 	]
 	build_summary_label.text += "\n%s" % " / ".join(demo_acceptance_rehearsal_lines)
 	build_summary_label.text += "\n%s" % " / ".join(demo_acceptance_packet_lines)
+	build_summary_label.text += "\n%s" % " / ".join(demo_archive_review_lines)
 	build_summary_label.text += "\n%s" % " / ".join(boss_validation_lines)
 
 

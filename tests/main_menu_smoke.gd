@@ -88,6 +88,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单体验包") or not scene.summary_label.text.contains("未开始；样本 0/4"):
 		failures.append("main menu: expected no-save demo acceptance packet line")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单复核") or not scene.summary_label.text.contains("暂无 Run 数据"):
+		failures.append("main menu: expected no-save archive review line")
+
 	var run_state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
 	RunSaveScript.save_state(run_state)
 	scene._refresh_continue_state()
@@ -144,6 +147,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单体验包") or not scene.summary_label.text.contains("继续试玩；样本 0/4"):
 		failures.append("main menu: expected saved-run demo acceptance packet to keep the sample open")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单复核") or not scene.summary_label.text.contains("未闭合"):
+		failures.append("main menu: expected saved-run archive review to stay open")
 
 	run_state.resolve_current_node(true, [{
 		"id": "smoke_reward",
@@ -272,6 +278,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("记录：已保存 Demo 验收通过"):
 		failures.append("main menu: expected accepted run demo archive record on the menu")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单复核") or not scene.summary_label.text.contains("已保存"):
+		failures.append("main menu: expected accepted run archive review on the menu")
 
 	scene.queue_free()
 	RunSaveScript.delete_save()

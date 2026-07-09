@@ -67,6 +67,9 @@ func _run() -> void:
 	if menu.summary_label == null or not menu.summary_label.text.contains("主菜单体验包") or not menu.summary_label.text.contains("可交付 Demo 验收体验包"):
 		failures.append("demo acceptance flow: expected main menu to show accepted demo packet")
 
+	if menu.summary_label == null or not menu.summary_label.text.contains("主菜单复核") or not menu.summary_label.text.contains("已保存"):
+		failures.append("demo acceptance flow: expected main menu to show saved archive review")
+
 	menu.queue_free()
 	await process_frame
 
@@ -94,6 +97,9 @@ func _run() -> void:
 
 	if run_map.build_summary_label == null or not run_map.build_summary_label.text.contains("保持当前数值并归档"):
 		failures.append("demo acceptance flow: expected accepted packet to preserve archive next action")
+
+	if run_map.build_summary_label == null or not run_map.build_summary_label.text.contains("Demo 归档复核") or not run_map.build_summary_label.text.contains("已保存"):
+		failures.append("demo acceptance flow: expected run map to show saved archive review")
 
 	run_map.queue_free()
 	RunSaveScript.delete_save()
