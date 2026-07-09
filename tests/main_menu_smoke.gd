@@ -64,6 +64,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单 Boss 关注") or not scene.summary_label.text.contains("先推进到休息点"):
 		failures.append("main menu: expected no-save boss focus line")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档") or not scene.summary_label.text.contains("暂无 Run 数据"):
+		failures.append("main menu: expected no-save archive and excerpt line")
+
 	var run_state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
 	RunSaveScript.save_state(run_state)
 	scene._refresh_continue_state()
@@ -97,6 +100,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单 Boss 关注") or not scene.summary_label.text.contains("尚未验证静息调气"):
 		failures.append("main menu: expected saved-run boss focus line")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档") or not scene.summary_label.text.contains("等待首战记录"):
+		failures.append("main menu: expected saved-run archive line to wait for the first battle")
+
 	run_state.resolve_current_node(true, [{
 		"id": "smoke_reward",
 		"title": "测试奖励",
@@ -120,6 +126,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单检查") or not scene.summary_label.text.contains("继续补齐完整 Run 实测 1/4 场"):
 		failures.append("main menu: expected checklist to reflect partial live run progress")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档") or not scene.summary_label.text.contains("样本 1/4 未齐"):
+		failures.append("main menu: expected archive line to keep partial saved runs open")
+
 	run_state.pending_rewards.clear()
 	run_state.pending_reward_node_index = -1
 	run_state.run_completed = true
@@ -135,6 +144,50 @@ func _run() -> void:
 
 	if scene.continue_button == null or not scene.continue_button.text.contains("查看验收结果"):
 		failures.append("main menu: expected accepted run to point at acceptance review")
+
+	var accepted_state = scene.playtest_simulator.run_baseline().get("state")
+	accepted_state.record_boss_opening_observation({
+		"enemy": "岩王",
+		"total_moves": 5,
+		"snapshots": [
+			{
+				"move_count": 1,
+				"actor": "己方",
+				"position": "F6",
+				"player_energy": 3,
+				"rock_count": 6,
+				"playable_count": 114,
+				"focus": "开局岩阵",
+			},
+			{
+				"move_count": 3,
+				"actor": "己方",
+				"position": "F7",
+				"player_energy": 4,
+				"rock_count": 6,
+				"playable_count": 113,
+				"focus": "能量与岩阵",
+			},
+			{
+				"move_count": 5,
+				"actor": "己方",
+				"position": "G7",
+				"player_energy": 4,
+				"rock_count": 6,
+				"playable_count": 112,
+				"focus": "反制点",
+			},
+		],
+	})
+	accepted_state.record_boss_opening_feel(RunStateScript.BOSS_OPENING_FEEL_STABLE)
+	RunSaveScript.save_state(accepted_state)
+	scene._refresh_continue_state()
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档") or not scene.summary_label.text.contains("可归档 Demo 验收"):
+		failures.append("main menu: expected accepted run archive result on the menu")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("摘录：Demo 验收通过"):
+		failures.append("main menu: expected accepted run recap excerpt on the menu")
 
 	scene.queue_free()
 	RunSaveScript.delete_save()
