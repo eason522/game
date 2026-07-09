@@ -61,6 +61,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单检查") or not scene.summary_label.text.contains("先完成首场战斗"):
 		failures.append("main menu: expected no-save playtest checklist line")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单 Boss 关注") or not scene.summary_label.text.contains("先推进到休息点"):
+		failures.append("main menu: expected no-save boss focus line")
+
 	var run_state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
 	RunSaveScript.save_state(run_state)
 	scene._refresh_continue_state()
@@ -90,6 +93,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单检查") or not scene.summary_label.text.contains("先完成首场战斗"):
 		failures.append("main menu: expected saved-run playtest checklist line")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单 Boss 关注") or not scene.summary_label.text.contains("尚未验证静息调气"):
+		failures.append("main menu: expected saved-run boss focus line")
 
 	run_state.resolve_current_node(true, [{
 		"id": "smoke_reward",
