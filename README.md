@@ -67,6 +67,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - stable completed Demo runs now save the Demo archive record when the Boss feel button closes the evidence loop
 - main menu and the run map now show a Demo archive review packet that distinguishes saved archives, still-open samples, and the exact next review action
 - Demo archive records now include a deterministic review signature plus a closed-evidence summary, and the main menu and run map show the archive audit before a real editor acceptance rerun
+- main menu and the run map now show a Demo editor rerun pack that combines visual checks, the full acceptance sequence, current status, archive review, and saved signature
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement
@@ -90,9 +91,9 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - display smoke tests for reward build summaries, effect descriptions, stack-limit text, and exclusive-group text
 - settlement feedback smoke tests for victory, reward-claim, route-choice, and save roundtrips
 - battle feedback smoke tests for action logs, cell flashes, result banners, generated board and token texture loading, polished board frame, refined legend copy, zero-gap continuous board material, no per-tile button shadows, and pseudo-3D rock visual state
-- main menu smoke tests for default project entry, save-aware continue state, demo entry buttons, saved-run progress, saved-run closeout overview, state-aware continue action labels, the live-run launch check, the baseline playtest line, the live checklist action, the Boss focus line, the Boss snapshot line, the evidence line, the acceptance gate line, the acceptance note line, the archive/recap line, the closeout line, the Demo acceptance packet, the Demo archive review packet, and the archive audit signature
-- run map feedback smoke tests for typed settlement labels, tone triggers, live playtest checklist/verdict/review/Boss validation display, Boss snapshot pressure assessment, rest-focus feel audit, editor acceptance gates, editor next-action/evidence/note/archive/recap/closeout-packet guidance, Demo acceptance packet states, Demo archive review/audit states, priority verdicts, Boss feel recording, and tuning candidate display
-- demo acceptance flow smoke tests for the stable rehearsal sample, save restore, main-menu review state, run-map acceptance packet, Boss feel/archive preservation, archive review/audit display, archive signature preservation, and archive next action
+- main menu smoke tests for default project entry, save-aware continue state, demo entry buttons, saved-run progress, saved-run closeout overview, state-aware continue action labels, the live-run launch check, the baseline playtest line, the live checklist action, the Boss focus line, the Boss snapshot line, the evidence line, the acceptance gate line, the acceptance note line, the archive/recap line, the closeout line, the Demo acceptance packet, the Demo archive review packet, the archive audit signature, and the editor rerun pack
+- run map feedback smoke tests for typed settlement labels, tone triggers, live playtest checklist/verdict/review/Boss validation display, Boss snapshot pressure assessment, rest-focus feel audit, editor acceptance gates, editor next-action/evidence/note/archive/recap/closeout-packet guidance, Demo acceptance packet states, Demo archive review/audit states, editor rerun pack states, priority verdicts, Boss feel recording, and tuning candidate display
+- demo acceptance flow smoke tests for the stable rehearsal sample, save restore, main-menu review state, run-map acceptance packet, Boss feel/archive preservation, archive review/audit display, archive signature preservation, editor rerun pack preservation, and archive next action
 
 ## Run Locally
 

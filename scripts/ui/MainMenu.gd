@@ -178,6 +178,7 @@ func _refresh_continue_state() -> void:
 			_get_main_menu_demo_packet_line(resume_state),
 			_get_main_menu_archive_review_line(resume_state),
 			_get_main_menu_archive_audit_line(resume_state),
+			_get_main_menu_editor_runbook_line(resume_state),
 		])
 	else:
 		continue_button.text = "继续 Run"
@@ -200,6 +201,7 @@ func _refresh_continue_state() -> void:
 			_get_main_menu_demo_packet_line(null),
 			_get_main_menu_archive_review_line(null),
 			_get_main_menu_archive_audit_line(null),
+			_get_main_menu_editor_runbook_line(null),
 		])
 
 
@@ -362,6 +364,16 @@ func _get_main_menu_archive_audit_line(run_state) -> String:
 		trimmed_lines.append(String(line).trim_prefix("Demo 归档校验："))
 
 	return "主菜单归档校验：%s" % " / ".join(trimmed_lines)
+
+
+func _get_main_menu_editor_runbook_line(run_state) -> String:
+	var runbook_lines: Array = playtest_simulator.get_demo_editor_validation_runbook_lines(run_state)
+	var trimmed_lines: Array = []
+
+	for line in runbook_lines:
+		trimmed_lines.append(String(line).trim_prefix("Demo 实机复跑包："))
+
+	return "主菜单复跑：%s" % " / ".join(trimmed_lines)
 
 
 func _resume_button_text(run_state) -> String:

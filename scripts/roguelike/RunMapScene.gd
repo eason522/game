@@ -750,6 +750,7 @@ func _refresh_build_summary() -> void:
 	var demo_acceptance_packet_lines := playtest_simulator.get_demo_acceptance_packet_lines(run_state)
 	var demo_archive_review_lines := playtest_simulator.get_demo_archive_review_lines(run_state)
 	var demo_archive_audit_lines := playtest_simulator.get_demo_archive_audit_lines(run_state)
+	var demo_editor_runbook_lines := playtest_simulator.get_demo_editor_validation_runbook_lines(run_state)
 	var boss_validation_lines := playtest_simulator.get_boss_pressure_validation_lines(run_state)
 	var boss_observation_lines := run_state.get_boss_opening_observation_lines()
 	var boss_pressure_lines := run_state.get_boss_opening_pressure_lines()
@@ -786,6 +787,7 @@ func _refresh_build_summary() -> void:
 	build_summary_label.text += "\n%s" % " / ".join(demo_acceptance_packet_lines)
 	build_summary_label.text += "\n%s" % " / ".join(demo_archive_review_lines)
 	build_summary_label.text += "\n%s" % " / ".join(demo_archive_audit_lines)
+	build_summary_label.text += "\n%s" % " / ".join(demo_editor_runbook_lines)
 	build_summary_label.text += "\n%s" % " / ".join(boss_validation_lines)
 
 

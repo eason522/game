@@ -233,6 +233,42 @@ func get_demo_acceptance_rehearsal_lines() -> Array:
 	]
 
 
+func get_demo_editor_validation_runbook_lines(run_state) -> Array:
+	var sequence := "主菜单演练参照 -> 主菜单体验包 -> 主菜单归档复核 -> 主菜单归档校验 -> 路线侧栏 Demo 验收包 -> Boss 体感按钮 -> 自动保存归档 -> 归档复核结论 -> 归档校验签名"
+	var visual_check := "从主菜单进战斗后先看生图棋盘底图、生图动态元素、精确棋线、玉子/墨子、岩石、灵脉、封手、预警和术法目标是否统一"
+
+	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
+		return [
+			"Demo 实机复跑包：视觉：%s" % visual_check,
+			"Demo 实机复跑包：流程：%s" % sequence,
+			"Demo 实机复跑包：归档：暂无 Run 数据，先按演练参照开新 Run",
+		]
+
+	var packet_status := _trim_first_line(get_demo_acceptance_packet_lines(run_state), "Demo 验收包：")
+	var review_status := _trim_first_line(get_demo_archive_review_lines(run_state), "Demo 归档复核：")
+	var audit_status := _trim_first_line(get_demo_archive_audit_lines(run_state), "Demo 归档校验：")
+	var next_action := _trim_first_line(get_editor_next_action_lines(run_state), "编辑器指引：")
+
+	if run_state.has_method("has_demo_acceptance_archive") and run_state.has_demo_acceptance_archive():
+		var record: Dictionary = run_state.demo_acceptance_archive
+		next_action = record.get("review_next_action", record.get("next_action", next_action))
+		return [
+			"Demo 实机复跑包：视觉：%s" % visual_check,
+			"Demo 实机复跑包：流程：%s" % sequence,
+			"Demo 实机复跑包：归档：已保存签名 %s；%s；下一步：%s" % [
+				record.get("review_id", "DEMO-REVIEW-PENDING"),
+				record.get("review_summary", "证据闭合状态待复核"),
+				next_action,
+			],
+		]
+
+	return [
+		"Demo 实机复跑包：视觉：%s" % visual_check,
+		"Demo 实机复跑包：流程：%s；当前：%s；下一步：%s" % [sequence, packet_status, next_action],
+		"Demo 实机复跑包：归档：%s；校验：%s" % [review_status, audit_status],
+	]
+
+
 func compare_run_to_baseline(run_state) -> Dictionary:
 	if run_state == null or not run_state.has_method("get_run_pacing_summary") or not run_state.has_method("get_battle_pacing_records"):
 		return {

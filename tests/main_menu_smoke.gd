@@ -94,6 +94,12 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档校验") or not scene.summary_label.text.contains("暂无归档签名"):
 		failures.append("main menu: expected no-save archive audit line")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单复跑") or not scene.summary_label.text.contains("生图棋盘底图"):
+		failures.append("main menu: expected no-save editor rerun pack to include visual checks")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单复跑") or not scene.summary_label.text.contains("主菜单演练参照 -> 主菜单体验包"):
+		failures.append("main menu: expected no-save editor rerun pack to include the acceptance sequence")
+
 	var run_state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
 	RunSaveScript.save_state(run_state)
 	scene._refresh_continue_state()
@@ -156,6 +162,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档校验") or not scene.summary_label.text.contains("暂不生成归档签名"):
 		failures.append("main menu: expected saved-run archive audit to wait for closed evidence")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单复跑") or not scene.summary_label.text.contains("继续试玩；样本 0/4"):
+		failures.append("main menu: expected saved-run rerun pack to show the current acceptance status")
 
 	run_state.resolve_current_node(true, [{
 		"id": "smoke_reward",
@@ -290,6 +299,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档校验") or not scene.summary_label.text.contains("签名 DEMO-"):
 		failures.append("main menu: expected accepted run archive audit signature on the menu")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单复跑") or not scene.summary_label.text.contains("已保存签名 DEMO-"):
+		failures.append("main menu: expected accepted run rerun pack to preserve the archive signature")
 
 	scene.queue_free()
 	RunSaveScript.delete_save()

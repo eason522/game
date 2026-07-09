@@ -145,6 +145,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 归档校验") or not scene.build_summary_label.text.contains("暂不生成归档签名"):
 		failures.append("run map feedback: expected fresh archive audit to wait for closed evidence")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 实机复跑包") or not scene.build_summary_label.text.contains("生图棋盘底图"):
+		failures.append("run map feedback: expected fresh editor rerun pack to include visual checks")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 实机复跑包") or not scene.build_summary_label.text.contains("主菜单演练参照 -> 主菜单体验包"):
+		failures.append("run map feedback: expected fresh editor rerun pack to include the acceptance sequence")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 
@@ -579,6 +585,9 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 归档校验") or not scene.build_summary_label.text.contains("签名 DEMO-"):
 		failures.append("run map feedback: expected stable full-run evidence to show archive audit signature")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 实机复跑包") or not scene.build_summary_label.text.contains("已保存签名 DEMO-"):
+		failures.append("run map feedback: expected stable editor rerun pack to preserve the archive signature")
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)
