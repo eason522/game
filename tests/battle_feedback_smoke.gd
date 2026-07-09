@@ -90,6 +90,12 @@ func _run() -> void:
 			if first_cell_style == null or first_cell_style.shadow_size <= 0:
 				failures.append("battle feedback: expected board cells to use material-style shadow")
 
+			if scene.board_grid.get_theme_constant("h_separation") > 2 or scene.board_grid.get_theme_constant("v_separation") > 2:
+				failures.append("battle feedback: expected tightened board gaps for a single-board material feel")
+
+			if not first_cell.has_method("get_material_tier") or first_cell.get_material_tier() != "inset_board_v2":
+				failures.append("battle feedback: expected inset board material renderer v2")
+
 			var rock_cell = scene.cells[3][3]
 
 			if not rock_cell.has_method("set_visual_state"):
