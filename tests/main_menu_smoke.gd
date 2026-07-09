@@ -100,6 +100,12 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单复跑") or not scene.summary_label.text.contains("主菜单演练参照 -> 主菜单体验包"):
 		failures.append("main menu: expected no-save editor rerun pack to include the acceptance sequence")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单预检") or not scene.summary_label.text.contains("路线节点列表和右侧验收长栏已接入滚动"):
+		failures.append("main menu: expected no-save preflight pack to include scroll checks")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单预检") or not scene.summary_label.text.contains("棋盘底图 OK") or not scene.summary_label.text.contains("动态元素图集 OK"):
+		failures.append("main menu: expected no-save preflight pack to verify generated art assets")
+
 	var run_state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
 	RunSaveScript.save_state(run_state)
 	scene._refresh_continue_state()
@@ -165,6 +171,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单复跑") or not scene.summary_label.text.contains("继续试玩；样本 0/4"):
 		failures.append("main menu: expected saved-run rerun pack to show the current acceptance status")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单预检") or not scene.summary_label.text.contains("继续试玩；样本 0/4"):
+		failures.append("main menu: expected saved-run preflight pack to show current acceptance status")
 
 	run_state.resolve_current_node(true, [{
 		"id": "smoke_reward",
@@ -302,6 +311,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单复跑") or not scene.summary_label.text.contains("已保存签名 DEMO-"):
 		failures.append("main menu: expected accepted run rerun pack to preserve the archive signature")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单预检") or not scene.summary_label.text.contains("已保存签名 DEMO-"):
+		failures.append("main menu: expected accepted run preflight pack to preserve the archive signature")
 
 	scene.queue_free()
 	RunSaveScript.delete_save()

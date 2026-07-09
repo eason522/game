@@ -4,6 +4,8 @@ extends RefCounted
 const MapGeneratorScript := preload("res://scripts/roguelike/MapGenerator.gd")
 const RewardGeneratorScript := preload("res://scripts/roguelike/RewardGenerator.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
+const DEMO_BOARD_FRAME_PATH := "res://assets/board/battle_board_frame_v1.png"
+const DEMO_TOKEN_SHEET_PATH := "res://assets/tokens/battle_tokens_sheet_v1.png"
 
 
 func run_baseline(actual_turn_counts: Array = []) -> Dictionary:
@@ -266,6 +268,45 @@ func get_demo_editor_validation_runbook_lines(run_state) -> Array:
 		"Demo 实机复跑包：视觉：%s" % visual_check,
 		"Demo 实机复跑包：流程：%s；当前：%s；下一步：%s" % [sequence, packet_status, next_action],
 		"Demo 实机复跑包：归档：%s；校验：%s" % [review_status, audit_status],
+	]
+
+
+func get_demo_editor_preflight_lines(run_state) -> Array:
+	var scroll_status := "路线节点列表和右侧验收长栏已接入滚动，先在小窗口拖动确认 Boss 节点与归档证据不被裁切"
+	var board_status := "棋盘底图 OK" if ResourceLoader.exists(DEMO_BOARD_FRAME_PATH) else "棋盘底图缺失"
+	var token_status := "动态元素图集 OK" if ResourceLoader.exists(DEMO_TOKEN_SHEET_PATH) else "动态元素图集缺失"
+	var asset_status := "%s；%s；进战斗后复核精确棋线、玉子/墨子、岩石、灵脉、封手、预警和术法目标" % [board_status, token_status]
+	var sequence_status := "从主菜单演练参照开始，再到路线侧栏 Demo 验收包、Boss 体感按钮、自动归档和签名校验"
+
+	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
+		return [
+			"Demo 复跑预检：界面：%s" % scroll_status,
+			"Demo 复跑预检：美术：%s" % asset_status,
+			"Demo 复跑预检：流程：暂无 Run 数据，按演练参照开新 Run；%s" % sequence_status,
+			"Demo 复跑预检：归档：暂无归档签名，完整 Run 结束并记录 Boss 体感后再校验",
+		]
+
+	var packet_status := _trim_first_line(get_demo_acceptance_packet_lines(run_state), "Demo 验收包：")
+	var next_action := _trim_first_line(get_editor_next_action_lines(run_state), "编辑器指引：")
+	var audit_status := _trim_first_line(get_demo_archive_audit_lines(run_state), "Demo 归档校验：")
+
+	if run_state.has_method("has_demo_acceptance_archive") and run_state.has_demo_acceptance_archive():
+		var record: Dictionary = run_state.demo_acceptance_archive
+		return [
+			"Demo 复跑预检：界面：%s" % scroll_status,
+			"Demo 复跑预检：美术：%s" % asset_status,
+			"Demo 复跑预检：流程：已闭合；下次按签名复核同一套演练、路线侧栏和 Boss 证据",
+			"Demo 复跑预检：归档：已保存签名 %s；%s" % [
+				record.get("review_id", "DEMO-REVIEW-PENDING"),
+				record.get("review_next_action", record.get("next_action", "保持当前记录")),
+			],
+		]
+
+	return [
+		"Demo 复跑预检：界面：%s" % scroll_status,
+		"Demo 复跑预检：美术：%s" % asset_status,
+		"Demo 复跑预检：流程：%s；下一步：%s" % [packet_status, next_action],
+		"Demo 复跑预检：归档：%s" % audit_status,
 	]
 
 

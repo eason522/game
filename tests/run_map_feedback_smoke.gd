@@ -162,6 +162,12 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 实机复跑包") or not scene.build_summary_label.text.contains("主菜单演练参照 -> 主菜单体验包"):
 		failures.append("run map feedback: expected fresh editor rerun pack to include the acceptance sequence")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 复跑预检") or not scene.build_summary_label.text.contains("路线节点列表和右侧验收长栏已接入滚动"):
+		failures.append("run map feedback: expected fresh preflight pack to include scroll checks")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 复跑预检") or not scene.build_summary_label.text.contains("棋盘底图 OK") or not scene.build_summary_label.text.contains("动态元素图集 OK"):
+		failures.append("run map feedback: expected fresh preflight pack to verify generated art assets")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 
