@@ -52,6 +52,7 @@ var turn_rhythm_label: Label
 var move_count_label: Label
 var energy_label: Label
 var tutorial_hint_label: Label
+var demo_visual_acceptance_label: Label
 var enemy_profile_label: Label
 var enemy_intent_hint_label: Label
 var board_grid: GridContainer
@@ -348,6 +349,21 @@ func _build_layout() -> void:
 	result_banner_label.add_theme_stylebox_override("normal", status_panel_style)
 	result_banner_label.z_index = 10
 	add_child(result_banner_label)
+
+	demo_visual_acceptance_label = Label.new()
+	demo_visual_acceptance_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	demo_visual_acceptance_label.offset_left = 300
+	demo_visual_acceptance_label.offset_top = 66
+	demo_visual_acceptance_label.offset_right = -200
+	demo_visual_acceptance_label.offset_bottom = 92
+	demo_visual_acceptance_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	demo_visual_acceptance_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	demo_visual_acceptance_label.clip_text = true
+	demo_visual_acceptance_label.add_theme_font_size_override("font_size", 13)
+	demo_visual_acceptance_label.add_theme_color_override("font_color", Color("#cde8df"))
+	demo_visual_acceptance_label.add_theme_stylebox_override("normal", _make_panel_style(Color("#18282c"), Color("#4a6a72"), 1, 6, 2))
+	demo_visual_acceptance_label.z_index = 6
+	add_child(demo_visual_acceptance_label)
 
 	var board_panel := PanelContainer.new()
 	board_panel.add_theme_stylebox_override("panel", board_panel_style)
@@ -1547,6 +1563,8 @@ func _refresh_info_labels() -> void:
 	if tutorial_hint_label != null:
 		tutorial_hint_label.visible = tutorial_hints_enabled
 		tutorial_hint_label.text = _battle_tutorial_hint() if tutorial_hints_enabled else ""
+	if demo_visual_acceptance_label != null:
+		demo_visual_acceptance_label.text = _demo_visual_acceptance_text()
 	enemy_profile_label.text = "%s\n%s" % [enemy_ai.get_profile_name(), enemy_ai.get_profile_intent()]
 	enemy_intent_hint_label.text = enemy_intent_hint
 
@@ -1588,6 +1606,19 @@ func _battle_tutorial_hint() -> String:
 		return "入门提示：能量足够时可先用术法制造威胁，再落子连线。"
 
 	return "入门提示：目标是连成五子；看到敌方四连时，优先封堵关键点。"
+
+
+func _demo_visual_acceptance_text() -> String:
+	var board_status := "底图 OK" if board_texture_rect != null and board_texture_rect.texture != null else "底图缺失"
+	var token_status := "动态元素图集 OK" if token_sheet_texture != null else "动态元素图集缺失"
+	var grid_status := "精确棋线 %dx%d，零格缝" % [BOARD_SIZE, BOARD_SIZE] if board_grid != null and board_grid.get_theme_constant("h_separation") == 0 and board_grid.get_theme_constant("v_separation") == 0 else "棋线/格缝待复核"
+	var boss_status := "Boss 前 5 手观察：开启" if _is_rock_boss_battle() else "Boss 前 5 手观察：非 Boss 可跳过"
+	return "Demo 视觉验收：%s；%s；%s；玉子/墨子、岩石、灵脉、封手/预警/术法目标同图集复核；%s。" % [
+		board_status,
+		token_status,
+		grid_status,
+		boss_status,
+	]
 
 
 func _boss_opening_observation_hint() -> String:

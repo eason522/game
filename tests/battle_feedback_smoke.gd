@@ -144,11 +144,29 @@ func _run() -> void:
 	elif not scene.tutorial_hint_label.text.contains("中心灵脉"):
 		failures.append("battle feedback: expected opening tutorial hint to mention center spirit cells")
 
+	if scene.demo_visual_acceptance_label == null:
+		failures.append("battle feedback: expected demo visual acceptance label to exist")
+	else:
+		if not scene.demo_visual_acceptance_label.text.contains("Demo 视觉验收"):
+			failures.append("battle feedback: expected visual acceptance line title")
+
+		if not scene.demo_visual_acceptance_label.text.contains("底图 OK") or not scene.demo_visual_acceptance_label.text.contains("动态元素图集 OK"):
+			failures.append("battle feedback: expected visual acceptance line to verify generated assets")
+
+		if not scene.demo_visual_acceptance_label.text.contains("精确棋线 11x11") or not scene.demo_visual_acceptance_label.text.contains("玉子/墨子"):
+			failures.append("battle feedback: expected visual acceptance line to summarize board and token checks")
+
+		if not scene.demo_visual_acceptance_label.text.contains("非 Boss 可跳过"):
+			failures.append("battle feedback: expected visual acceptance line to mark normal battles as non-boss")
+
 	scene.enemy_ai.set_profile(EnemyAI.PROFILE_ROCK_BOSS)
 	scene.move_count = 0
 	scene.current_turn = BoardState.PLAYER
 	scene.game_over = false
 	scene._refresh_info_labels()
+
+	if scene.demo_visual_acceptance_label == null or not scene.demo_visual_acceptance_label.text.contains("Boss 前 5 手观察：开启"):
+		failures.append("battle feedback: expected visual acceptance line to enable boss opening observation")
 
 	if scene.tutorial_hint_label == null or not scene.tutorial_hint_label.text.contains("Boss 前 5 手观察") or not scene.tutorial_hint_label.text.contains("岩阵"):
 		failures.append("battle feedback: expected rock boss opening hint to guide first-five-turn observation")
