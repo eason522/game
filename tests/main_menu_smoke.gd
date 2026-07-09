@@ -44,6 +44,9 @@ func _run() -> void:
 	if scene.status_label == null or not scene.status_label.text.contains("暂无存档"):
 		failures.append("main menu: expected no-save status text")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单速览") or not scene.summary_label.text.contains("等待首战记录"):
+		failures.append("main menu: expected no-save playtest overview")
+
 	var run_state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
 	RunSaveScript.save_state(run_state)
 	scene._refresh_continue_state()
@@ -53,6 +56,12 @@ func _run() -> void:
 
 	if scene.status_label == null or not scene.status_label.text.contains("可继续"):
 		failures.append("main menu: expected continue status text")
+
+	if scene.status_label == null or not scene.status_label.text.contains("进入试锋之局"):
+		failures.append("main menu: expected continue status to show editor next action")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("编辑器收口包") or not scene.summary_label.text.contains("等待首战记录"):
+		failures.append("main menu: expected save-aware editor closeout overview")
 
 	scene.queue_free()
 	RunSaveScript.delete_save()

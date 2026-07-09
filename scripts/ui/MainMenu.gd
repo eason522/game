@@ -4,13 +4,17 @@ const RUN_STATE_META := "tymj_run_state"
 const RUN_MAP_SCENE_PATH := "res://scenes/roguelike/RunMapScene.tscn"
 const BATTLE_SCENE_PATH := "res://scenes/game/BattleScene.tscn"
 const RunSaveScript := preload("res://scripts/roguelike/RunSave.gd")
+const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
+const RunPlaytestSimulatorScript := preload("res://scripts/roguelike/RunPlaytestSimulator.gd")
 
 var title_label: Label
 var subtitle_label: Label
+var summary_label: Label
 var status_label: Label
 var start_button: Button
 var continue_button: Button
 var battle_button: Button
+var playtest_simulator := RunPlaytestSimulatorScript.new()
 var panel_style: StyleBoxFlat
 var button_style: StyleBoxFlat
 var button_hover_style: StyleBoxFlat
@@ -88,12 +92,11 @@ func _build_layout() -> void:
 	summary_panel.custom_minimum_size = Vector2(0, 156)
 	left.add_child(summary_panel)
 
-	var summary := Label.new()
-	summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	summary.add_theme_font_size_override("font_size", 16)
-	summary.add_theme_color_override("font_color", Color("#cde8df"))
-	summary.text = "当前目标：完成一轮从试锋之局到岩王的 Roguelike Run。\n验收重点：记录实测手数、Boss 前 5 手快照、静息调气体感与编辑器收口包。"
-	summary_panel.add_child(summary)
+	summary_label = Label.new()
+	summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	summary_label.add_theme_font_size_override("font_size", 16)
+	summary_label.add_theme_color_override("font_color", Color("#cde8df"))
+	summary_panel.add_child(summary_label)
 
 	var right_panel := PanelContainer.new()
 	right_panel.custom_minimum_size = Vector2(360, 0)
@@ -147,9 +150,49 @@ func _make_action_button(text: String) -> Button:
 
 
 func _refresh_continue_state() -> void:
-	var has_run := get_tree().root.has_meta(RUN_STATE_META) or RunSaveScript.has_save()
+	var resume_state = _load_resume_state()
+	var has_run := resume_state != null
 	continue_button.disabled = not has_run
-	status_label.text = "检测到可继续的 Run。" if has_run else "暂无存档，从新的 Run 开始。"
+
+	if has_run:
+		var next_action_lines: Array = playtest_simulator.get_editor_next_action_lines(resume_state)
+		var closeout_lines: Array = playtest_simulator.get_editor_closeout_packet_lines(resume_state)
+		status_label.text = "检测到可继续的 Run。\n%s" % _first_line(next_action_lines)
+		summary_label.text = "%s\n主菜单速览：%s" % [_base_summary_text(), " / ".join(closeout_lines)]
+	else:
+		status_label.text = "暂无存档，从新的 Run 开始。"
+		summary_label.text = "%s\n主菜单速览：等待首战记录。" % _base_summary_text()
+
+
+func _base_summary_text() -> String:
+	return "当前目标：完成一轮从试锋之局到岩王的 Roguelike Run。\n验收重点：记录实测手数、Boss 前 5 手快照、静息调气体感与编辑器收口包。"
+
+
+func _load_resume_state():
+	var data := {}
+
+	if get_tree().root.has_meta(RUN_STATE_META):
+		var root_state = get_tree().root.get_meta(RUN_STATE_META)
+
+		if typeof(root_state) == TYPE_DICTIONARY:
+			data = root_state
+
+	if data.is_empty() and RunSaveScript.has_save():
+		data = RunSaveScript.load_dict()
+
+	if data.is_empty():
+		return null
+
+	var state := RunStateScript.new()
+	state.load_from_dict(data)
+	return state
+
+
+func _first_line(lines: Array) -> String:
+	if lines.is_empty():
+		return "编辑器指引：从路线图开始完整 Run"
+
+	return String(lines[0])
 
 
 func _start_new_run() -> void:

@@ -43,6 +43,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - run map now includes an editor recap excerpt that condenses the current live run into a copyable one-line playtest note
 - run map now includes an editor closeout packet that pairs the live-run verdict with the exact next action: archive, record Boss feel, run Boss-only review, or keep the sample open
 - demo now starts from a main menu with continue, new-run, and single-battle entry points
+- main menu now previews the saved Run's editor next action and closeout packet before continuing a live playtest
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement
@@ -66,14 +67,14 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - display smoke tests for reward build summaries, effect descriptions, stack-limit text, and exclusive-group text
 - settlement feedback smoke tests for victory, reward-claim, route-choice, and save roundtrips
 - battle feedback smoke tests for action logs, cell flashes, and result banners
-- main menu smoke tests for default project entry, save-aware continue state, and demo entry buttons
+- main menu smoke tests for default project entry, save-aware continue state, demo entry buttons, and saved-run closeout overview
 - run map feedback smoke tests for typed settlement labels, tone triggers, live playtest checklist/verdict/review/Boss validation display, Boss snapshot pressure assessment, rest-focus feel audit, editor acceptance gates, editor next-action/evidence/note/archive/recap/closeout-packet guidance, priority verdicts, Boss feel recording, and tuning candidate display
 
 ## Run Locally
 
 1. Install Godot 4.x.
 2. Open this repository folder in Godot.
-3. Press Play to start at `scenes/ui/MainMenu.tscn`. The menu can continue a saved Run, start a new Run, or open `scenes/game/BattleScene.tscn` for a single battle.
+3. Press Play to start at `scenes/ui/MainMenu.tscn`. The menu can continue a saved Run, preview its editor next action and closeout packet, start a new Run, or open `scenes/game/BattleScene.tscn` for a single battle.
 
 On this machine Godot 4.7 is installed through WinGet. `godot` and `godot4` command shims are available from `C:\Users\eason\bin`.
 
