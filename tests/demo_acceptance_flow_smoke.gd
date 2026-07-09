@@ -38,6 +38,9 @@ func _run() -> void:
 		if not accepted_state.has_demo_acceptance_archive():
 			failures.append("demo acceptance flow: expected accepted sample to save a demo archive record")
 
+		if not accepted_state.demo_acceptance_archive.get("review_id", "").begins_with("DEMO-"):
+			failures.append("demo acceptance flow: expected accepted sample to save an archive review signature")
+
 		if " / ".join(packet_lines).find("可交付 Demo 验收体验包") == -1:
 			failures.append("demo acceptance flow: expected simulator packet to mark the sample deliverable")
 
@@ -54,6 +57,9 @@ func _run() -> void:
 		if saved_dict.get("demo_acceptance_archive", {}).is_empty():
 			failures.append("demo acceptance flow: expected saved dict to keep demo archive record")
 
+		if not saved_dict.get("demo_acceptance_archive", {}).get("review_id", "").begins_with("DEMO-"):
+			failures.append("demo acceptance flow: expected saved dict to keep archive review signature")
+
 	var menu = MainMenuScene.instantiate()
 	root.add_child(menu)
 	await process_frame
@@ -69,6 +75,9 @@ func _run() -> void:
 
 	if menu.summary_label == null or not menu.summary_label.text.contains("主菜单复核") or not menu.summary_label.text.contains("已保存"):
 		failures.append("demo acceptance flow: expected main menu to show saved archive review")
+
+	if menu.summary_label == null or not menu.summary_label.text.contains("主菜单归档校验") or not menu.summary_label.text.contains("签名 DEMO-"):
+		failures.append("demo acceptance flow: expected main menu to show saved archive audit signature")
 
 	menu.queue_free()
 	await process_frame
@@ -100,6 +109,9 @@ func _run() -> void:
 
 	if run_map.build_summary_label == null or not run_map.build_summary_label.text.contains("Demo 归档复核") or not run_map.build_summary_label.text.contains("已保存"):
 		failures.append("demo acceptance flow: expected run map to show saved archive review")
+
+	if run_map.build_summary_label == null or not run_map.build_summary_label.text.contains("Demo 归档校验") or not run_map.build_summary_label.text.contains("签名 DEMO-"):
+		failures.append("demo acceptance flow: expected run map to show saved archive audit signature")
 
 	run_map.queue_free()
 	RunSaveScript.delete_save()

@@ -142,6 +142,9 @@ func _run() -> void:
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 归档复核") or not scene.build_summary_label.text.contains("未闭合"):
 		failures.append("run map feedback: expected fresh archive review to stay open")
 
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 归档校验") or not scene.build_summary_label.text.contains("暂不生成归档签名"):
+		failures.append("run map feedback: expected fresh archive audit to wait for closed evidence")
+
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("调参建议"):
 		failures.append("run map feedback: expected build panel to show tuning suggestions")
 
@@ -573,6 +576,9 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 归档复核") or not scene.build_summary_label.text.contains("已保存"):
 		failures.append("run map feedback: expected stable full-run evidence to show saved archive review")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 归档校验") or not scene.build_summary_label.text.contains("签名 DEMO-"):
+		failures.append("run map feedback: expected stable full-run evidence to show archive audit signature")
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)

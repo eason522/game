@@ -61,6 +61,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - accepted Demo rehearsal samples now save a Demo archive record with the pass result, target ratio, total turns, Boss evidence, and next action, then restore that record through the run save
 - stable completed Demo runs now save the Demo archive record when the Boss feel button closes the evidence loop
 - main menu and the run map now show a Demo archive review packet that distinguishes saved archives, still-open samples, and the exact next review action
+- Demo archive records now include a deterministic review signature plus a closed-evidence summary, and the main menu and run map show the archive audit before a real editor acceptance rerun
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement
@@ -84,15 +85,15 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - display smoke tests for reward build summaries, effect descriptions, stack-limit text, and exclusive-group text
 - settlement feedback smoke tests for victory, reward-claim, route-choice, and save roundtrips
 - battle feedback smoke tests for action logs, cell flashes, and result banners
-- main menu smoke tests for default project entry, save-aware continue state, demo entry buttons, saved-run progress, saved-run closeout overview, state-aware continue action labels, the live-run launch check, the baseline playtest line, the live checklist action, the Boss focus line, the Boss snapshot line, the evidence line, the acceptance gate line, the acceptance note line, the archive/recap line, the closeout line, the Demo acceptance packet, and the Demo archive review packet
-- run map feedback smoke tests for typed settlement labels, tone triggers, live playtest checklist/verdict/review/Boss validation display, Boss snapshot pressure assessment, rest-focus feel audit, editor acceptance gates, editor next-action/evidence/note/archive/recap/closeout-packet guidance, Demo acceptance packet states, Demo archive review states, priority verdicts, Boss feel recording, and tuning candidate display
-- demo acceptance flow smoke tests for the stable rehearsal sample, save restore, main-menu review state, run-map acceptance packet, Boss feel/archive preservation, archive review display, and archive next action
+- main menu smoke tests for default project entry, save-aware continue state, demo entry buttons, saved-run progress, saved-run closeout overview, state-aware continue action labels, the live-run launch check, the baseline playtest line, the live checklist action, the Boss focus line, the Boss snapshot line, the evidence line, the acceptance gate line, the acceptance note line, the archive/recap line, the closeout line, the Demo acceptance packet, the Demo archive review packet, and the archive audit signature
+- run map feedback smoke tests for typed settlement labels, tone triggers, live playtest checklist/verdict/review/Boss validation display, Boss snapshot pressure assessment, rest-focus feel audit, editor acceptance gates, editor next-action/evidence/note/archive/recap/closeout-packet guidance, Demo acceptance packet states, Demo archive review/audit states, priority verdicts, Boss feel recording, and tuning candidate display
+- demo acceptance flow smoke tests for the stable rehearsal sample, save restore, main-menu review state, run-map acceptance packet, Boss feel/archive preservation, archive review/audit display, archive signature preservation, and archive next action
 
 ## Run Locally
 
 1. Install Godot 4.x.
 2. Open this repository folder in Godot.
-3. Press Play to start at `scenes/ui/MainMenu.tscn`. The menu can continue a saved Run with a state-aware action label, preview saved-run progress plus its editor next action and closeout packet, show a one-line live-run launch check, automatic baseline playtest summary, stable Demo acceptance rehearsal, first live checklist action, Boss focus line, Boss snapshot line, evidence line, acceptance gate line, acceptance note line, archive/recap line, closeout line, Demo acceptance packet, Demo archive review packet, and saved Demo archive record, start a new Run, or open `scenes/game/BattleScene.tscn` for a single battle.
+3. Press Play to start at `scenes/ui/MainMenu.tscn`. The menu can continue a saved Run with a state-aware action label, preview saved-run progress plus its editor next action and closeout packet, show a one-line live-run launch check, automatic baseline playtest summary, stable Demo acceptance rehearsal, first live checklist action, Boss focus line, Boss snapshot line, evidence line, acceptance gate line, acceptance note line, archive/recap line, closeout line, Demo acceptance packet, Demo archive review packet, archive audit signature, and saved Demo archive record, start a new Run, or open `scenes/game/BattleScene.tscn` for a single battle.
 
 On this machine Godot 4.7 is installed through WinGet. `godot` and `godot4` command shims are available from `C:\Users\eason\bin`.
 

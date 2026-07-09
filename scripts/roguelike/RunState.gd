@@ -433,6 +433,10 @@ func get_demo_acceptance_archive_lines() -> Array:
 			demo_acceptance_archive.get("boss_summary", "Boss 证据待复核"),
 			demo_acceptance_archive.get("next_action", "保持当前记录"),
 		],
+		"Demo 归档记录：复核签名 %s；%s" % [
+			demo_acceptance_archive.get("review_id", "DEMO-REVIEW-PENDING"),
+			demo_acceptance_archive.get("review_summary", "证据闭合状态待复核"),
+		],
 	]
 
 

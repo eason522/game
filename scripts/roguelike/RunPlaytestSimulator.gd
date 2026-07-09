@@ -84,9 +84,12 @@ func build_demo_acceptance_archive_record(run_state) -> Dictionary:
 	var pacing: Dictionary = run_state.get_run_pacing_summary()
 	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
 	var boss_record := _boss_pacing_record(run_state.get_battle_pacing_records())
-	var pressure_text := _boss_opening_pressure_acceptance_label(_boss_opening_pressure_level(run_state))
+	var pressure_level := _boss_opening_pressure_level(run_state)
+	var pressure_text := _boss_opening_pressure_acceptance_label(pressure_level)
 	var feel_label: String = run_state.get_boss_opening_feel_label() if run_state.has_method("get_boss_opening_feel_label") else "未记录"
 	var rest_text := "静息调气已生效" if _has_reward_source(run_state, RewardGeneratorScript.REST_FOCUS_SOURCE_ID) else "静息调气未验证"
+	var review_id := _demo_archive_review_id(run_state, pacing, boss_record, pressure_level)
+	var review_summary := _demo_archive_review_summary(run_state, pacing, pressure_text, feel_label, rest_text)
 	return {
 		"outcome": "Demo 验收通过",
 		"summary": "目标内 %d/%d，总 %d 手，%s" % [
@@ -102,6 +105,9 @@ func build_demo_acceptance_archive_record(run_state) -> Dictionary:
 		],
 		"next_action": "保持当前数值并归档",
 		"note": _trim_first_line(get_editor_acceptance_note_lines(run_state), "编辑器纪要："),
+		"review_id": review_id,
+		"review_summary": review_summary,
+		"review_next_action": "下次编辑器实机验收时对照该签名复核",
 	}
 
 
@@ -174,6 +180,39 @@ func get_demo_archive_review_lines(run_state) -> Array:
 	return [
 		"Demo 归档复核：未闭合；%s" % _trim_first_line(packet_lines, "Demo 验收包："),
 		"Demo 归档复核：下一步：%s" % next_action,
+	]
+
+
+func get_demo_archive_audit_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary") or not run_state.has_method("get_battle_pacing_records"):
+		return [
+			"Demo 归档校验：暂无归档签名，先按演练样本完成完整 Run",
+			"Demo 归档校验：复核项：目标内场次、Boss 快照、静息调气和体感按钮",
+		]
+
+	var record := {}
+
+	if run_state.has_method("has_demo_acceptance_archive") and run_state.has_demo_acceptance_archive():
+		record = run_state.demo_acceptance_archive
+	elif _is_demo_acceptance_ready(run_state):
+		record = build_demo_acceptance_archive_record(run_state)
+	else:
+		var packet_status := _trim_first_line(get_demo_acceptance_packet_lines(run_state), "Demo 验收包：")
+		var next_action := _trim_first_line(get_editor_next_action_lines(run_state), "编辑器指引：")
+		return [
+			"Demo 归档校验：证据未闭合，暂不生成归档签名；%s" % packet_status,
+			"Demo 归档校验：下一步：%s" % next_action,
+		]
+
+	return [
+		"Demo 归档校验：签名 %s；%s" % [
+			record.get("review_id", "DEMO-REVIEW-PENDING"),
+			record.get("summary", "归档摘要待复核"),
+		],
+		"Demo 归档校验：%s；下一步：%s" % [
+			record.get("review_summary", "证据闭合状态待复核"),
+			record.get("review_next_action", record.get("next_action", "保持当前记录")),
+		],
 	]
 
 
@@ -1706,6 +1745,51 @@ func _boss_opening_pressure_acceptance_label(pressure_level: String) -> String:
 			return "暂稳"
 		_:
 			return "未记录"
+
+
+func _demo_archive_review_id(run_state, pacing: Dictionary, boss_record: Dictionary, pressure_level: String) -> String:
+	var pressure_token := "OPEN"
+
+	match pressure_level:
+		RunStateScript.BOSS_OPENING_PRESSURE_STABLE:
+			pressure_token = "STABLE"
+		RunStateScript.BOSS_OPENING_PRESSURE_REVIEW:
+			pressure_token = "REVIEW"
+		RunStateScript.BOSS_OPENING_PRESSURE_HIGH:
+			pressure_token = "HIGH"
+
+	var feel_token := "OPEN"
+
+	if run_state != null:
+		match run_state.boss_opening_feel:
+			RunStateScript.BOSS_OPENING_FEEL_STABLE:
+				feel_token = "STABLE"
+			RunStateScript.BOSS_OPENING_FEEL_PRESSURE:
+				feel_token = "PRESSURE"
+			RunStateScript.BOSS_OPENING_FEEL_UNCLEAR:
+				feel_token = "UNCLEAR"
+
+	return "DEMO-%dof%d-%dT-B%d-%s-%s" % [
+		pacing.get("on_target_count", 0),
+		pacing.get("recorded_battle_nodes", 0),
+		pacing.get("actual_turn_total", 0),
+		boss_record.get("actual_turn_count", 0),
+		pressure_token,
+		feel_token,
+	]
+
+
+func _demo_archive_review_summary(run_state, pacing: Dictionary, pressure_text: String, feel_label: String, rest_text: String) -> String:
+	var coverage := "样本 %d/%d" % [
+		pacing.get("on_target_count", 0),
+		pacing.get("recorded_battle_nodes", 0),
+	]
+	var boss_text := "Boss 快照%s" % pressure_text
+
+	if run_state == null or run_state.boss_opening_feel.is_empty():
+		return "证据未闭合：%s、%s、%s、体感待记录" % [coverage, boss_text, rest_text]
+
+	return "证据闭合：%s、%s、%s、体感：%s" % [coverage, boss_text, rest_text, feel_label]
 
 
 func _boss_opening_evidence_suffix(run_state) -> String:

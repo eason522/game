@@ -91,6 +91,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单复核") or not scene.summary_label.text.contains("暂无 Run 数据"):
 		failures.append("main menu: expected no-save archive review line")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档校验") or not scene.summary_label.text.contains("暂无归档签名"):
+		failures.append("main menu: expected no-save archive audit line")
+
 	var run_state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
 	RunSaveScript.save_state(run_state)
 	scene._refresh_continue_state()
@@ -150,6 +153,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单复核") or not scene.summary_label.text.contains("未闭合"):
 		failures.append("main menu: expected saved-run archive review to stay open")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档校验") or not scene.summary_label.text.contains("暂不生成归档签名"):
+		failures.append("main menu: expected saved-run archive audit to wait for closed evidence")
 
 	run_state.resolve_current_node(true, [{
 		"id": "smoke_reward",
@@ -281,6 +287,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单复核") or not scene.summary_label.text.contains("已保存"):
 		failures.append("main menu: expected accepted run archive review on the menu")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单归档校验") or not scene.summary_label.text.contains("签名 DEMO-"):
+		failures.append("main menu: expected accepted run archive audit signature on the menu")
 
 	scene.queue_free()
 	RunSaveScript.delete_save()
