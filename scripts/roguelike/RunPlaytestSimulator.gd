@@ -842,6 +842,56 @@ func get_editor_acceptance_note_lines(run_state) -> Array:
 			return ["编辑器纪要：体感记录异常，先复核按钮写入"]
 
 
+func get_editor_archive_record_lines(run_state) -> Array:
+	if run_state == null or not run_state.has_method("get_run_pacing_summary") or not run_state.has_method("get_battle_pacing_records"):
+		return ["编辑器归档：暂无 Run 数据，先从路线图开始完整试玩"]
+
+	var pacing: Dictionary = run_state.get_run_pacing_summary()
+	var recorded_battles: int = pacing.get("recorded_battle_nodes", 0)
+	var total_battles: int = pacing.get("total_battle_nodes", 0)
+
+	if recorded_battles <= 0:
+		return ["编辑器归档：等待首战记录，不创建验收归档"]
+
+	if recorded_battles < total_battles:
+		return ["编辑器归档：样本 %d/%d 未齐，只保留过程记录" % [recorded_battles, total_battles]]
+
+	if run_state.run_failed:
+		return ["编辑器归档：Run 失败，归档为失败复盘而非 Demo 验收"]
+
+	var boss_record := _boss_pacing_record(run_state.get_battle_pacing_records())
+
+	if boss_record.is_empty():
+		return ["编辑器归档：完整样本缺 Boss 记录，暂不归档验收"]
+
+	var pressure_level := _boss_opening_pressure_level(run_state)
+	var pressure_text := _boss_opening_pressure_acceptance_label(pressure_level)
+	var rest_text := "静息调气已生效" if _has_reward_source(run_state, RewardGeneratorScript.REST_FOCUS_SOURCE_ID) else "静息调气未验证"
+
+	if pressure_level == RunStateScript.BOSS_OPENING_PRESSURE_HIGH:
+		return ["编辑器归档：Boss 快照压力偏高，本轮归档为 Boss-only 复核"]
+
+	if run_state.boss_opening_feel.is_empty():
+		return ["编辑器归档：缺 Boss 前 5 手体感，暂不归档验收"]
+
+	match run_state.boss_opening_feel:
+		RunStateScript.BOSS_OPENING_FEEL_STABLE:
+			if pressure_level == RunStateScript.BOSS_OPENING_PRESSURE_STABLE and pacing.get("on_target_count", 0) == recorded_battles:
+				return ["编辑器归档：可归档 Demo 验收，目标内 %d/%d，总 %d 手，%s，保持当前数值" % [
+					pacing.get("on_target_count", 0),
+					recorded_battles,
+					pacing.get("actual_turn_total", 0),
+					rest_text,
+				]]
+			return ["编辑器归档：体感更稳但快照%s，归档为 Boss 开局复看" % pressure_text]
+		RunStateScript.BOSS_OPENING_FEEL_PRESSURE:
+			return ["编辑器归档：Boss 体感仍压迫，归档为 Boss 手感轴复核"]
+		RunStateScript.BOSS_OPENING_FEEL_UNCLEAR:
+			return ["编辑器归档：Boss 体感需再测，归档为待补样本"]
+		_:
+			return ["编辑器归档：体感记录异常，先复核按钮写入"]
+
+
 func get_single_axis_tuning_candidates(run_state) -> Array:
 	if run_state == null or not run_state.has_method("get_run_pacing_summary"):
 		return ["单轴候选：暂无 Run 数据，先完成一次实机记录"]

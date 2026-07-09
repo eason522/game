@@ -381,6 +381,12 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: fresh closeout should wait for a full live sample")
 		return
 
+	var fresh_archive := simulator.get_editor_archive_record_lines(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
+
+	if not _lines_contain(fresh_archive, "编辑器归档") or not _lines_contain(fresh_archive, "等待首战记录"):
+		failures.append("run playtest simulator: fresh editor archive should wait for the first battle")
+		return
+
 	var fresh_followup := simulator.get_boss_pressure_followup_lines(RunStateScript.new(MapGeneratorScript.new().generate_linear_route()))
 
 	if not _lines_contain(fresh_followup, "Boss 复核") or not _lines_contain(fresh_followup, "样本未齐"):
@@ -425,7 +431,47 @@ func _assert_full_run_baseline_playtest() -> void:
 		failures.append("run playtest simulator: boss followup should request feel recording before tuning")
 		return
 
+	var baseline_archive := simulator.get_editor_archive_record_lines(report.get("state"))
+
+	if not _lines_contain(baseline_archive, "缺 Boss 前 5 手体感"):
+		failures.append("run playtest simulator: editor archive should wait for boss opening feel")
+		return
+
 	var baseline_state = report.get("state")
+
+	baseline_state.record_boss_opening_observation({
+		"enemy": "岩王",
+		"total_moves": 5,
+		"snapshots": [
+			{
+				"move_count": 1,
+				"actor": "己方",
+				"position": "F6",
+				"player_energy": 2,
+				"rock_count": 6,
+				"playable_count": 114,
+				"focus": "开局岩阵",
+			},
+			{
+				"move_count": 3,
+				"actor": "己方",
+				"position": "F7",
+				"player_energy": 3,
+				"rock_count": 6,
+				"playable_count": 112,
+				"focus": "能量与岩阵",
+			},
+			{
+				"move_count": 5,
+				"actor": "己方",
+				"position": "G7",
+				"player_energy": 4,
+				"rock_count": 6,
+				"playable_count": 110,
+				"focus": "反制点",
+			},
+		],
+	})
 
 	if not baseline_state.record_boss_opening_feel(RunStateScript.BOSS_OPENING_FEEL_STABLE):
 		failures.append("run playtest simulator: expected boss opening feel record to succeed")
@@ -453,6 +499,12 @@ func _assert_full_run_baseline_playtest() -> void:
 
 	if not _lines_contain(recorded_followup, "体感更稳且目标内") or not _lines_contain(recorded_followup, "可复现"):
 		failures.append("run playtest simulator: stable boss followup should ask only for reproducibility")
+		return
+
+	var recorded_archive := simulator.get_editor_archive_record_lines(baseline_state)
+
+	if not _lines_contain(recorded_archive, "可归档 Demo 验收") or not _lines_contain(recorded_archive, "保持当前数值"):
+		failures.append("run playtest simulator: stable editor archive should close demo acceptance")
 		return
 
 	var pressure_state = simulator.run_baseline().get("state")
