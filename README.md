@@ -47,6 +47,7 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - main menu continue button now names the immediate saved-run action, such as entering the current node, claiming loot, recording Boss feel, or reviewing acceptance
 - main menu now shows a saved-run progress line with the current node, recorded battle count, and on-target progress before entering the run map
 - main menu now includes a one-line live-run launch check that combines the continue action, saved-run progress, and closeout packet before entering the run map
+- main menu now shows the automatic baseline playtest's on-target battle count, total turns, starsand, and reward count before a live run starts
 - 11x11 board
 - player and simple AI alternating turns
 - legal piece placement
@@ -70,14 +71,14 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - display smoke tests for reward build summaries, effect descriptions, stack-limit text, and exclusive-group text
 - settlement feedback smoke tests for victory, reward-claim, route-choice, and save roundtrips
 - battle feedback smoke tests for action logs, cell flashes, and result banners
-- main menu smoke tests for default project entry, save-aware continue state, demo entry buttons, saved-run progress, saved-run closeout overview, state-aware continue action labels, and the live-run launch check
+- main menu smoke tests for default project entry, save-aware continue state, demo entry buttons, saved-run progress, saved-run closeout overview, state-aware continue action labels, the live-run launch check, and the baseline playtest line
 - run map feedback smoke tests for typed settlement labels, tone triggers, live playtest checklist/verdict/review/Boss validation display, Boss snapshot pressure assessment, rest-focus feel audit, editor acceptance gates, editor next-action/evidence/note/archive/recap/closeout-packet guidance, priority verdicts, Boss feel recording, and tuning candidate display
 
 ## Run Locally
 
 1. Install Godot 4.x.
 2. Open this repository folder in Godot.
-3. Press Play to start at `scenes/ui/MainMenu.tscn`. The menu can continue a saved Run with a state-aware action label, preview saved-run progress plus its editor next action and closeout packet, show a one-line live-run launch check, start a new Run, or open `scenes/game/BattleScene.tscn` for a single battle.
+3. Press Play to start at `scenes/ui/MainMenu.tscn`. The menu can continue a saved Run with a state-aware action label, preview saved-run progress plus its editor next action and closeout packet, show a one-line live-run launch check and automatic baseline playtest summary, start a new Run, or open `scenes/game/BattleScene.tscn` for a single battle.
 
 On this machine Godot 4.7 is installed through WinGet. `godot` and `godot4` command shims are available from `C:\Users\eason\bin`.
 

@@ -89,7 +89,7 @@ func _build_layout() -> void:
 
 	var summary_panel := PanelContainer.new()
 	summary_panel.add_theme_stylebox_override("panel", panel_style)
-	summary_panel.custom_minimum_size = Vector2(0, 156)
+	summary_panel.custom_minimum_size = Vector2(0, 184)
 	left.add_child(summary_panel)
 
 	summary_label = Label.new()
@@ -160,16 +160,20 @@ func _refresh_continue_state() -> void:
 		var snapshot_lines: Array = playtest_simulator.get_live_playtest_snapshot_lines(resume_state)
 		continue_button.text = _resume_button_text(resume_state)
 		status_label.text = "检测到可继续的 Run。\n%s" % _first_line(next_action_lines)
-		summary_label.text = "%s\n主菜单进度：%s\n主菜单速览：%s\n%s" % [
+		summary_label.text = "%s\n主菜单进度：%s\n主菜单速览：%s\n%s\n%s" % [
 			_base_summary_text(),
 			_first_line(snapshot_lines).trim_prefix("实机快照："),
 			" / ".join(closeout_lines),
 			_get_main_menu_check_line(resume_state, snapshot_lines, closeout_lines),
+			_get_main_menu_baseline_line(),
 		]
 	else:
 		continue_button.text = "继续 Run"
 		status_label.text = "暂无存档，从新的 Run 开始。"
-		summary_label.text = "%s\n主菜单进度：暂无 Run 数据\n主菜单速览：等待首战记录。\n主菜单核对：继续按钮禁用；暂无 Run 数据；从新的 Run 开始首战。" % _base_summary_text()
+		summary_label.text = "%s\n主菜单进度：暂无 Run 数据\n主菜单速览：等待首战记录。\n主菜单核对：继续按钮禁用；暂无 Run 数据；从新的 Run 开始首战。\n%s" % [
+			_base_summary_text(),
+			_get_main_menu_baseline_line(),
+		]
 
 
 func _base_summary_text() -> String:
@@ -208,6 +212,18 @@ func _get_main_menu_check_line(run_state, snapshot_lines: Array, closeout_lines:
 	var progress_text := _first_line(snapshot_lines).trim_prefix("实机快照：")
 	var closeout_text := _first_line(closeout_lines).trim_prefix("编辑器收口包：")
 	return "主菜单核对：%s；%s；%s" % [action_text, progress_text, closeout_text]
+
+
+func _get_main_menu_baseline_line() -> String:
+	var report: Dictionary = playtest_simulator.run_baseline()
+	var pacing: Dictionary = report.get("pacing", {})
+	return "主菜单基准：%d/%d 场目标内，总 %d 手，星砂 %d，奖励 %d" % [
+		pacing.get("on_target_count", 0),
+		pacing.get("recorded_battle_nodes", 0),
+		pacing.get("actual_turn_total", 0),
+		report.get("coins", 0),
+		report.get("reward_count", 0),
+	]
 
 
 func _resume_button_text(run_state) -> String:

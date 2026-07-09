@@ -55,6 +55,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单核对") or not scene.summary_label.text.contains("继续按钮禁用"):
 		failures.append("main menu: expected no-save launch check line")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单基准") or not scene.summary_label.text.contains("4/4 场目标内"):
+		failures.append("main menu: expected no-save baseline playtest line")
+
 	var run_state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
 	RunSaveScript.save_state(run_state)
 	scene._refresh_continue_state()
@@ -78,6 +81,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单核对") or not scene.summary_label.text.contains("进入试锋之局"):
 		failures.append("main menu: expected saved-run launch check line")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单基准") or not scene.summary_label.text.contains("总"):
+		failures.append("main menu: expected saved-run baseline playtest line")
 
 	run_state.resolve_current_node(true, [{
 		"id": "smoke_reward",
