@@ -64,6 +64,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单 Boss 关注") or not scene.summary_label.text.contains("先推进到休息点"):
 		failures.append("main menu: expected no-save boss focus line")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单 Boss 快照") or not scene.summary_label.text.contains("尚未记录前 5 手快照"):
+		failures.append("main menu: expected no-save boss snapshot line")
+
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单证据") or not scene.summary_label.text.contains("暂无 Run 数据"):
 		failures.append("main menu: expected no-save evidence line")
 
@@ -108,6 +111,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单 Boss 关注") or not scene.summary_label.text.contains("尚未验证静息调气"):
 		failures.append("main menu: expected saved-run boss focus line")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单 Boss 快照") or not scene.summary_label.text.contains("尚未记录前 5 手快照"):
+		failures.append("main menu: expected saved-run boss snapshot line to wait for boss observation")
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单证据") or not scene.summary_label.text.contains("样本 0/4"):
 		failures.append("main menu: expected saved-run evidence line to request the first battle")
@@ -172,6 +178,46 @@ func _run() -> void:
 	if scene.continue_button == null or not scene.continue_button.text.contains("查看验收结果"):
 		failures.append("main menu: expected accepted run to point at acceptance review")
 
+	var high_pressure_state = scene.playtest_simulator.run_baseline().get("state")
+	high_pressure_state.record_boss_opening_observation({
+		"enemy": "岩王",
+		"total_moves": 5,
+		"snapshots": [
+			{
+				"move_count": 1,
+				"actor": "己方",
+				"position": "F6",
+				"player_energy": 2,
+				"rock_count": 8,
+				"playable_count": 112,
+				"focus": "开局岩阵",
+			},
+			{
+				"move_count": 3,
+				"actor": "己方",
+				"position": "F7",
+				"player_energy": 2,
+				"rock_count": 9,
+				"playable_count": 106,
+				"focus": "能量与岩阵",
+			},
+			{
+				"move_count": 5,
+				"actor": "己方",
+				"position": "G7",
+				"player_energy": 2,
+				"rock_count": 9,
+				"playable_count": 104,
+				"focus": "反制点",
+			},
+		],
+	})
+	RunSaveScript.save_state(high_pressure_state)
+	scene._refresh_continue_state()
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单 Boss 快照") or not scene.summary_label.text.contains("压力偏高"):
+		failures.append("main menu: expected high-pressure boss snapshot result on the menu")
+
 	var accepted_state = scene.playtest_simulator.run_baseline().get("state")
 	accepted_state.record_boss_opening_observation({
 		"enemy": "岩王",
@@ -215,6 +261,9 @@ func _run() -> void:
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单证据") or not scene.summary_label.text.contains("可归档 Demo 验收证据"):
 		failures.append("main menu: expected accepted run evidence result on the menu")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单 Boss 快照") or not scene.summary_label.text.contains("暂稳"):
+		failures.append("main menu: expected accepted run boss snapshot result on the menu")
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单验收") or not scene.summary_label.text.contains("可作为本轮 Demo 实机验收"):
 		failures.append("main menu: expected accepted run acceptance gate result on the menu")
