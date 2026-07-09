@@ -160,7 +160,7 @@ func _refresh_continue_state() -> void:
 		var snapshot_lines: Array = playtest_simulator.get_live_playtest_snapshot_lines(resume_state)
 		continue_button.text = _resume_button_text(resume_state)
 		status_label.text = "检测到可继续的 Run。\n%s" % _first_line(next_action_lines)
-		summary_label.text = "%s\n主菜单进度：%s\n主菜单速览：%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s" % [
+		summary_label.text = "%s\n主菜单进度：%s\n主菜单速览：%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s" % [
 			_base_summary_text(),
 			_first_line(snapshot_lines).trim_prefix("实机快照："),
 			" / ".join(closeout_lines),
@@ -171,13 +171,14 @@ func _refresh_continue_state() -> void:
 			_get_main_menu_boss_snapshot_line(resume_state),
 			_get_main_menu_evidence_line(resume_state),
 			_get_main_menu_acceptance_gate_line(resume_state),
+			_get_main_menu_acceptance_note_line(resume_state),
 			_get_main_menu_archive_excerpt_line(resume_state),
 			_get_main_menu_closeout_line(resume_state),
 		]
 	else:
 		continue_button.text = "继续 Run"
 		status_label.text = "暂无存档，从新的 Run 开始。"
-		summary_label.text = "%s\n主菜单进度：暂无 Run 数据\n主菜单速览：等待首战记录。\n主菜单核对：继续按钮禁用；暂无 Run 数据；从新的 Run 开始首战。\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s" % [
+		summary_label.text = "%s\n主菜单进度：暂无 Run 数据\n主菜单速览：等待首战记录。\n主菜单核对：继续按钮禁用；暂无 Run 数据；从新的 Run 开始首战。\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s" % [
 			_base_summary_text(),
 			_get_main_menu_baseline_line(),
 			_get_main_menu_playtest_check_line(null),
@@ -185,6 +186,7 @@ func _refresh_continue_state() -> void:
 			_get_main_menu_boss_snapshot_line(null),
 			_get_main_menu_evidence_line(null),
 			_get_main_menu_acceptance_gate_line(null),
+			_get_main_menu_acceptance_note_line(null),
 			_get_main_menu_archive_excerpt_line(null),
 			_get_main_menu_closeout_line(null),
 		]
@@ -290,6 +292,11 @@ func _get_main_menu_acceptance_gate_line(run_state) -> String:
 		trimmed_lines.append(String(line).trim_prefix("编辑器验收："))
 
 	return "主菜单验收：%s" % " / ".join(trimmed_lines)
+
+
+func _get_main_menu_acceptance_note_line(run_state) -> String:
+	var note_lines: Array = playtest_simulator.get_editor_acceptance_note_lines(run_state)
+	return "主菜单纪要：%s" % _first_line(note_lines).trim_prefix("编辑器纪要：")
 
 
 func _get_main_menu_closeout_line(run_state) -> String:
