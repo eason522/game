@@ -157,13 +157,18 @@ func _refresh_continue_state() -> void:
 	if has_run:
 		var next_action_lines: Array = playtest_simulator.get_editor_next_action_lines(resume_state)
 		var closeout_lines: Array = playtest_simulator.get_editor_closeout_packet_lines(resume_state)
+		var snapshot_lines: Array = playtest_simulator.get_live_playtest_snapshot_lines(resume_state)
 		continue_button.text = _resume_button_text(resume_state)
 		status_label.text = "检测到可继续的 Run。\n%s" % _first_line(next_action_lines)
-		summary_label.text = "%s\n主菜单速览：%s" % [_base_summary_text(), " / ".join(closeout_lines)]
+		summary_label.text = "%s\n主菜单进度：%s\n主菜单速览：%s" % [
+			_base_summary_text(),
+			_first_line(snapshot_lines).trim_prefix("实机快照："),
+			" / ".join(closeout_lines),
+		]
 	else:
 		continue_button.text = "继续 Run"
 		status_label.text = "暂无存档，从新的 Run 开始。"
-		summary_label.text = "%s\n主菜单速览：等待首战记录。" % _base_summary_text()
+		summary_label.text = "%s\n主菜单进度：暂无 Run 数据\n主菜单速览：等待首战记录。" % _base_summary_text()
 
 
 func _base_summary_text() -> String:

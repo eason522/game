@@ -46,6 +46,9 @@ func _run() -> void:
 	if scene.status_label == null or not scene.status_label.text.contains("暂无存档"):
 		failures.append("main menu: expected no-save status text")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单进度") or not scene.summary_label.text.contains("暂无 Run 数据"):
+		failures.append("main menu: expected no-save progress overview")
+
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单速览") or not scene.summary_label.text.contains("等待首战记录"):
 		failures.append("main menu: expected no-save playtest overview")
 
@@ -67,6 +70,9 @@ func _run() -> void:
 	if scene.summary_label == null or not scene.summary_label.text.contains("编辑器收口包") or not scene.summary_label.text.contains("等待首战记录"):
 		failures.append("main menu: expected save-aware editor closeout overview")
 
+	if scene.summary_label == null or not scene.summary_label.text.contains("当前 试锋之局") or not scene.summary_label.text.contains("实测 0/4 场"):
+		failures.append("main menu: expected saved-run progress overview")
+
 	run_state.resolve_current_node(true, [{
 		"id": "smoke_reward",
 		"title": "测试奖励",
@@ -80,6 +86,9 @@ func _run() -> void:
 
 	if scene.continue_button == null or not scene.continue_button.text.contains("领取战利品"):
 		failures.append("main menu: expected continue button to point at pending rewards")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("实测 1/4 场"):
+		failures.append("main menu: expected progress overview to reflect recorded battle count")
 
 	run_state.pending_rewards.clear()
 	run_state.pending_reward_node_index = -1
