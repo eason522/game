@@ -7,6 +7,7 @@ const BATTLE_MOVE_COUNT_META := "tymj_battle_move_count"
 const BOSS_OPENING_OBSERVATION_META := "tymj_boss_opening_observation"
 const DEMO_SOUND_ENABLED_META := "tymj_demo_sound_enabled"
 const DEMO_HINTS_ENABLED_META := "tymj_demo_hints_enabled"
+const DEMO_ACCEPTANCE_MODE_META := "tymj_demo_acceptance_mode"
 
 var failures: Array = []
 
@@ -16,6 +17,9 @@ func _init() -> void:
 
 
 func _run() -> void:
+	if root.has_meta(DEMO_ACCEPTANCE_MODE_META):
+		root.remove_meta(DEMO_ACCEPTANCE_MODE_META)
+
 	root.set_meta(BATTLE_NODE_INDEX_META, 1)
 	var scene := BattleScene.instantiate()
 	root.add_child(scene)
@@ -147,6 +151,19 @@ func _run() -> void:
 	if scene.demo_visual_acceptance_label == null:
 		failures.append("battle feedback: expected demo visual acceptance label to exist")
 	else:
+		if scene.demo_visual_acceptance_label.visible:
+			failures.append("battle feedback: expected visual acceptance overlay hidden in player mode")
+
+		if scene.demo_stage_badge == null or scene.demo_stage_badge.visible:
+			failures.append("battle feedback: expected demo acceptance badge hidden in player mode")
+
+		scene.dev_acceptance_mode = true
+		root.set_meta(DEMO_ACCEPTANCE_MODE_META, true)
+		scene._refresh_info_labels()
+
+		if not scene.demo_visual_acceptance_label.visible or scene.demo_stage_badge == null or not scene.demo_stage_badge.visible:
+			failures.append("battle feedback: expected developer mode to reveal the visual acceptance overlay")
+
 		if not scene.demo_visual_acceptance_label.text.contains("Demo 视觉验收"):
 			failures.append("battle feedback: expected visual acceptance line title")
 

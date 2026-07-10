@@ -5,6 +5,7 @@ const RunSaveScript := preload("res://scripts/roguelike/RunSave.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
 const MapGeneratorScript := preload("res://scripts/roguelike/MapGenerator.gd")
 const RUN_STATE_META := "tymj_run_state"
+const DEMO_ACCEPTANCE_MODE_META := "tymj_demo_acceptance_mode"
 
 var failures: Array = []
 
@@ -18,6 +19,9 @@ func _run() -> void:
 
 	if root.has_meta(RUN_STATE_META):
 		root.remove_meta(RUN_STATE_META)
+
+	if root.has_meta(DEMO_ACCEPTANCE_MODE_META):
+		root.remove_meta(DEMO_ACCEPTANCE_MODE_META)
 
 	var scene = MainMenuScene.instantiate()
 	root.add_child(scene)
@@ -45,6 +49,25 @@ func _run() -> void:
 
 	if scene.status_label == null or not scene.status_label.text.contains("暂无存档"):
 		failures.append("main menu: expected no-save status text")
+
+	if scene.dev_acceptance_button == null or not scene.dev_acceptance_button.text.contains("开发验收模式：关"):
+		failures.append("main menu: expected one explicit disabled-by-default developer acceptance entry")
+
+	if scene.dev_acceptance_mode:
+		failures.append("main menu: expected player mode by default")
+
+	if scene.summary_label == null or not scene.summary_label.text.contains("尚无旅程记录"):
+		failures.append("main menu: expected one player-readable no-save summary")
+	elif scene.summary_label.text.contains("基准") or scene.summary_label.text.contains("证据") or scene.summary_label.text.contains("归档") or scene.summary_label.text.contains("签名") or scene.summary_label.text.contains("复跑"):
+		failures.append("main menu: expected player mode to hide developer acceptance terminology")
+
+	scene._on_dev_acceptance_toggled(true)
+
+	if not scene.dev_acceptance_mode or not root.get_meta(DEMO_ACCEPTANCE_MODE_META, false):
+		failures.append("main menu: expected developer acceptance mode to persist across scene changes")
+
+	if scene.dev_acceptance_button == null or not scene.dev_acceptance_button.text.contains("开发验收模式：开"):
+		failures.append("main menu: expected the single acceptance entry to show enabled state")
 
 	if scene.summary_label == null or not scene.summary_label.text.contains("主菜单进度") or not scene.summary_label.text.contains("暂无 Run 数据"):
 		failures.append("main menu: expected no-save progress overview")

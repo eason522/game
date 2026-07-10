@@ -49,6 +49,9 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 - board pieces and terrain now use normalized generated sprite-sheet art at `assets/tokens/battle_tokens_sheet_v1.png`, covering player jade, temporary jade, enemy ink, rock, spirit, seal, warning, and skill-target tokens with transparent 256px cells
 - battle scenes now show a compact Demo visual acceptance strip that confirms generated board/token assets, 11x11 zero-gap grid alignment, token families, and whether Boss first-five-turn observation is active
 - demo now starts from a main menu with continue, new-run, and single-battle entry points
+- the main menu now starts in player mode with one save-progress summary and a single `开发验收模式` entry; the developer mode is session-only and resets to off after restarting the game
+- the run map now keeps player mode focused on the current node, starsand, build, reward/choice, and next action, while pacing matrices, evidence, archives, signatures, and rerun packs remain available in developer acceptance mode
+- battle scenes now hide the `Demo 验收版` badge and visual-acceptance strip in player mode and reveal them only when developer acceptance mode was enabled from the main menu
 - main menu now previews the saved Run's editor next action and closeout packet before continuing a live playtest
 - main menu continue button now names the immediate saved-run action, such as entering the current node, claiming loot, recording Boss feel, or reviewing acceptance
 - main menu now shows a saved-run progress line with the current node, recorded battle count, and on-target progress before entering the run map
@@ -102,7 +105,9 @@ Phase 6 tuning has started on top of the playable Phase 5 roguelike loop:
 
 1. Install Godot 4.x.
 2. Open this repository folder in Godot.
-3. Press Play to start at `scenes/ui/MainMenu.tscn`. The menu can continue a saved Run with a state-aware action label, preview saved-run progress plus its editor next action and closeout packet, show a one-line live-run launch check, automatic baseline playtest summary, stable Demo acceptance rehearsal, first live checklist action, Boss focus line, Boss snapshot line, evidence line, acceptance gate line, acceptance note line, archive/recap line, closeout line, Demo acceptance packet, Demo archive review packet, archive audit signature, Demo editor preflight pack, and saved Demo archive record, start a new Run, or open `scenes/game/BattleScene.tscn` for a single battle.
+3. Press Play to start at `scenes/ui/MainMenu.tscn`. Player mode shows the three main actions and one saved-run progress summary. Use the single `开发验收模式` switch when you need the baseline, evidence, archive, signature, rerun, and preflight readouts; the switch resets to off after restarting the game.
+
+The first internal full-run record is available at [`docs/playtests/2026-07-10-internal-full-run.md`](docs/playtests/2026-07-10-internal-full-run.md).
 
 On this machine Godot 4.7 is installed through WinGet. `godot` and `godot4` command shims are available from `C:\Users\eason\bin`.
 

@@ -8,6 +8,7 @@ const BATTLE_ENEMY_PROFILE_META := "tymj_battle_enemy_profile_id"
 const BOSS_OPENING_OBSERVATION_META := "tymj_boss_opening_observation"
 const DEMO_SOUND_ENABLED_META := "tymj_demo_sound_enabled"
 const DEMO_HINTS_ENABLED_META := "tymj_demo_hints_enabled"
+const DEMO_ACCEPTANCE_MODE_META := "tymj_demo_acceptance_mode"
 const BATTLE_SCENE_PATH := "res://scenes/game/BattleScene.tscn"
 const MapGeneratorScript := preload("res://scripts/roguelike/MapGenerator.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
@@ -46,6 +47,7 @@ var last_pulsed_node_status := ""
 var route_node_pulse_seconds := ROUTE_NODE_PULSE_IN_SECONDS + ROUTE_NODE_PULSE_OUT_SECONDS
 var sound_feedback_enabled := true
 var route_hints_enabled := true
+var dev_acceptance_mode := false
 var settlement_tween: Tween
 var reward_panel_tween: Tween
 var panel_style: StyleBoxFlat
@@ -77,6 +79,7 @@ func _read_demo_preferences() -> void:
 	var root := get_tree().root
 	sound_feedback_enabled = root.get_meta(DEMO_SOUND_ENABLED_META, true)
 	route_hints_enabled = root.get_meta(DEMO_HINTS_ENABLED_META, true)
+	dev_acceptance_mode = root.get_meta(DEMO_ACCEPTANCE_MODE_META, false)
 
 
 func _create_styles() -> void:
@@ -501,13 +504,14 @@ func _refresh() -> void:
 		var status_text := _status_text(node.get("status", RunStateScript.STATUS_LOCKED))
 		var enemy_text := _enemy_text(node)
 
+		var pacing_text := _node_pacing_text(node) if dev_acceptance_mode else ""
 		button.text = "%s  %s\n%s%s" % [
 			_type_mark(node.get("type", "")),
 			node.get("title", ""),
 			status_text,
-			"%s%s" % [enemy_text, _node_pacing_text(node)],
+			"%s%s" % [enemy_text, pacing_text],
 		]
-		button.tooltip_text = _node_tooltip(node)
+		button.tooltip_text = _node_tooltip(node) if dev_acceptance_mode else node.get("description", "")
 		button.disabled = not run_state.can_enter_node(index)
 		_apply_node_button_style(button, node)
 		_pulse_node_button_if_changed(index, node, button)
@@ -517,6 +521,7 @@ func _refresh() -> void:
 
 	if settlement_label != null:
 		_refresh_settlement_feedback()
+		settlement_label.visible = dev_acceptance_mode
 
 	if run_state.run_completed:
 		status_label.text = "本轮 Run 已通关：岩王之局告破。可以开始新 Run。"
@@ -598,15 +603,19 @@ func _refresh_reward_panel() -> void:
 		return
 
 	if _should_show_boss_feel_buttons():
-		reward_label.text = "Boss 前 5 手体感记录\n当前记录：%s\n%s" % [
-			run_state.get_boss_opening_feel_label(),
-			"\n".join(run_state.get_boss_opening_observation_lines()),
-		]
+		if dev_acceptance_mode:
+			reward_label.text = "Boss 前 5 手体感记录\n当前记录：%s\n%s" % [
+				run_state.get_boss_opening_feel_label(),
+				"\n".join(run_state.get_boss_opening_observation_lines()),
+			]
+		else:
+			reward_label.text = "岩王体感：%s" % run_state.get_boss_opening_feel_label()
 		var feel_options := _boss_feel_options()
+		var already_recorded := not run_state.boss_opening_feel.is_empty()
 
 		for index in range(reward_buttons.size()):
 			var button: Button = reward_buttons[index]
-			var has_option := index < feel_options.size()
+			var has_option := index < feel_options.size() and (dev_acceptance_mode or not already_recorded)
 			button.visible = has_option
 			button.disabled = not has_option
 
@@ -744,6 +753,23 @@ func _refresh_build_summary() -> void:
 		return
 
 	var build_lines := reward_generator.get_build_summary_lines(run_state)
+
+	if not dev_acceptance_mode:
+		var current_node: Dictionary = run_state.get_current_node() if run_state.has_method("get_current_node") else {}
+		var next_action_lines := playtest_simulator.get_editor_next_action_lines(run_state)
+		var next_action := "继续当前路线"
+
+		if not next_action_lines.is_empty():
+			next_action = String(next_action_lines[0]).trim_prefix("编辑器指引：")
+
+		build_summary_label.text = "当前节点：%s\n星砂：%d\n当前构筑：%s\n下一步：%s" % [
+			current_node.get("title", "路线已结束"),
+			run_state.coins,
+			" / ".join(build_lines),
+			next_action,
+		]
+		return
+
 	var pacing_lines := reward_generator.get_run_pacing_lines(run_state)
 	var tuning_lines := reward_generator.get_run_tuning_lines(run_state)
 	var boss_prep_lines := reward_generator.get_boss_prep_lines(run_state)

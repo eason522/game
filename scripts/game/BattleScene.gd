@@ -25,6 +25,7 @@ const BATTLE_ENEMY_PROFILE_META := "tymj_battle_enemy_profile_id"
 const BOSS_OPENING_OBSERVATION_META := "tymj_boss_opening_observation"
 const DEMO_SOUND_ENABLED_META := "tymj_demo_sound_enabled"
 const DEMO_HINTS_ENABLED_META := "tymj_demo_hints_enabled"
+const DEMO_ACCEPTANCE_MODE_META := "tymj_demo_acceptance_mode"
 const ENEMY_THINK_DELAY_SECONDS := 0.42
 const TURN_RHYTHM_FADE_SECONDS := 0.14
 const TURN_RHYTHM_SETTLE_SECONDS := 0.12
@@ -53,6 +54,7 @@ var move_count_label: Label
 var energy_label: Label
 var tutorial_hint_label: Label
 var demo_visual_acceptance_label: Label
+var demo_stage_badge: Label
 var enemy_profile_label: Label
 var enemy_intent_hint_label: Label
 var board_grid: GridContainer
@@ -114,6 +116,7 @@ var result_banner_animation_seconds := RESULT_BANNER_FADE_SECONDS + RESULT_BANNE
 var feedback_flash_seconds := FEEDBACK_FLASH_SECONDS
 var sound_feedback_enabled := true
 var tutorial_hints_enabled := true
+var dev_acceptance_mode := false
 
 var empty_style: StyleBoxFlat
 var spirit_style: StyleBoxFlat
@@ -172,6 +175,7 @@ func _read_demo_preferences() -> void:
 	var root := get_tree().root
 	sound_feedback_enabled = root.get_meta(DEMO_SOUND_ENABLED_META, true)
 	tutorial_hints_enabled = root.get_meta(DEMO_HINTS_ENABLED_META, true)
+	dev_acceptance_mode = root.get_meta(DEMO_ACCEPTANCE_MODE_META, false)
 
 
 func _load_run_build_modifiers(root: Window) -> void:
@@ -318,15 +322,16 @@ func _build_layout() -> void:
 	subtitle.add_theme_color_override("font_color", Color("#9ec8bd"))
 	title_box.add_child(subtitle)
 
-	var stage_badge := Label.new()
-	stage_badge.text = "Demo 验收版"
-	stage_badge.custom_minimum_size = Vector2(128, 30)
-	stage_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	stage_badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	stage_badge.add_theme_font_size_override("font_size", 14)
-	stage_badge.add_theme_color_override("font_color", Color("#f4dfad"))
-	stage_badge.add_theme_stylebox_override("normal", _make_panel_style(Color("#253331"), Color("#68b7a2"), 1, 17, 3))
-	header.add_child(stage_badge)
+	demo_stage_badge = Label.new()
+	demo_stage_badge.text = "Demo 验收版"
+	demo_stage_badge.visible = dev_acceptance_mode
+	demo_stage_badge.custom_minimum_size = Vector2(128, 30)
+	demo_stage_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	demo_stage_badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	demo_stage_badge.add_theme_font_size_override("font_size", 14)
+	demo_stage_badge.add_theme_color_override("font_color", Color("#f4dfad"))
+	demo_stage_badge.add_theme_stylebox_override("normal", _make_panel_style(Color("#253331"), Color("#68b7a2"), 1, 17, 3))
+	header.add_child(demo_stage_badge)
 
 	var content := HBoxContainer.new()
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -363,6 +368,7 @@ func _build_layout() -> void:
 	demo_visual_acceptance_label.add_theme_color_override("font_color", Color("#cde8df"))
 	demo_visual_acceptance_label.add_theme_stylebox_override("normal", _make_panel_style(Color("#18282c"), Color("#4a6a72"), 1, 6, 2))
 	demo_visual_acceptance_label.z_index = 6
+	demo_visual_acceptance_label.visible = dev_acceptance_mode
 	add_child(demo_visual_acceptance_label)
 
 	var board_panel := PanelContainer.new()
@@ -1564,7 +1570,10 @@ func _refresh_info_labels() -> void:
 		tutorial_hint_label.visible = tutorial_hints_enabled
 		tutorial_hint_label.text = _battle_tutorial_hint() if tutorial_hints_enabled else ""
 	if demo_visual_acceptance_label != null:
+		demo_visual_acceptance_label.visible = dev_acceptance_mode
 		demo_visual_acceptance_label.text = _demo_visual_acceptance_text()
+	if demo_stage_badge != null:
+		demo_stage_badge.visible = dev_acceptance_mode
 	enemy_profile_label.text = "%s\n%s" % [enemy_ai.get_profile_name(), enemy_ai.get_profile_intent()]
 	enemy_intent_hint_label.text = enemy_intent_hint
 

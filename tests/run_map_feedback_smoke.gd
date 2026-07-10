@@ -6,6 +6,7 @@ const RunMapScene := preload("res://scenes/roguelike/RunMapScene.tscn")
 const RUN_STATE_META := "tymj_run_state"
 const DEMO_SOUND_ENABLED_META := "tymj_demo_sound_enabled"
 const DEMO_HINTS_ENABLED_META := "tymj_demo_hints_enabled"
+const DEMO_ACCEPTANCE_MODE_META := "tymj_demo_acceptance_mode"
 
 var failures: Array = []
 
@@ -15,6 +16,9 @@ func _init() -> void:
 
 
 func _run() -> void:
+	if root.has_meta(DEMO_ACCEPTANCE_MODE_META):
+		root.remove_meta(DEMO_ACCEPTANCE_MODE_META)
+
 	var state := RunStateScript.new(MapGeneratorScript.new().generate_linear_route())
 	root.set_meta(RUN_STATE_META, state.to_dict())
 
@@ -34,6 +38,25 @@ func _run() -> void:
 	if scene.side_scroll == null or scene.build_summary_label == null or not scene.side_scroll.is_ancestor_of(scene.build_summary_label):
 		failures.append("run map feedback: expected right-side build summary to live inside a scroll container")
 
+	await process_frame
+
+	if scene.dev_acceptance_mode:
+		failures.append("run map feedback: expected player mode by default")
+
+	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("当前节点") or not scene.build_summary_label.text.contains("星砂") or not scene.build_summary_label.text.contains("当前构筑") or not scene.build_summary_label.text.contains("下一步"):
+		failures.append("run map feedback: expected player mode to keep only node, resource, build and next-action summary")
+	elif scene.build_summary_label.text.contains("基准") or scene.build_summary_label.text.contains("证据") or scene.build_summary_label.text.contains("归档") or scene.build_summary_label.text.contains("签名") or scene.build_summary_label.text.contains("复跑"):
+		failures.append("run map feedback: expected player mode to hide developer acceptance terminology")
+
+	if not scene.node_buttons.is_empty() and (scene.node_buttons[0].text.contains("实测") or scene.node_buttons[0].text.contains("目标")):
+		failures.append("run map feedback: expected player route nodes to omit pacing diagnostics")
+
+	if scene.settlement_label != null and scene.settlement_label.visible:
+		failures.append("run map feedback: expected player mode to hide the diagnostic settlement card")
+
+	scene.dev_acceptance_mode = true
+	root.set_meta(DEMO_ACCEPTANCE_MODE_META, true)
+	scene._refresh()
 	await process_frame
 
 	if scene.side_scroll != null and scene.side_scroll.get_v_scroll_bar().max_value <= scene.side_scroll.size.y:
@@ -605,6 +628,15 @@ func _run() -> void:
 
 	if scene.build_summary_label == null or not scene.build_summary_label.text.contains("Demo 实机复跑包") or not scene.build_summary_label.text.contains("已保存签名 DEMO-"):
 		failures.append("run map feedback: expected stable editor rerun pack to preserve the archive signature")
+
+	scene.dev_acceptance_mode = false
+	root.set_meta(DEMO_ACCEPTANCE_MODE_META, false)
+	scene._refresh()
+
+	if scene.reward_label == null or not scene.reward_label.text.contains("岩王体感：") or not scene.reward_label.text.contains("更稳"):
+		failures.append("run map feedback: expected player mode to keep one concise boss feel result")
+	elif scene.reward_label.text.contains("第 1 手") or scene.reward_label.text.contains("可落点"):
+		failures.append("run map feedback: expected player mode to hide boss diagnostic snapshot details")
 
 	scene.queue_free()
 	root.remove_meta(RUN_STATE_META)

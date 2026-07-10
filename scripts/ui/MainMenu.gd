@@ -1,6 +1,7 @@
 extends Control
 
 const RUN_STATE_META := "tymj_run_state"
+const DEMO_ACCEPTANCE_MODE_META := "tymj_demo_acceptance_mode"
 const RUN_MAP_SCENE_PATH := "res://scenes/roguelike/RunMapScene.tscn"
 const BATTLE_SCENE_PATH := "res://scenes/game/BattleScene.tscn"
 const RunSaveScript := preload("res://scripts/roguelike/RunSave.gd")
@@ -10,10 +11,13 @@ const RunPlaytestSimulatorScript := preload("res://scripts/roguelike/RunPlaytest
 var title_label: Label
 var subtitle_label: Label
 var summary_label: Label
+var summary_scroll: ScrollContainer
 var status_label: Label
 var start_button: Button
 var continue_button: Button
 var battle_button: Button
+var dev_acceptance_button: Button
+var dev_acceptance_mode := false
 var playtest_simulator := RunPlaytestSimulatorScript.new()
 var panel_style: StyleBoxFlat
 var button_style: StyleBoxFlat
@@ -22,6 +26,8 @@ var button_disabled_style: StyleBoxFlat
 
 
 func _ready() -> void:
+	get_tree().root.set_meta(DEMO_ACCEPTANCE_MODE_META, false)
+	dev_acceptance_mode = false
 	_create_styles()
 	_build_layout()
 	_refresh_continue_state()
@@ -92,11 +98,18 @@ func _build_layout() -> void:
 	summary_panel.custom_minimum_size = Vector2(0, 240)
 	left.add_child(summary_panel)
 
+	summary_scroll = ScrollContainer.new()
+	summary_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	summary_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	summary_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	summary_panel.add_child(summary_scroll)
+
 	summary_label = Label.new()
 	summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	summary_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	summary_label.add_theme_font_size_override("font_size", 16)
 	summary_label.add_theme_color_override("font_color", Color("#cde8df"))
-	summary_panel.add_child(summary_label)
+	summary_scroll.add_child(summary_label)
 
 	var right_panel := PanelContainer.new()
 	right_panel.custom_minimum_size = Vector2(360, 0)
@@ -127,6 +140,14 @@ func _build_layout() -> void:
 
 	var divider := HSeparator.new()
 	actions.add_child(divider)
+
+	dev_acceptance_button = _make_action_button("开发验收模式：关")
+	dev_acceptance_button.toggle_mode = true
+	dev_acceptance_button.button_pressed = false
+	dev_acceptance_button.custom_minimum_size = Vector2(0, 42)
+	dev_acceptance_button.add_theme_font_size_override("font_size", 15)
+	dev_acceptance_button.toggled.connect(_on_dev_acceptance_toggled)
+	actions.add_child(dev_acceptance_button)
 
 	status_label = Label.new()
 	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -159,8 +180,8 @@ func _refresh_continue_state() -> void:
 		var closeout_lines: Array = playtest_simulator.get_editor_closeout_packet_lines(resume_state)
 		var snapshot_lines: Array = playtest_simulator.get_live_playtest_snapshot_lines(resume_state)
 		continue_button.text = _resume_button_text(resume_state)
-		status_label.text = "检测到可继续的 Run。\n%s" % _first_line(next_action_lines)
-		summary_label.text = "\n".join([
+		status_label.text = "检测到可继续的旅程。\n%s" % continue_button.text
+		var developer_summary := "\n".join([
 			_base_summary_text(),
 			"主菜单进度：%s" % _first_line(snapshot_lines).trim_prefix("实机快照："),
 			"主菜单速览：%s" % " / ".join(closeout_lines),
@@ -181,10 +202,11 @@ func _refresh_continue_state() -> void:
 			_get_main_menu_editor_runbook_line(resume_state),
 			_get_main_menu_editor_preflight_line(resume_state),
 		])
+		summary_label.text = developer_summary if dev_acceptance_mode else _player_summary_text(resume_state)
 	else:
 		continue_button.text = "继续 Run"
 		status_label.text = "暂无存档，从新的 Run 开始。"
-		summary_label.text = "\n".join([
+		var developer_summary := "\n".join([
 			_base_summary_text(),
 			"主菜单进度：暂无 Run 数据",
 			"主菜单速览：等待首战记录。",
@@ -205,6 +227,36 @@ func _refresh_continue_state() -> void:
 			_get_main_menu_editor_runbook_line(null),
 			_get_main_menu_editor_preflight_line(null),
 		])
+		summary_label.text = developer_summary if dev_acceptance_mode else _player_summary_text(null)
+
+	if dev_acceptance_button != null:
+		dev_acceptance_button.set_pressed_no_signal(dev_acceptance_mode)
+		dev_acceptance_button.text = "开发验收模式：开" if dev_acceptance_mode else "开发验收模式：关"
+
+
+func _player_summary_text(run_state) -> String:
+	if run_state == null:
+		return "尚无旅程记录。选择“新的 Run”开始岩之国试炼。"
+
+	var current_node: Dictionary = run_state.get_current_node() if run_state.has_method("get_current_node") else {}
+	var progress_text: String = current_node.get("title", "当前路线")
+
+	if run_state.run_completed:
+		progress_text = "本轮已通关"
+	elif run_state.run_failed:
+		progress_text = "本轮挑战结束"
+
+	return "存档进度：%s · 星砂 %d · 已完成战斗 %d/4" % [
+		progress_text,
+		run_state.coins,
+		run_state.get_battle_pacing_records().size(),
+	]
+
+
+func _on_dev_acceptance_toggled(enabled: bool) -> void:
+	dev_acceptance_mode = enabled
+	get_tree().root.set_meta(DEMO_ACCEPTANCE_MODE_META, enabled)
+	_refresh_continue_state()
 
 
 func _base_summary_text() -> String:

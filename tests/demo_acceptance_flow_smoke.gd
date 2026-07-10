@@ -6,6 +6,7 @@ const RunSaveScript := preload("res://scripts/roguelike/RunSave.gd")
 const RunPlaytestSimulatorScript := preload("res://scripts/roguelike/RunPlaytestSimulator.gd")
 const RunStateScript := preload("res://scripts/roguelike/RunState.gd")
 const RUN_STATE_META := "tymj_run_state"
+const DEMO_ACCEPTANCE_MODE_META := "tymj_demo_acceptance_mode"
 
 var failures: Array = []
 
@@ -63,6 +64,7 @@ func _run() -> void:
 	var menu = MainMenuScene.instantiate()
 	root.add_child(menu)
 	await process_frame
+	menu._on_dev_acceptance_toggled(true)
 
 	if menu.continue_button == null or not menu.continue_button.text.contains("查看验收结果"):
 		failures.append("demo acceptance flow: expected main menu to route accepted save to review")
@@ -130,6 +132,9 @@ func _run() -> void:
 
 	if root.has_meta(RUN_STATE_META):
 		root.remove_meta(RUN_STATE_META)
+
+	if root.has_meta(DEMO_ACCEPTANCE_MODE_META):
+		root.remove_meta(DEMO_ACCEPTANCE_MODE_META)
 
 	await process_frame
 
